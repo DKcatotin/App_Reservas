@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/networking/dio_client.dart';
 import '../../../../../core/storage/token_storage.dart';
-import '../../repositories/auth_repository.dart';
-import '../../sources/auth_api.dart';
+import '../../repositories/auth/auth_repository.dart';
+import '../../sources/auth/auth_api.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

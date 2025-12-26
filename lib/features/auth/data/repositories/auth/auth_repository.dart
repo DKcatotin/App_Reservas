@@ -1,6 +1,6 @@
-import '../../../../core/storage/token_storage.dart';
-import '../models/auth_response.dart';
-import '../sources/auth_api.dart';
+import '../../../../../core/storage/token_storage.dart';
+import '../../models/auth_response.dart';
+import '../../sources/auth/auth_api.dart';
 
 class AuthRepository {
   final AuthApi api;
@@ -16,5 +16,9 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await tokenStorage.clear();
+  }
+   Future<AuthResponse> greetPrivate() async {
+    return await api.greetPrivate();
+
   }
 }

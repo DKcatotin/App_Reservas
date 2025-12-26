@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 import '../../features/auth/data/presentation/pages/login_page.dart';
-import '../../features/owner/presentation/pages/owner_home_page.dart';
-import '../../features/appointments/presentation/pages/agenda_page.dart';
+import '../../features/owner/presentation/dashbord/owner_home_page.dart';
+import '../../features/owner/presentation/appointments/presentation/pages/agenda_page.dart';
 import '../storage/token_storage.dart';
 import 'route_guard.dart';
 
