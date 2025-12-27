@@ -7,12 +7,14 @@ class AuthRepository {
   final TokenStorage tokenStorage;
 
   AuthRepository({required this.api, required this.tokenStorage});
+Future<void> signIn(String username, String password) async {
+  final auth = await api.signIn(
+    username: username,
+    password: password,
+  );
 
-  Future<AuthResponse> signIn(String username, String password) async {
-    final auth = await api.signIn(username: username, password: password);
-    await tokenStorage.saveAccessToken(auth.accessToken);
-    return auth;
-  }
+  await tokenStorage.saveAccessToken(auth.accessToken);
+}
 
   Future<void> signOut() async {
     await tokenStorage.clear();

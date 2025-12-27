@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/appointments_repository.dart';
-import '../../data/sources/appointments_mock_api.dart';
 import '../widgets/appointment_card.dart';
 
 class AgendaPage extends StatefulWidget {
-  const AgendaPage({super.key});
+  final AppointmentsRepository appointmentsRepository;
+
+  const AgendaPage({
+    super.key,
+    required this.appointmentsRepository,
+  });
 
   @override
   State<AgendaPage> createState() => _AgendaPageState();
 }
 
 class _AgendaPageState extends State<AgendaPage> {
-  late final AppointmentsRepository repo;
   late Future future;
 
   @override
   void initState() {
     super.initState();
-    repo = AppointmentsRepository(mockApi: AppointmentsMockApi());
-    future = repo.getToday();
+    future = widget.appointmentsRepository.getToday();
   }
 
   @override

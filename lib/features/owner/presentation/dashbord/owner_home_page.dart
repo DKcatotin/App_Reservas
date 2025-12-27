@@ -50,6 +50,12 @@ class OwnerHomePage extends StatelessWidget {
                 onPressed: () => context.push('/owner/agenda'),
               ),
             ),
+            ElevatedButton.icon(
+  icon: const Icon(Icons.bug_report),
+  label: const Text('Probar ruta privada'),
+  onPressed: () => context.go('/owner/test'),
+),
+
           ],
         ),
       ),
