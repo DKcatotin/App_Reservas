@@ -1,24 +1,14 @@
 import '../models/appointment.dart';
-import '../models/test_item.dart';
-import '../sources/appointments_mock_api.dart';
-import '../sources/appointments_api.dart';
+import '../sources/appointments_datasource.dart';
 
 class AppointmentsRepository {
-  final AppointmentsMockApi mockApi;
-  final AppointmentsApi api;
+  final AppointmentsDatasource datasource;
 
-  AppointmentsRepository({
-    required this.mockApi,
-    required this.api,
-  });
+  AppointmentsRepository({required this.datasource});
 
-  // Agenda local (JSON)
-  Future<List<Appointment>> getToday() {
-    return mockApi.getToday();
-  }
+  Future<List<Appointment>> getToday() => datasource.getToday();
 
-  // Ruta privada backend
-  Future<List<TestItem>> getTest1() {
-    return api.getTest1();
-  }
+  Future<List<Appointment>> getPast() => datasource.getPast();
+
+  Future<List<Appointment>> getUpcoming() => datasource.getUpcoming();
 }

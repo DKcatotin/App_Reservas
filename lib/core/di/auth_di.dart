@@ -6,9 +6,11 @@ import '../storage/token_storage.dart';
 import '../../features/auth/data/sources/auth/auth_api.dart';
 import '../../features/auth/data/repositories/auth/auth_repository.dart';
 
-import '../../features/owner/appointments/data/sources/appointments_api.dart';
-import '../../features/owner/appointments/data/sources/appointments_mock_api.dart';
 import '../../features/owner/appointments/data/repositories/appointments_repository.dart';
+import '../../features/owner/appointments/data/sources/appointments_json_datasource.dart';
+
+import '../../features/owner/catalogues/data/repositories/catalogues_repository.dart';
+import '../../features/owner/catalogues/data/sources/catalogues_api_datasource.dart';
 
 class AppDependencies {
   final TokenStorage tokenStorage;
@@ -16,12 +18,14 @@ class AppDependencies {
 
   final AuthRepository authRepository;
   final AppointmentsRepository appointmentsRepository;
+  final CataloguesRepository cataloguesRepository;
 
   AppDependencies._({
     required this.tokenStorage,
     required this.dio,
     required this.authRepository,
     required this.appointmentsRepository,
+    required this.cataloguesRepository,
   });
 
   factory AppDependencies.build() {
@@ -35,13 +39,16 @@ class AppDependencies {
       tokenStorage: tokenStorage,
     );
 
-    // Appointments
-    final appointmentsApi = AppointmentsApi(dio);
-    final appointmentsMockApi = AppointmentsMockApi();
+    // Catalogues (API real)
+    final cataloguesApi = CataloguesApiDatasource(dio);
+    final cataloguesRepository = CataloguesRepository(
+      api: cataloguesApi,
+    );
 
+    // Appointments (JSON quemado)
+    final appointmentsDatasource = AppointmentsJsonDatasource();
     final appointmentsRepository = AppointmentsRepository(
-      api: appointmentsApi,
-      mockApi: appointmentsMockApi,
+      datasource: appointmentsDatasource,
     );
 
     return AppDependencies._(
@@ -49,6 +56,7 @@ class AppDependencies {
       dio: dio,
       authRepository: authRepository,
       appointmentsRepository: appointmentsRepository,
+      cataloguesRepository: cataloguesRepository,
     );
   }
 }

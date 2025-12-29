@@ -1,10 +1,10 @@
+import 'package:agenda_app/features/owner/catalogues/data/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/test_item.dart';
-import '../../data/repositories/appointments_repository.dart';
+import '../../data/models/catalogue_item.dart';
 
 class TestPage extends StatefulWidget {
-  final AppointmentsRepository repo;
+  final CataloguesRepository repo;
   const TestPage({super.key, required this.repo});
 
   @override
@@ -12,12 +12,12 @@ class TestPage extends StatefulWidget {
 }
 
 class _TestPageState extends State<TestPage> {
-  late Future<List<TestItem>> future;
+  late Future<List<CatalogueItem >> future;
 
   @override
   void initState() {
     super.initState();
-    future = widget.repo.getTest1();
+    future = widget.repo.getAppointmentStatuses();
   }
 
   @override
@@ -29,7 +29,7 @@ class _TestPageState extends State<TestPage> {
   onPressed: () => context.go('/owner'),
 ),
 ),
-      body: FutureBuilder<List<TestItem>>(
+      body: FutureBuilder<List<CatalogueItem >>(
         future: future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
@@ -42,7 +42,7 @@ class _TestPageState extends State<TestPage> {
             );
           }
 
-          final items = snap.data ?? const <TestItem>[];
+          final items = snap.data ?? const <CatalogueItem >[];
           if (items.isEmpty) {
             return const Center(child: Text('Sin datos'));
           }
