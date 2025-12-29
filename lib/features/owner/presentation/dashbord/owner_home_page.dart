@@ -305,7 +305,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                                   ],
                                 ),
                                 child: ElevatedButton.icon(
-                                  onPressed: () => context.go('/owner/test'),
+                                  onPressed: () => context.go('/owner/test1'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     foregroundColor: Colors.white,

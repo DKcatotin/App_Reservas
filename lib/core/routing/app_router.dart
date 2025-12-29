@@ -1,3 +1,5 @@
+import 'package:agenda_app/features/owner/catalogues/presentation/pages/catalogue_test_page.dart';
+
 import '../../features/auth/data/presentation/pages/login_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/diary_page.dart';
 import 'package:agenda_app/features/owner/presentation/dashbord/owner_home_page.dart';
@@ -29,6 +31,13 @@ class AppRouter {
             repo: deps.appointmentsRepository,
           ),
         ),
+         GoRoute(
+          path: '/owner/test1',
+          builder: (_, __) => TestPage(
+            repo: deps.cataloguesRepository,
+          ),
+        ),
+      
       ],
     );
   }
