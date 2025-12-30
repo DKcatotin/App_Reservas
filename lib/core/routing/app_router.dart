@@ -18,19 +18,20 @@ class AppRouter {
             authRepository: deps.authRepository,
           ),
         ),
-
-        GoRoute(
-          path: '/owner',
-          builder: (_, __) => const OwnerHomePage(),
-        ),
+GoRoute(
+  path: '/owner',
+  builder: (_, __) => OwnerHomePage(
+    repo: deps.appointmentsRepository,
+  ),
+),
 
         // 📔 Agenda (JSON hoy)
-        GoRoute(
-          path: '/owner/agenda',
-          builder: (_, __) => DiaryPage(
-            repo: deps.appointmentsRepository,
-          ),
-        ),
+         GoRoute(
+  path: '/owner/agenda',
+  builder: (_, __) => DiaryPage(
+    repo: deps.appointmentsRepository,
+  ),
+),
          GoRoute(
           path: '/owner/test1',
           builder: (_, __) => TestPage(

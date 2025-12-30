@@ -1,45 +1,66 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../models/appointment.dart';
-import '../models/customer.dart';
-import '../models/staff.dart';
-import '../models/status.dart';
-import '../models/source.dart';
-import '../models/appointment_service.dart';
+import 'appointments_datasource.dart';
 
-class AppointmentsMockApi {
+class AppointmentsMockApi implements AppointmentsDatasource {
+  final List<Appointment> _memory = [];
+
+  AppointmentsMockApi() {
+    // Cargar inicial desde JSON UNA SOLA VEZ
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final today = await _load('assets/data/owner/appointments/appointments_today.json');
+    final past = await _load('assets/data/owner/appointments/appointments_past.json');
+    final upcoming = await _load('assets/data/owner/appointments/appointments_upcoming.json');
+
+    _memory.addAll([...past, ...today, ...upcoming]);
+  }
+
+  Future<List<Appointment>> _load(String path) async {
+    final raw = await rootBundle.loadString(path);
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final list = decoded['data'] as List;
+    return list.map((e) => Appointment.fromJson(e)).toList();
+  }
+
+  @override
+  Future<void> create(Appointment appointment) async {
+    _memory.add(appointment);
+    debugPrint('CITAS GUARDADAS: ${_memory.length}');
+  }
+
+  @override
   Future<List<Appointment>> getToday() async {
-    await Future.delayed(const Duration(milliseconds: 250));
+    final today = DateTime.now();
+    return _memory.where((a) =>
+      _isSameDay(a.startAt, today),
+    ).toList();
+  }
 
-    final now = DateTime.now();
+  @override
+  Future<List<Appointment>> getUpcoming() async {
+    final today = DateTime.now();
+    return _memory.where((a) =>
+      a.startAt.isAfter(today),
+    ).toList();
+  }
 
-    return [
-      Appointment(
-        id: 'a1',
-        ownerId: 'owner1',
-        branchId: 'branch1',
-        customerId: 'c1',
-        staffId: 's1',
-        startAt: DateTime(now.year, now.month, now.day, 10, 0),
-        endAt: DateTime(now.year, now.month, now.day, 11, 0),
-        notes: null,
-        status: Status(code: 'pending', label: 'Pendiente'),
-        source: Source(type: 'manual'),
-        customer: Customer(
-          id: 'c1',
-          name: 'María',
-          phone: '099999999',
-        ),
-        staff: Staff(
-          id: 's1',
-          name: 'Andrea',
-        ),
-        services: [
-          AppointmentService(
-            id: 'sv1',
-            name: 'Uñas acrílicas',
-            durationMinutes: 60,
-          ),
-        ],
-      ),
-    ];
+  @override
+  Future<List<Appointment>> getPast() async {
+    final today = DateTime.now();
+    return _memory.where((a) =>
+      a.startAt.isBefore(today),
+    ).toList();
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
+

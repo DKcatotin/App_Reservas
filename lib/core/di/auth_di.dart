@@ -11,6 +11,9 @@ import '../../features/owner/appointments/data/sources/appointments_json_datasou
 
 import '../../features/owner/catalogues/data/repositories/catalogues_repository.dart';
 import '../../features/owner/catalogues/data/sources/catalogues_api_datasource.dart';
+import '../../features/owner/appointments/data/sources/appointments_memory_datasource.dart';
+import '../../features/owner/appointments/data/sources/appointments_hybrid_datasource.dart';
+
 
 class AppDependencies {
   final TokenStorage tokenStorage;
@@ -46,10 +49,15 @@ class AppDependencies {
     );
 
     // Appointments (JSON quemado)
-    final appointmentsDatasource = AppointmentsJsonDatasource();
-    final appointmentsRepository = AppointmentsRepository(
-      datasource: appointmentsDatasource,
-    );
+    // Appointments (JSON + memoria)
+final appointmentsDatasource = AppointmentsHybridDatasource(
+  json: AppointmentsJsonDatasource(),
+  memory: AppointmentsMemoryDatasource(),
+);
+
+final appointmentsRepository = AppointmentsRepository(
+  datasource: appointmentsDatasource,
+);
 
     return AppDependencies._(
       tokenStorage: tokenStorage,

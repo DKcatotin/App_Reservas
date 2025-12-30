@@ -1,0 +1,64 @@
+{
+  "data": [
+    {
+      "id": "66666666-6666-6666-6666-666666666661",
+      "name": "María Zambrano",
+      "phone": "0995382332",
+      "email": "maria.zambrano@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666662",
+      "name": "Daniela Pérez",
+      "phone": "0912365432",
+      "email": "daniela.perez@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666663",
+      "name": "Ana Torres",
+      "phone": "0987654321",
+      "email": "ana.torres@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666664",
+      "name": "Sofía Ramírez",
+      "phone": "0923456789",
+      "email": "sofia.ramirez@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666665",
+      "name": "Valentina Castro",
+      "phone": "0934567890",
+      "email": "valentina.castro@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666666",
+      "name": "Isabella Morales",
+      "phone": "0998765432",
+      "email": "isabella.morales@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666667",
+      "name": "Camila Vega",
+      "phone": "0956789012",
+      "email": "camila.vega@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666668",
+      "name": "Martina Ruiz",
+      "phone": "0967890123",
+      "email": "martina.ruiz@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666669",
+      "name": "Lucía Mendoza",
+      "phone": "0978901234",
+      "email": "lucia.mendoza@email.com"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666670",
+      "name": "Emilia Vargas",
+      "phone": "0989012345",
+      "email": "emilia.vargas@email.com"
+    }
+  ]
+}

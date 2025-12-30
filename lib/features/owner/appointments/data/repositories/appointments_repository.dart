@@ -6,9 +6,20 @@ class AppointmentsRepository {
 
   AppointmentsRepository({required this.datasource});
 
-  Future<List<Appointment>> getToday() => datasource.getToday();
+  Future<List<Appointment>> getToday() {
+    return datasource.getToday();
+  }
 
-  Future<List<Appointment>> getPast() => datasource.getPast();
+  Future<List<Appointment>> getPast() {
+    return datasource.getPast();
+  }
 
-  Future<List<Appointment>> getUpcoming() => datasource.getUpcoming();
+  Future<List<Appointment>> getUpcoming() {
+    return datasource.getUpcoming();
+  }
+
+  /// Crear nueva cita
+  Future<void> create(Appointment appointment) {
+    return datasource.create(appointment);
+  }
 }

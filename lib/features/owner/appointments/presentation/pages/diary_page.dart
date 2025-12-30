@@ -1,43 +1,46 @@
+import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_form_page.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
 import '../../data/repositories/appointments_repository.dart';
 import '../widgets/appointment_card.dart';
+import 'package:provider/provider.dart';
 
 class DiaryPage extends StatefulWidget {
   final AppointmentsRepository repo;
 
-  const DiaryPage({super.key, required this.repo});
+  const DiaryPage({
+    super.key,
+    required this.repo,
+  });
 
   @override
   State<DiaryPage> createState() => _DiaryPageState();
 }
 
-class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMixin {
+
+class _DiaryPageState extends State<DiaryPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+  late final AppointmentsRepository repo;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  
+
   List<Appointment> _allAppointments = [];
   List<Appointment> _filteredAppointments = [];
-  String? _selectedStaffId;
   bool _isLoading = true;
+
+ 
 
   @override
   void initState() {
     super.initState();
+     repo = widget.repo;
     _tabController = TabController(length: 3, vsync: this);
     _selectedDay = _focusedDay;
+
     _loadAllAppointments();
-    
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        _filterAppointments();
-      }
-    });
   }
 
   @override
@@ -48,12 +51,12 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
 
   Future<void> _loadAllAppointments() async {
     setState(() => _isLoading = true);
-    
+
     try {
-      final today = await widget.repo.getToday();
-      final past = await widget.repo.getPast();
-      final upcoming = await widget.repo.getUpcoming();
-      
+      final today = await repo.getToday();
+      final past = await repo.getPast();
+      final upcoming = await repo.getUpcoming();
+
       setState(() {
         _allAppointments = [...past, ...today, ...upcoming];
         _filterAppointments();
@@ -69,46 +72,26 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
     }
   }
 
-  void _filterAppointments() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    
-    List<Appointment> filtered = _allAppointments;
-    
-    // Filtrar por tab (Hoy/Próximas/Pasadas)
-    switch (_tabController.index) {
-      case 0: // Hoy
-        filtered = filtered.where((a) {
-          final aDate = DateTime(a.startAt.year, a.startAt.month, a.startAt.day);
-          return aDate.isAtSameMomentAs(today);
-        }).toList();
-        break;
-      case 1: // Próximas
-        filtered = filtered.where((a) {
-          final aDate = DateTime(a.startAt.year, a.startAt.month, a.startAt.day);
-          return aDate.isAfter(today);
-        }).toList();
-        break;
-      case 2: // Pasadas
-        filtered = filtered.where((a) {
-          final aDate = DateTime(a.startAt.year, a.startAt.month, a.startAt.day);
-          return aDate.isBefore(today);
-        }).toList();
-        break;
-    }
-    
-    // Filtrar por staff si hay uno seleccionado
-    if (_selectedStaffId != null) {
-      filtered = filtered.where((a) => a.staffId == _selectedStaffId).toList();
-    }
-    
-    // Ordenar por fecha
-    filtered.sort((a, b) => a.startAt.compareTo(b.startAt));
-    
-    setState(() {
-      _filteredAppointments = filtered;
-    });
-  }
+ void _filterAppointments() {
+  final selected = _selectedDay ?? DateTime.now();
+  final selectedDate =
+      DateTime(selected.year, selected.month, selected.day);
+
+  final filtered = _allAppointments.where((a) {
+    final aDate = DateTime(
+      a.startAt.year,
+      a.startAt.month,
+      a.startAt.day,
+    );
+    return aDate.isAtSameMomentAs(selectedDate);
+  }).toList();
+
+  filtered.sort((a, b) => a.startAt.compareTo(b.startAt));
+
+  setState(() {
+    _filteredAppointments = filtered;
+  });
+}
 
   List<Appointment> _getAppointmentsForDay(DateTime day) {
     return _allAppointments.where((a) {
@@ -118,15 +101,8 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
     }).toList();
   }
 
-  List<String> _getUniqueStaff() {
-    final staffIds = _allAppointments.map((a) => a.staffId).toSet().toList();
-    return staffIds;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final uniqueStaff = _getUniqueStaff();
-    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F5FF),
       appBar: AppBar(
@@ -198,6 +174,7 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
                         _selectedDay = selectedDay;
                         _focusedDay = focusedDay;
                       });
+                       _filterAppointments();
                     },
                     onFormatChanged: (format) {
                       setState(() {
@@ -209,29 +186,6 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
                     },
                   ),
                 ),
-
-                /// FILTRO POR STAFF
-                if (uniqueStaff.length > 1) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildStaffChip(null, 'Todos'),
-                          const SizedBox(width: 8),
-                          ..._allAppointments
-                              .map((a) => a.staff)
-                              .toSet()
-                              .map((staff) => Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: _buildStaffChip(staff.id, staff.name),
-                                  )),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
 
                 /// LISTA DE CITAS
                 Expanded(
@@ -251,45 +205,32 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navegar a crear nueva cita
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Crear nueva cita (próximamente)')),
-          );
-        },
-        backgroundColor: const Color(0xFF8B5CF6),
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva Cita'),
+     floatingActionButton: FloatingActionButton.extended(
+  onPressed: () async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AppointmentFormPage(
+          repo: repo,
+        ),
       ),
     );
-  }
 
-  Widget _buildStaffChip(String? staffId, String name) {
-    final isSelected = _selectedStaffId == staffId;
-    
-    return FilterChip(
-      label: Text(name),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedStaffId = selected ? staffId : null;
-          _filterAppointments();
-        });
-      },
-      selectedColor: const Color(0xFF8B5CF6),
-      checkmarkColor: Colors.white,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black87,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
+    if (created == true) {
+      _loadAllAppointments();
+    }
+  },
+  backgroundColor: const Color(0xFF8B5CF6),
+  icon: const Icon(Icons.add),
+  label: const Text('Nueva Cita'),
+),
     );
   }
 
   Widget _buildEmptyState() {
     String message;
     IconData icon;
-    
+
     switch (_tabController.index) {
       case 0:
         message = 'No hay citas para hoy';
@@ -307,7 +248,7 @@ class _DiaryPageState extends State<DiaryPage> with SingleTickerProviderStateMix
         message = 'No hay citas';
         icon = Icons.event_note;
     }
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

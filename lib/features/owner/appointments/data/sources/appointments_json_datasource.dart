@@ -37,4 +37,11 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
       'assets/data/owner/appointments/appointments_upcoming.json',
     );
   }
+
+  @override
+  Future<void> create(Appointment appointment) {
+    throw UnimplementedError(
+      'AppointmentsJsonDatasource is read-only',
+    );
+  }
 }

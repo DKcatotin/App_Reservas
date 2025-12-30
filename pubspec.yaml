@@ -11,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  provider: ^6.1.2
   # iOS style icons
   cupertino_icons: ^1.0.8
 
@@ -46,3 +46,4 @@ flutter:
 
   assets:
     - assets/data/owner/appointments/
+    - assets/data/owner/catalogues/
