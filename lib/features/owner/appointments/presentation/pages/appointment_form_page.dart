@@ -63,7 +63,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     try {
       final customers = await _datasource.getCustomers();
       final services = await _datasource.getServices();
-
+   
       setState(() {
         _customers = customers;
         _services = services;
