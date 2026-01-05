@@ -36,4 +36,16 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
     await _ensureLoaded();
     return memory.create(appointment);
   }
+  @override
+Future<void> update(Appointment appointment) async {
+  await _ensureLoaded();
+  return memory.update(appointment);
+}
+
+@override
+Future<void> delete(String id) async {
+  await _ensureLoaded();
+  return memory.delete(id);
+}
+
 }

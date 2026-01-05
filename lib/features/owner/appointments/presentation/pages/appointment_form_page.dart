@@ -1,14 +1,10 @@
-import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/staff.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
+import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../appointments/data/models/customer.dart';
-import '../../../catalogues/data/sources/catalogues_json_datasource.dart';
+
 import '../../../catalogues/data/models/service.dart';
+import '../../../catalogues/data/sources/catalogues_json_datasource.dart';
 
 class AppointmentFormPage extends StatefulWidget {
   final AppointmentsRepository repo;
@@ -24,14 +20,16 @@ class AppointmentFormPage extends StatefulWidget {
 
 class _AppointmentFormPageState extends State<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _notesController = TextEditingController();
+  final _customerNameController = TextEditingController();
+  final _customerPhoneController = TextEditingController();
+  
   final _datasource = CataloguesJsonDatasource();
 
-  List<Customer> _customers = [];
   List<Service> _services = [];
-
-  Customer? _selectedCustomer;
   List<Service> _selectedServices = [];
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _selectedSource = 'whatsapp';
@@ -55,17 +53,16 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   @override
   void dispose() {
     _notesController.dispose();
+    _customerNameController.dispose();
+    _customerPhoneController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final customers = await _datasource.getCustomers();
       final services = await _datasource.getServices();
-   
       setState(() {
-        _customers = customers;
         _services = services;
         _isLoading = false;
       });
@@ -73,7 +70,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
+          const SnackBar(content: Text('Error al cargar datos')),
         );
       }
     }
@@ -86,16 +83,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       locale: const Locale('es'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF8B5CF6),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -107,16 +94,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF8B5CF6),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -124,85 +101,64 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     }
   }
 
-  Staff _dummyStaff() {
-    return Staff(
-      id: 's1',
-      name: 'Staff demo',
-    );
-  }
-
-  int _calculateTotalMinutes() {
-    return _selectedServices.fold(0, (sum, s) => sum + s.durationMinutes);
-  }
-
-  double _calculateTotalPrice() {
-    return _selectedServices.fold(0.0, (sum, s) => sum + s.price);
-  }
-
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final startAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
-
-    final totalMinutes = _calculateTotalMinutes();
-
-    final appointment = Appointment(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      ownerId: 'owner1',
-      branchId: 'branch1',
-      customerId: _selectedCustomer!.id,
-      staffId: 's1',
-      startAt: startAt,
-      endAt: startAt.add(Duration(minutes: totalMinutes)),
-      notes: _notesController.text.isEmpty ? null : _notesController.text,
-      status: Status(code: 'pending', label: 'Pendiente'),
-      source: Source(type: _selectedSource),
-      customer: _selectedCustomer!,
-      staff: _dummyStaff(),
-      services: _selectedServices.map((s) {
-        return AppointmentService(
-          id: s.id,
-          name: s.name,
-          durationMinutes: s.durationMinutes,
-        );
-      }).toList(),
-    );
+    if (_selectedServices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona al menos un servicio')),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
 
-    await widget.repo.create(appointment);
+    try {
+      final startAt = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
 
-    if (mounted) {
-      Navigator.pop(context, true);
+      final input = CreateAppointmentInput(
+        customerName: _customerNameController.text.trim(),
+        customerPhone: _customerPhoneController.text.trim(),
+        startAt: startAt,
+        services: List<Service>.from(_selectedServices),
+        source: _selectedSource,
+        notes: _notesController.text, // el repo hace trim y null-safe
+      );
+
+      await widget.repo.createFromInput(input);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al crear la cita')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Nueva Cita'),
-          backgroundColor: const Color(0xFF8B5CF6),
-          foregroundColor: Colors.white,
-        ),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
-      appBar: AppBar(
-        title: const Text('Nueva Cita'),
-        backgroundColor: const Color(0xFF8B5CF6),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Nueva Cita')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -211,7 +167,30 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
             _buildSection(
               title: 'Cliente',
               icon: Icons.person,
-              child: _buildCustomerSelector(),
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _customerNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del cliente',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().isEmpty ? 'Campo requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _customerPhoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Teléfono',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().isEmpty ? 'Campo requerido' : null,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             _buildSection(
@@ -231,10 +210,6 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
               icon: Icons.spa,
               child: _buildServicesSelector(),
             ),
-            if (_selectedServices.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _buildServicesSummary(),
-            ],
             const SizedBox(height: 16),
             _buildSection(
               title: 'Fuente de la cita',
@@ -255,37 +230,10 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveAppointment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.check_circle),
-                label: Text(
-                  _isSaving ? 'Guardando...' : 'Crear Cita',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            ElevatedButton(
+              onPressed: _isSaving ? null : _saveAppointment,
+              child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -297,163 +245,50 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
     required IconData icon,
     required Widget child,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF8B5CF6)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCustomerSelector() {
-    return DropdownButtonFormField<Customer>(
-      value: _selectedCustomer,
-      decoration: const InputDecoration(
-        hintText: 'Selecciona un cliente',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.search),
-      ),
-      items: _customers.map((c) {
-        return DropdownMenuItem(
-          value: c,
-          child: Text('${c.name} - ${c.phone}'),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() => _selectedCustomer = value);
-      },
-      validator: (value) {
-        if (value == null) return 'Selecciona un cliente';
-        return null;
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon),
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
     );
   }
 
   Widget _buildDateButton() {
-    return OutlinedButton.icon(
+    return OutlinedButton(
       onPressed: _selectDate,
-      icon: const Icon(Icons.calendar_today),
-      label: Text(
-        DateFormat('dd MMM yyyy', 'es').format(_selectedDate),
-        style: const TextStyle(fontSize: 16),
-      ),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        side: const BorderSide(color: Color(0xFF8B5CF6)),
-      ),
+      child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
     );
   }
 
   Widget _buildTimeButton() {
-    return OutlinedButton.icon(
+    return OutlinedButton(
       onPressed: _selectTime,
-      icon: const Icon(Icons.access_time),
-      label: Text(
-        _selectedTime.format(context),
-        style: const TextStyle(fontSize: 16),
-      ),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        side: const BorderSide(color: Color(0xFF8B5CF6)),
-      ),
+      child: Text(_selectedTime.format(context)),
     );
   }
 
   Widget _buildServicesSelector() {
     return Column(
       children: _services.map((s) {
-        final isSelected = _selectedServices.contains(s);
         return CheckboxListTile(
           title: Text(s.name),
-          subtitle: Text('${s.durationLabel} • \$${s.price.toStringAsFixed(2)}'),
-          value: isSelected,
+          subtitle: Text('${s.durationLabel} • \$${s.price}'),
+          value: _selectedServices.contains(s),
           onChanged: (checked) {
             setState(() {
-              if (checked == true) {
-                _selectedServices.add(s);
-              } else {
-                _selectedServices.remove(s);
-              }
+              checked == true ? _selectedServices.add(s) : _selectedServices.remove(s);
             });
           },
-          activeColor: const Color(0xFF8B5CF6),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildServicesSummary() {
-    final totalMinutes = _calculateTotalMinutes();
-    final hours = totalMinutes ~/ 60;
-    final minutes = totalMinutes % 60;
-    final durationText = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF8B5CF6).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Duración total',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(durationText),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text(
-                'Total a pagar',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '\$${_calculateTotalPrice().toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF8B5CF6),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -477,9 +312,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
             ],
           ),
           selected: isSelected,
-          onSelected: (selected) {
-            setState(() => _selectedSource = source['id'] as String);
-          },
+          onSelected: (_) => setState(() => _selectedSource = source['id'] as String),
           selectedColor: const Color(0xFF8B5CF6),
           labelStyle: TextStyle(
             color: isSelected ? Colors.white : Colors.black87,

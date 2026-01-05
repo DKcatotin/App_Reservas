@@ -358,8 +358,12 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                             _buildPrimaryButton(
                               label: 'Agendar nueva cita',
                               icon: Icons.add_circle_outline,
-                              onPressed: () => context.push('/owner/agenda'),
+                              onPressed: () async {
+  await context.push('/owner/citas');
+  await _loadServicios(); // o tu método que carga “hoy”
+},
                             ),
+
                             const SizedBox(height: 12),
                             _buildSecondaryButton(
                               label: 'Probar ruta privada',

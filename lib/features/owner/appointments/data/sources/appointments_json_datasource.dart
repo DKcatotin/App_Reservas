@@ -30,5 +30,15 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
   Future<void> create(Appointment appointment) {
     throw UnimplementedError('AppointmentsJsonDatasource is read-only');
   }
+
+  @override
+  Future<void> update(Appointment appointment) {
+    throw UnimplementedError('AppointmentsJsonDatasource is read-only');
+  }
+
+  @override
+  Future<void> delete(String id) {
+    throw UnimplementedError('AppointmentsJsonDatasource is read-only');
+  }
 }
 

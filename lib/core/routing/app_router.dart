@@ -1,3 +1,4 @@
+import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_form_page.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/pages/catalogue_test_page.dart';
 
 import '../../features/auth/data/presentation/pages/login_page.dart';
@@ -18,27 +19,31 @@ class AppRouter {
             authRepository: deps.authRepository,
           ),
         ),
-GoRoute(
-  path: '/owner',
-  builder: (_, __) => OwnerHomePage(
-    repo: deps.appointmentsRepository,
-  ),
-),
+        GoRoute(
+          path: '/owner',
+          builder: (_, __) => OwnerHomePage(
+            repo: deps.appointmentsRepository,
+          ),
+        ),
+        GoRoute(
+            path: '/owner/citas',
+            builder: (_, __) => AppointmentFormPage(
+                  repo: deps.appointmentsRepository,
+                )),
 
         // 📔 Agenda (JSON hoy)
-         GoRoute(
-  path: '/owner/agenda',
-  builder: (_, __) => DiaryPage(
-    repo: deps.appointmentsRepository,
-  ),
-),
-         GoRoute(
+        GoRoute(
+          path: '/owner/agenda',
+          builder: (_, __) => DiaryPage(
+            repo: deps.appointmentsRepository,
+          ),
+        ),
+        GoRoute(
           path: '/owner/test1',
           builder: (_, __) => TestPage(
             repo: deps.cataloguesRepository,
           ),
         ),
-      
       ],
     );
   }

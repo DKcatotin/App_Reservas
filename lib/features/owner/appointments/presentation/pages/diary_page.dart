@@ -35,7 +35,6 @@ class _DiaryPageState extends State<DiaryPage> {
     super.initState();
     repo = widget.repo;
     _selectedDay = _focusedDay;
-
     _loadAllAppointments();
   }
 
@@ -74,6 +73,24 @@ class _DiaryPageState extends State<DiaryPage> {
         _allAppointments.where((a) => isSameDate(a.startAt, day)).toList();
     items.sort((a, b) => a.startAt.compareTo(b.startAt));
     return items;
+  }
+
+  void _handleAppointmentUpdated(Appointment updated) {
+    setState(() {
+      // Update en la lista global
+      final allIndex =
+          _allAppointments.indexWhere((a) => a.id == updated.id);
+      if (allIndex != -1) {
+        _allAppointments[allIndex] = updated;
+      }
+
+      // Update en la lista filtrada
+      final filteredIndex =
+          _filteredAppointments.indexWhere((a) => a.id == updated.id);
+      if (filteredIndex != -1) {
+        _filteredAppointments[filteredIndex] = updated;
+      }
+    });
   }
 
   @override
@@ -159,8 +176,13 @@ class _DiaryPageState extends State<DiaryPage> {
                             separatorBuilder: (_, __) =>
                                 const SizedBox(height: 12),
                             itemBuilder: (_, i) {
+                              final appointment =
+                                  _filteredAppointments[i];
+
                               return AppointmentCard(
-                                a: _filteredAppointments[i],
+                                a: appointment,
+                                onAppointmentUpdated:
+                                    _handleAppointmentUpdated,
                               );
                             },
                           ),
@@ -196,8 +218,8 @@ class _DiaryPageState extends State<DiaryPage> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color:
-                  const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+              color: const Color(0xFF8B5CF6)
+                  .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(

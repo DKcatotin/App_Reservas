@@ -1,3 +1,4 @@
+import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/appointment.dart';
@@ -103,51 +104,37 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
   }
 
   void _saveChanges() {
-    final newStartAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
+  final newStartAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
 
-    final newEndAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _endTime.hour,
-      _endTime.minute,
-    );
+  final newEndAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _endTime.hour,
+    _endTime.minute,
+  );
 
-    for (int i = 0; i < _selectedServices.length; i++) {
-      // Actualizar servicios según tu lógica
-    }
+  final updatedAppointment = widget.appointment.copyWith(
+    startAt: newStartAt,
+    endAt: newEndAt,
+    notes: _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim(),
+    status: Status(
+      code: _selectedStatus.toLowerCase(),
+      label: _selectedStatus,
+    ),
+    services: List.from(_selectedServices),
+  );
 
-    // TODO: Guardar cambios incluyendo las notas
-    // String notesValue = _notesController.text.trim();
-    // if (notesValue.isEmpty) notesValue = null;
-
-    setState(() {
-      _isEditing = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            const Text('Cambios guardados exitosamente'),
-          ],
-        ),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
+  Navigator.pop(context, updatedAppointment);
+}
 
   void _cancelEdit() {
     setState(() {

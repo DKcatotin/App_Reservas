@@ -3,7 +3,10 @@ import 'staff.dart';
 import 'status.dart';
 import 'source.dart';
 import 'appointment_service.dart';
-
+ class _Unset {
+  const _Unset();
+}
+const _unset = _Unset();
 class Appointment {
   final String id;
   final String ownerId;
@@ -54,4 +57,37 @@ class Appointment {
           .toList(),
     );
   }
+ 
+  Appointment copyWith({
+  String? id,
+  String? ownerId,
+  String? branchId,
+  String? customerId,
+  String? staffId,
+  DateTime? startAt,
+  DateTime? endAt,
+  Object? notes = _unset,
+  Status? status,
+  Source? source,
+  Customer? customer,
+  Staff? staff,
+  List<AppointmentService>? services,
+}) {
+  return Appointment(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    branchId: branchId ?? this.branchId,
+    customerId: customerId ?? this.customerId,
+    staffId: staffId ?? this.staffId,
+    startAt: startAt ?? this.startAt,
+    endAt: endAt ?? this.endAt,
+    notes: notes == _unset ? this.notes : notes as String?,
+    status: status ?? this.status,
+    source: source ?? this.source,
+    customer: customer ?? this.customer,
+    staff: staff ?? this.staff,
+    services: services ?? this.services,
+  );
+}
+
 }
