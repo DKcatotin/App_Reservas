@@ -17,11 +17,8 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
 
-    final today = await json.getToday();
-    final past = await json.getPast();
-    final upcoming = await json.getUpcoming();
-
-    for (final a in [...past, ...today, ...upcoming]) {
+    final all = await json.getAll();
+    for (final a in all) {
       await memory.create(a);
     }
 
@@ -29,21 +26,9 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   }
 
   @override
-  Future<List<Appointment>> getToday() async {
+  Future<List<Appointment>> getAll() async {
     await _ensureLoaded();
-    return memory.getToday();
-  }
-
-  @override
-  Future<List<Appointment>> getUpcoming() async {
-    await _ensureLoaded();
-    return memory.getUpcoming();
-  }
-
-  @override
-  Future<List<Appointment>> getPast() async {
-    await _ensureLoaded();
-    return memory.getPast();
+    return memory.getAll();
   }
 
   @override
