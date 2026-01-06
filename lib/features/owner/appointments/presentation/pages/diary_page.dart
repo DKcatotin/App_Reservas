@@ -58,6 +58,14 @@ class _DiaryPageState extends State<DiaryPage> {
       }
     }
   }
+Future<void> _handleAppointmentDeleted(String id) async {
+  await repo.delete(id);
+
+  setState(() {
+    _allAppointments.removeWhere((a) => a.id == id);
+    _filteredAppointments.removeWhere((a) => a.id == id);
+  });
+}
 
   Future<void> _loadAppointmentsForSelectedDay() async {
     final day = _selectedDay ?? DateTime.now();
@@ -75,23 +83,20 @@ class _DiaryPageState extends State<DiaryPage> {
     return items;
   }
 
-  void _handleAppointmentUpdated(Appointment updated) {
-    setState(() {
-      // Update en la lista global
-      final allIndex =
-          _allAppointments.indexWhere((a) => a.id == updated.id);
-      if (allIndex != -1) {
-        _allAppointments[allIndex] = updated;
-      }
+Future<void> _handleAppointmentUpdated(Appointment updated) async {
+  // 1) Persistir en la “fuente de verdad” (memory datasource hoy, backend mañana)
+  await repo.update(updated);
 
-      // Update en la lista filtrada
-      final filteredIndex =
-          _filteredAppointments.indexWhere((a) => a.id == updated.id);
-      if (filteredIndex != -1) {
-        _filteredAppointments[filteredIndex] = updated;
-      }
-    });
-  }
+  // 2) Actualizar UI local (para que se vea inmediato sin recargar todo)
+  setState(() {
+    final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
+    if (allIndex != -1) _allAppointments[allIndex] = updated;
+
+    final filteredIndex =
+        _filteredAppointments.indexWhere((a) => a.id == updated.id);
+    if (filteredIndex != -1) _filteredAppointments[filteredIndex] = updated;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -180,10 +185,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                   _filteredAppointments[i];
 
                               return AppointmentCard(
-                                a: appointment,
-                                onAppointmentUpdated:
-                                    _handleAppointmentUpdated,
-                              );
+  a: appointment,
+  onAppointmentUpdated: _handleAppointmentUpdated,
+  onAppointmentDeleted: _handleAppointmentDeleted,
+);
+
                             },
                           ),
                         ),

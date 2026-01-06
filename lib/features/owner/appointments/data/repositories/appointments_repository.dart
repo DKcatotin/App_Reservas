@@ -18,7 +18,7 @@ class AppointmentsRepository {
 
   Future<void> createFromInput(CreateAppointmentInput input) async {
     //normalizar notas 
-    final notes = input.notes.trim();
+    final notes = input.notes?.trim();
     final cleanNotes = (notes == null || notes.isEmpty) ? null : notes;
     final customer = Customer(
         id: _makeTempId('customer'), 

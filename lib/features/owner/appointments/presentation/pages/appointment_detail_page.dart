@@ -74,6 +74,23 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
       });
     }
   }
+  Future<void> _confirmDelete() async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Eliminar cita'),
+      content: const Text('¿Seguro que deseas eliminar esta cita?'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+      ],
+    ),
+  );
+
+  if (ok == true && mounted) {
+    Navigator.pop(context, {'deleteId': widget.appointment.id});
+  }
+}
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -212,6 +229,20 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                     tooltip: 'Editar',
                   ),
                 ),
+                if (!_isEditing)
+  Container(
+    margin: const EdgeInsets.only(right: 8),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: IconButton(
+      icon: const Icon(Icons.delete_outline, color: Colors.white),
+      onPressed: _confirmDelete,
+      tooltip: 'Eliminar',
+    ),
+  ),
+
             ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(

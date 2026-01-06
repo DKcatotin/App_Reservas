@@ -4,25 +4,26 @@ import '../../data/models/appointment.dart';
 
 class AppointmentCard extends StatelessWidget {
   final Appointment a;
-  final Function(Appointment)? onAppointmentUpdated;
+  final Future<void> Function(Appointment)? onAppointmentUpdated;
+  final Future<void> Function(String id)? onAppointmentDeleted;
 
   const AppointmentCard({
     super.key,
     required this.a,
     this.onAppointmentUpdated,
+    this.onAppointmentDeleted,
   });
 
   // Usa el label del status para mapear colores
   Color _statusColor(String statusLabel) {
     switch (statusLabel) {
       case 'Pendiente':
-        return const Color(0xFFF59E0B); // Amarillo
+        return const Color(0xFFF59E0B);
       case 'Confirmada':
-        return const Color(0xFF10B981); // Verde
       case 'Terminada':
-        return const Color(0xFF10B981); // Verde
+        return const Color(0xFF10B981);
       case 'Cancelada':
-        return const Color(0xFFEF4444); // Rojo
+        return const Color(0xFFEF4444);
       default:
         return Colors.grey;
     }
@@ -31,7 +32,8 @@ class AppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = TimeOfDay.fromDateTime(a.startAt).format(context);
-    final serviceName = a.services.isNotEmpty ? a.services.first.name : 'Sin servicio';
+    final serviceName =
+        a.services.isNotEmpty ? a.services.first.name : 'Sin servicio';
     final statusColor = _statusColor(a.status.label);
 
     return Container(
@@ -49,21 +51,25 @@ class AppointmentCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            // Navegar y esperar el resultado
-            final updatedAppointment = await Navigator.push<Appointment>(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => AppointmentDetailPage(appointment: a),
               ),
             );
 
-            // Si se devolvió un appointment actualizado, llamar al callback
-            if (updatedAppointment != null && onAppointmentUpdated != null) {
-              onAppointmentUpdated!(updatedAppointment);
+            if (result is Appointment && onAppointmentUpdated != null) {
+              await onAppointmentUpdated!(result);
+            }
+
+            if (result is Map &&
+                result['deleteId'] != null &&
+                onAppointmentDeleted != null) {
+              await onAppointmentDeleted!(result['deleteId'] as String);
             }
           },
-          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
