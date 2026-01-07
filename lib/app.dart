@@ -8,7 +8,7 @@ import 'core/theme/app_theme.dart';
 class App extends StatelessWidget {
   App({super.key});
 
-  final AppDependencies deps = AppDependencies.build();
+  final AppDependencies deps = AppDependencies();
 
   @override
   Widget build(BuildContext context) {

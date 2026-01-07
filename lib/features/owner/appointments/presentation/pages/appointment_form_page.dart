@@ -1,10 +1,11 @@
+import 'package:agenda_app/core/di/auth_di.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
 import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../catalogues/data/models/service.dart';
-import '../../../catalogues/data/sources/catalogues_json_datasource.dart';
 
 class AppointmentFormPage extends StatefulWidget {
   final AppointmentsRepository repo;
@@ -25,56 +26,60 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
   
-  final _datasource = CataloguesJsonDatasource();
+ late final CataloguesRepository _cataloguesRepo;
 
-  List<Service> _services = [];
-  List<Service> _selectedServices = [];
+List<Service> _services = [];
+List<Service> _selectedServices = [];
 
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  String _selectedSource = 'whatsapp';
+DateTime _selectedDate = DateTime.now();
+TimeOfDay _selectedTime = TimeOfDay.now();
+String _selectedSource = 'whatsapp';
 
-  bool _isLoading = true;
-  bool _isSaving = false;
+bool _isLoading = true;
+bool _isSaving = false;
 
-  final List<Map<String, dynamic>> _sources = [
-    {'id': 'whatsapp', 'label': 'WhatsApp', 'icon': Icons.chat},
-    {'id': 'llamada', 'label': 'Llamada', 'icon': Icons.phone},
-    {'id': 'web', 'label': 'Web', 'icon': Icons.language},
-    {'id': 'presencial', 'label': 'Presencial', 'icon': Icons.store},
-  ];
+final List<Map<String, dynamic>> _sources = [
+  {'id': 'whatsapp', 'label': 'WhatsApp', 'icon': Icons.chat},
+  {'id': 'llamada', 'label': 'Llamada', 'icon': Icons.phone},
+  {'id': 'web', 'label': 'Web', 'icon': Icons.language},
+  {'id': 'presencial', 'label': 'Presencial', 'icon': Icons.store},
+];
+
+
+@override
+void initState() {
+  super.initState();
+  _cataloguesRepo = AppDependencies().cataloguesRepository;// ← inyectar
+  _loadData();
+}
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+void dispose() {
+  _notesController.dispose();
+  _customerNameController.dispose();
+  _customerPhoneController.dispose();
+  super.dispose();
+}
 
-  @override
-  void dispose() {
-    _notesController.dispose();
-    _customerNameController.dispose();
-    _customerPhoneController.dispose();
-    super.dispose();
-  }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    try {
-      final services = await _datasource.getServices();
-      setState(() {
-        _services = services;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al cargar datos')),
-        );
-      }
+  setState(() => _isLoading = true);
+  try {
+    final services = await _cataloguesRepo.getServices();
+    setState(() {
+      _services = services;
+      _isLoading = false;
+    });
+  } catch (e) {
+    setState(() => _isLoading = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar servicios: $e')),
+      );
     }
   }
+}
+
 
   Future<void> _selectDate() async {
     final picked = await showDatePicker(
