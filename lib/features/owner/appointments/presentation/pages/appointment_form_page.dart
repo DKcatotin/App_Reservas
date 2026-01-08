@@ -1,13 +1,17 @@
 import 'package:agenda_app/core/di/auth_di.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
+import 'package:agenda_app/features/owner/appointments/data/repositories/providers/cliente_provider.dart';
 import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../catalogues/data/models/service.dart';
+import '../widgets/buscar_cliente_widget.dart';
 
-class AppointmentFormPage extends StatefulWidget {
+class AppointmentFormPage extends ConsumerStatefulWidget {
   final AppointmentsRepository repo;
 
   const AppointmentFormPage({
@@ -16,98 +20,68 @@ class AppointmentFormPage extends StatefulWidget {
   });
 
   @override
-  State<AppointmentFormPage> createState() => _AppointmentFormPageState();
+  ConsumerState<AppointmentFormPage> createState() =>
+      _AppointmentFormPageState();
 }
 
-class _AppointmentFormPageState extends State<AppointmentFormPage> {
+class _AppointmentFormPageState
+    extends ConsumerState<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _notesController = TextEditingController();
-  final _customerNameController = TextEditingController();
-  final _customerPhoneController = TextEditingController();
-  
- late final CataloguesRepository _cataloguesRepo;
 
-List<Service> _services = [];
-List<Service> _selectedServices = [];
+  late final CataloguesRepository _cataloguesRepo;
 
-DateTime _selectedDate = DateTime.now();
-TimeOfDay _selectedTime = TimeOfDay.now();
-String _selectedSource = 'whatsapp';
+  List<Service> _services = [];
+  List<Service> _selectedServices = [];
 
-bool _isLoading = true;
-bool _isSaving = false;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  String _selectedSource = 'whatsapp';
 
-final List<Map<String, dynamic>> _sources = [
-  {'id': 'whatsapp', 'label': 'WhatsApp', 'icon': Icons.chat},
-  {'id': 'llamada', 'label': 'Llamada', 'icon': Icons.phone},
-  {'id': 'web', 'label': 'Web', 'icon': Icons.language},
-  {'id': 'presencial', 'label': 'Presencial', 'icon': Icons.store},
-];
+  bool _isLoading = true;
+  bool _isSaving = false;
 
-
-@override
-void initState() {
-  super.initState();
-  _cataloguesRepo = AppDependencies().cataloguesRepository;// ← inyectar
-  _loadData();
-}
+  final List<Map<String, dynamic>> _sources = [
+    {'id': 'whatsapp', 'label': 'WhatsApp', 'icon': Icons.chat},
+    {'id': 'llamada', 'label': 'Llamada', 'icon': Icons.phone},
+    {'id': 'web', 'label': 'Web', 'icon': Icons.language},
+    {'id': 'presencial', 'label': 'Presencial', 'icon': Icons.store},
+  ];
 
   @override
-void dispose() {
-  _notesController.dispose();
-  _customerNameController.dispose();
-  _customerPhoneController.dispose();
-  super.dispose();
-}
+  void initState() {
+    super.initState();
+    _cataloguesRepo = AppDependencies().cataloguesRepository;
+    _loadData();
+  }
 
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadData() async {
-  setState(() => _isLoading = true);
-  try {
-    final services = await _cataloguesRepo.getServices();
-    setState(() {
-      _services = services;
-      _isLoading = false;
-    });
-  } catch (e) {
-    setState(() => _isLoading = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar servicios: $e')),
-      );
-    }
-  }
-}
-
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('es'),
-    );
-
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
-  }
-
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
+    try {
+      final services = await _cataloguesRepo.getServices();
+      setState(() {
+        _services = services;
+        _isLoading = false;
+      });
+    } catch (_) {
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _saveAppointment() async {
-    if (!_formKey.currentState!.validate()) return;
+    final clienteState = ref.read(clienteProvider);
+
+    if (clienteState.cliente == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debe seleccionar o crear un cliente')),
+      );
+      return;
+    }
 
     if (_selectedServices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,31 +102,74 @@ void dispose() {
       );
 
       final input = CreateAppointmentInput(
-        customerName: _customerNameController.text.trim(),
-        customerPhone: _customerPhoneController.text.trim(),
+        customerName: clienteState.cliente!.nombre,
+        customerPhone: clienteState.cliente!.celular,
         startAt: startAt,
         services: List<Service>.from(_selectedServices),
         source: _selectedSource,
-        notes: _notesController.text, // el repo hace trim y null-safe
+        notes: _notesController.text,
       );
 
       await widget.repo.createFromInput(input);
 
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al crear la cita')),
-        );
-      }
+      if (mounted) Navigator.pop(context, true);
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
+Widget _buildClienteSelector() {
+  final clienteState = ref.watch(clienteProvider);
+  
+  if (clienteState.cliente == null) {
+    // No hay cliente seleccionado
+    return OutlinedButton.icon(
+      onPressed: _irABuscarCliente,
+      icon: const Icon(Icons.person_search),
+      label: const Text('Buscar o crear cliente'),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.all(16),
+      ),
+    );
+  }
+  
+  // Cliente ya seleccionado
+  return Card(
+    color: Colors.green[50],
+    child: ListTile(
+      leading: const CircleAvatar(
+        child: Icon(Icons.person),
+      ),
+      title: Text(clienteState.cliente!.nombre),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CI: ${clienteState.cliente!.cedula}'),
+          Text('Tel: ${clienteState.cliente!.celular}'),
+        ],
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          ref.read(clienteProvider.notifier).limpiar();
+        },
+      ),
+    ),
+  );
+}
+
+Future<void> _irABuscarCliente() async {
+  final clienteSeleccionado = await context.push(
+    '/owner/appointments/cliente/buscar',
+  );
+  
+  // El cliente ya está en el provider
+  if (clienteSeleccionado != null && mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cliente seleccionado')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -169,35 +186,16 @@ void dispose() {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildSection(
-              title: 'Cliente',
-              icon: Icons.person,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _customerNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre del cliente',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) =>
-                        value == null || value.trim().isEmpty ? 'Campo requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _customerPhoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Teléfono',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) =>
-                        value == null || value.trim().isEmpty ? 'Campo requerido' : null,
-                  ),
-                ],
-              ),
-            ),
+            /// 👤 CLIENTE
+           _buildSection(
+  title: 'Cliente',
+  icon: Icons.person,
+  child: _buildClienteSelector(), // 👈 Cambiar esto
+),
+
             const SizedBox(height: 16),
+
+            /// 📅 FECHA Y HORA
             _buildSection(
               title: 'Fecha y hora',
               icon: Icons.event,
@@ -209,19 +207,28 @@ void dispose() {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
+
+            /// 🧖 SERVICIOS
             _buildSection(
               title: 'Servicios',
               icon: Icons.spa,
               child: _buildServicesSelector(),
             ),
+
             const SizedBox(height: 16),
+
+            /// 🔗 FUENTE
             _buildSection(
               title: 'Fuente de la cita',
               icon: Icons.source,
               child: _buildSourceSelector(),
             ),
+
             const SizedBox(height: 16),
+
+            /// 📝 NOTAS
             _buildSection(
               title: 'Notas (opcional)',
               icon: Icons.note,
@@ -234,7 +241,9 @@ void dispose() {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
             ElevatedButton(
               onPressed: _isSaving ? null : _saveAppointment,
               child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
@@ -268,14 +277,27 @@ void dispose() {
 
   Widget _buildDateButton() {
     return OutlinedButton(
-      onPressed: _selectDate,
+      onPressed: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _selectedDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+          locale: const Locale('es'),
+        );
+        if (picked != null) setState(() => _selectedDate = picked);
+      },
       child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
     );
   }
 
   Widget _buildTimeButton() {
     return OutlinedButton(
-      onPressed: _selectTime,
+      onPressed: () async {
+        final picked =
+            await showTimePicker(context: context, initialTime: _selectedTime);
+        if (picked != null) setState(() => _selectedTime = picked);
+      },
       child: Text(_selectedTime.format(context)),
     );
   }
@@ -289,7 +311,9 @@ void dispose() {
           value: _selectedServices.contains(s),
           onChanged: (checked) {
             setState(() {
-              checked == true ? _selectedServices.add(s) : _selectedServices.remove(s);
+              checked == true
+                  ? _selectedServices.add(s)
+                  : _selectedServices.remove(s);
             });
           },
         );
@@ -308,16 +332,17 @@ void dispose() {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                source['icon'] as IconData,
+                source['icon'],
                 size: 18,
                 color: isSelected ? Colors.white : Colors.black54,
               ),
               const SizedBox(width: 6),
-              Text(source['label'] as String),
+              Text(source['label']),
             ],
           ),
           selected: isSelected,
-          onSelected: (_) => setState(() => _selectedSource = source['id'] as String),
+          onSelected: (_) =>
+              setState(() => _selectedSource = source['id']),
           selectedColor: const Color(0xFF8B5CF6),
           labelStyle: TextStyle(
             color: isSelected ? Colors.white : Colors.black87,

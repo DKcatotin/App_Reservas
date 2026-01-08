@@ -11,7 +11,6 @@ import '../../features/auth/data/repositories/auth/auth_repository.dart';
 // ==================== CATALOGUES ====================
 import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_local_datasource.dart';
-// import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_remote_datasource.dart'; // backend
 import 'package:agenda_app/features/owner/catalogues/data/repositories/catalogues_repository_impl.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 
@@ -33,10 +32,7 @@ class AppDependencies {
   late final AuthRepository authRepository;
 
   // ==================== CATALOGUES ====================
-  // Datasource (privado)
   late final CataloguesDatasource _cataloguesDatasource;
-
-  // Repository (público)
   late final CataloguesRepository cataloguesRepository;
 
   // ==================== APPOINTMENTS ====================
@@ -68,7 +64,7 @@ class AppDependencies {
   // ==================== CATALOGUES INIT ====================
   void _initCatalogues() {
     // TODO(backend): cambiar a CataloguesRemoteDatasource(dio)
-    _cataloguesDatasource = CataloguesLocalDatasource();
+    _cataloguesDatasource = CataloguesLocalDatasource(dio);
 
     cataloguesRepository = CataloguesRepositoryImpl(
       datasource: _cataloguesDatasource,

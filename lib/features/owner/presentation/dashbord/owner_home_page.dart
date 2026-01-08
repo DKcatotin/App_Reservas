@@ -312,7 +312,10 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                               ],
                             ),
                             TextButton.icon(
-                              onPressed: () => context.push('/owner/agenda'),
+                              onPressed: () async { 
+                                await context.push('/owner/agenda');
+                                await _loadServicios();
+                              },
                               icon: const Text(
                                 'Ver todas',
                                 style: TextStyle(
@@ -396,7 +399,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildNavItem(Icons.home_rounded, 'Inicio', true, () {}),
-                _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () => context.push('/owner/agenda')),
+                _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {await context.push('/owner/agenda'); await _loadServicios();}),
                 _buildNavItem(Icons.people_rounded, 'Clientas', false, () {}),
                 _buildNavItem(Icons.person_rounded, 'Perfil', false, () {}),
               ],
@@ -482,7 +485,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.push('/owner/agenda'),
+          onTap: () async { await context.push('/owner/agenda'); await _loadServicios(); },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(20),

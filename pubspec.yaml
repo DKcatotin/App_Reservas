@@ -15,6 +15,9 @@ dependencies:
   # iOS style icons
   cupertino_icons: ^1.0.8
 
+  #manejo de estados 
+  flutter_riverpod: ^2.5.1
+
   # Calendario
   table_calendar: ^3.0.9
 
