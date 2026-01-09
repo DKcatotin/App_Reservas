@@ -23,6 +23,22 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     super.initState();
     _loadServicios();
   }
+List<Appointment> _upcoming = [];
+bool _loadingUpcoming = true;
+
+Future<void> _loadUpcoming() async {
+  try {
+    final data = await widget.repo.getUpcoming();
+    if (!mounted) return;
+    setState(() {
+      _upcoming = data;
+      _loadingUpcoming = false;
+    });
+  } catch (_) {
+    if (!mounted) return;
+    setState(() => _loadingUpcoming = false);
+  }
+}
 
   List<Appointment> _servicios = [];
   bool _loading = true;
@@ -281,59 +297,50 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                     ),
 
                     /// SECCIÓN CITAS
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Próximas citas',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1F2937),
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Programadas para hoy',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton.icon(
-                              onPressed: () async { 
-                                await context.push('/owner/agenda');
-                                await _loadServicios();
-                              },
-                              icon: const Text(
-                                'Ver todas',
-                                style: TextStyle(
-                                  color: Color(0xFF7C3AED),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              label: const Icon(
-                                Icons.arrow_forward_ios,
-                                color: Color(0xFF7C3AED),
-                                size: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+      // SECCIÓN CITAS FUTURAS
+SliverToBoxAdapter(
+  child: Padding(
+    padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: const [
+        Text(
+          'Citas futuras',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+if (_upcoming.isEmpty)
+  const SliverToBoxAdapter(
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Text('No hay citas futuras'),
+    ),
+  )
+else
+  SliverPadding(
+    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+    sliver: SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final cita = _upcoming[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildPremiumCitaCard(cita),
+          );
+        },
+        childCount: _upcoming.length,
+      ),
+    ),
+  ),
+
 
                     /// LISTA DE CITAS
                     if (_servicios.isEmpty)

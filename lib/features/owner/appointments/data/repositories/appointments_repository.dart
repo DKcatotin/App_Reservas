@@ -1,7 +1,6 @@
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/staff.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
 import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/domain/utils/id_generator.dart';
@@ -42,7 +41,7 @@ class AppointmentsRepository {
       phone: input.customerPhone.trim(),
     );
 
-    final totalMinutes =
+    final int totalMinutes =
         input.services.fold(0, (sum, s) => sum + s.durationMinutes);
 
     final appointment = Appointment(
@@ -50,14 +49,14 @@ class AppointmentsRepository {
       ownerId: 'owner1',
       branchId: 'branch1',
       customerId: customer.id,
-      staffId: 's1',
+      staffId: null, // staff se asigna luego en edición
       startAt: input.startAt,
       endAt: input.startAt.add(Duration(minutes: totalMinutes)),
       notes: cleanNotes,
       status: Status(code: 'pending', label: 'Pendiente'),
       source: Source(type: input.source),
       customer: customer,
-      staff: Staff(id: 's1', name: 'Staff demo'),
+      staff: null,
       services: input.services.map((Service s) {
         return AppointmentService(
           id: s.id,
@@ -94,6 +93,20 @@ class AppointmentsRepository {
 
   Future<List<Appointment>> getToday() {
     return getByDay(DateTime.now());
+  }
+
+  // Citas futuras (>= mañana)
+  Future<List<Appointment>> getUpcoming() async {
+    final all = await getAll();
+    final today = DateTime.now();
+
+    final result = all.where((a) {
+      final d = a.startAt;
+      return !isSameDate(d, today) && d.isAfter(today);
+    }).toList();
+
+    result.sort((a, b) => a.startAt.compareTo(b.startAt));
+    return result;
   }
 
   // ==================== WRITE ====================

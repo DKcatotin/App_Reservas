@@ -12,17 +12,17 @@ class Appointment {
   final String ownerId;
   final String branchId;
   final String customerId;
-  final String staffId;
+  final String? staffId;      // 👈 antes String
   final DateTime startAt;
   final DateTime endAt;
   final String? notes;
   final Status status;
   final Source source;
   final Customer customer;
-  final Staff staff;
+  final Staff? staff;         // 👈 antes Staff
   final List<AppointmentService> services;
 
-  Appointment({
+  const Appointment({
     required this.id,
     required this.ownerId,
     required this.branchId,
@@ -30,13 +30,14 @@ class Appointment {
     required this.staffId,
     required this.startAt,
     required this.endAt,
-    this.notes,
+    required this.notes,
     required this.status,
     required this.source,
     required this.customer,
     required this.staff,
     required this.services,
   });
+
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
