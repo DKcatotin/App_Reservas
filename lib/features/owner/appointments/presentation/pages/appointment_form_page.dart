@@ -74,54 +74,58 @@ class _AppointmentFormPageState
   }
 
   Future<void> _saveAppointment() async {
-    final clienteState = ref.read(clienteProvider);
+  final clienteState = ref.read(clienteProvider);
 
-    if (clienteState.cliente == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debe seleccionar o crear un cliente')),
-      );
-      return;
-    }
-
-    if (_selectedServices.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona al menos un servicio')),
-      );
-      return;
-    }
-
-    setState(() => _isSaving = true);
-
-    try {
-      final startAt = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      final input = CreateAppointmentInput(
-        customerName: clienteState.cliente!.nombre,
-        customerPhone: clienteState.cliente!.celular,
-        startAt: startAt,
-        services: List<Service>.from(_selectedServices),
-        source: _selectedSource,
-        notes: _notesController.text,
-      );
-
-      await widget.repo.createFromInput(input);
-
-      if (mounted) Navigator.pop(context, true);
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+  if (clienteState.cliente == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debe seleccionar o crear un cliente')),
+    );
+    return;
   }
+
+  if (_selectedServices.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Selecciona al menos un servicio')),
+    );
+    return;
+  }
+
+  setState(() => _isSaving = true);
+
+  try {
+    final startAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    final input = CreateAppointmentInput(
+      customerName: clienteState.cliente!.nombre,
+      customerPhone: clienteState.cliente!.celular,
+      startAt: startAt,
+      services: List<Service>.from(_selectedServices),
+      source: _selectedSource,
+      notes: _notesController.text,
+    );
+
+    await widget.repo.createFromInput(input);
+
+    if (!mounted) return;
+
+    // Cerrar devolviendo true al padre
+    context.pop(true);
+  } finally {
+    if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+
 Widget _buildClienteSelector() {
   final clienteState = ref.watch(clienteProvider);
-  
+
   if (clienteState.cliente == null) {
-    // No hay cliente seleccionado
     return OutlinedButton.icon(
       onPressed: _irABuscarCliente,
       icon: const Icon(Icons.person_search),
@@ -131,8 +135,7 @@ Widget _buildClienteSelector() {
       ),
     );
   }
-  
-  // Cliente ya seleccionado
+
   return Card(
     color: Colors.green[50],
     child: ListTile(
@@ -148,10 +151,8 @@ Widget _buildClienteSelector() {
         ],
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () {
-          ref.read(clienteProvider.notifier).limpiar();
-        },
+        icon: const Icon(Icons.swap_horiz), // más claro que la X
+        onPressed: _irABuscarCliente,       // en vez de limpiar solo
       ),
     ),
   );
@@ -180,7 +181,10 @@ Future<void> _irABuscarCliente() async {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nueva Cita')),
+      appBar: AppBar(title: const Text('Nueva Cita'),
+       leading: IconButton(
+      icon: const Icon(Icons.close),
+      onPressed: () => context.pop(),)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -242,12 +246,25 @@ Future<void> _irABuscarCliente() async {
               ),
             ),
 
-            const SizedBox(height: 24),
+         const SizedBox(height: 24),
 
-            ElevatedButton(
-              onPressed: _isSaving ? null : _saveAppointment,
-              child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
-            ),
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: _isSaving ? null : _saveAppointment,
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      backgroundColor: const Color(0xFF8B5CF6),
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+    child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
+  ),
+),
+
+
           ],
         ),
       ),

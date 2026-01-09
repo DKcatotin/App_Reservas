@@ -36,100 +36,103 @@ class _ClienteBusquedaPageState extends ConsumerState<ClienteBusquedaPage> {
     setState(() => _buscado = true);
   }
 
-  void _irACrearCliente() {
-    final cedula = _cedulaController.text.trim();
-   context.push(
-  '/owner/appointments/cliente/new',
-  extra: cedula, // 👈 Usar 'extra' en lugar de 'arguments'
-).then((clienteCreado) {
-      if (clienteCreado != null && clienteCreado is ClienteModel) {
-        // Cliente creado, devolverlo a la pantalla de cita
-        Navigator.pop(context, clienteCreado);
-      }
-    });
-  }
+void _irACrearCliente() {
+  final cedula = _cedulaController.text.trim();
+  context.push(
+    '/owner/appointments/cliente/new',
+    extra: cedula,
+  ).then((_) {
+    context.push('/owner/citas'); // correcto
+  });
+}
 
-  @override
-  Widget build(BuildContext context) {
-    final clienteState = ref.watch(clienteProvider);
+   
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Buscar Cliente'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Ilustración
-            Icon(
-              Icons.person_search,
-              size: 100,
-              color: Theme.of(context).primaryColor.withOpacity(0.5),
+ @override
+Widget build(BuildContext context) {
+  final clienteState = ref.watch(clienteProvider);
+
+  return Scaffold(
+    resizeToAvoidBottomInset: true,
+    appBar: AppBar(
+      title: const Text('Buscar Cliente'),
+      centerTitle: true,
+    ),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Ilustración
+          Icon(
+            Icons.person_search,
+            size: 100,
+            color: Theme.of(context).primaryColor.withOpacity(0.5),
+          ),
+          const SizedBox(height: 24),
+
+          // Instrucciones
+          const Text(
+            'Ingrese la cédula del cliente',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Si el cliente no existe, podrá crearlo',
+            style: TextStyle(color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+
+          // Campo de cédula
+          TextField(
+            controller: _cedulaController,
+            decoration: const InputDecoration(
+              labelText: 'Cédula',
+              hintText: '1712345678',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.badge),
             ),
-            const SizedBox(height: 24),
+            keyboardType: TextInputType.number,
+            maxLength: 10,
+            onSubmitted: (_) => _buscarCliente(),
+          ),
+          const SizedBox(height: 10),
 
-            // Instrucciones
-            const Text(
-              'Ingrese la cédula del cliente',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+          // Botón buscar
+          ElevatedButton.icon(
+            onPressed: clienteState.cargando ? null : _buscarCliente,
+            icon: clienteState.cargando
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.search),
+            label: const Text('Buscar Cliente'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Si el cliente no existe, podrá crearlo',
-              style: TextStyle(color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
+          ),
 
-            // Campo de cédula
-            TextField(
-              controller: _cedulaController,
-              decoration: const InputDecoration(
-                labelText: 'Cédula',
-                hintText: '1712345678',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.badge),
-              ),
-              keyboardType: TextInputType.number,
-              maxLength: 10,
-              onSubmitted: (_) => _buscarCliente(),
-            ),
-            const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-            // Botón buscar
-            ElevatedButton.icon(
-              onPressed: clienteState.cargando ? null : _buscarCliente,
-              icon: clienteState.cargando
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.search),
-              label: const Text('Buscar Cliente'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Resultado de la búsqueda
-            if (_buscado) ...[
-              if (clienteState.cliente != null)
-                _buildClienteEncontrado(clienteState.cliente!)
-              else
-                _buildClienteNoEncontrado(),
-            ],
+          // Resultado de la búsqueda
+          if (_buscado) ...[
+            if (clienteState.cliente != null)
+              _buildClienteEncontrado(clienteState.cliente!)
+            else
+              _buildClienteNoEncontrado(),
           ],
-        ),
+
+          const SizedBox(height: 20),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+  
 
   Widget _buildClienteEncontrado(ClienteModel cliente) {
     return Card(
@@ -154,21 +157,24 @@ class _ClienteBusquedaPageState extends ConsumerState<ClienteBusquedaPage> {
             _buildInfoRow(Icons.phone, 'Celular', cliente.celular),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context, cliente),
-              icon: const Icon(Icons.check),
-              label: const Text('Seleccionar este cliente'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
+ onPressed: () {
+    // El provider ya tiene el cliente (porque lo cargaste en _buscarCliente)
+    context.push('/owner/citas'); // 👈 antes era go
+  },
+  icon: const Icon(Icons.check),
+  label: const Text('Seleccionar este cliente'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.green,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(vertical: 12),
+  ),
+),
           ],
         ),
       ),
     );
   }
-
+//cliente no encontrado 
   Widget _buildClienteNoEncontrado() {
     return Card(
       color: Colors.orange[50],

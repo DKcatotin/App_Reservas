@@ -359,13 +359,15 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                         child: Column(
                           children: [
                             _buildPrimaryButton(
-                              label: 'Agendar nueva cita',
-                              icon: Icons.add_circle_outline,
-                              onPressed: () async {
-  await context.push('/owner/citas');
-  await _loadServicios(); // o tu método que carga “hoy”
-},
-                            ),
+  label: 'Agendar nueva cita',
+  icon: Icons.add_circle_outline,
+  onPressed: () async {
+    await context.push('/owner/appointments/cliente/buscar');
+    // Aquí NO recargas todavía, porque aún no se ha creado la cita.
+  },
+),
+
+
 
                             const SizedBox(height: 12),
                             _buildSecondaryButton(
@@ -409,6 +411,17 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
       ),
     );
   }
+ Future<void> _irACrearCita(BuildContext context) async {
+  final result = await context.push('/owner/citas');
+  if (result == true && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cita creada correctamente')),
+    );
+    await _loadServicios(); // recargar lista de hoy
+  }
+}
+
+
 
   Widget _buildModernStatCard({
     required IconData icon,
