@@ -1,9 +1,19 @@
+import 'dart:convert';
+import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/appointment.dart';
 
-class AppointmentDetailPage extends StatefulWidget {
+//tres imports para staff
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/staff.dart';
+import '../../data/repositories/providers/staff_provider.dart';
+
+class AppointmentDetailPage extends ConsumerStatefulWidget {
+
   final Appointment appointment;
 
   const AppointmentDetailPage({
@@ -12,10 +22,11 @@ class AppointmentDetailPage extends StatefulWidget {
   });
 
   @override
-  State<AppointmentDetailPage> createState() => _AppointmentDetailPageState();
+   ConsumerState<AppointmentDetailPage> createState() => _AppointmentDetailPageState();
+
 }
 
-class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
+class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   bool _isEditing = false;
   late DateTime _selectedDate;
   late TimeOfDay _startTime;
@@ -24,21 +35,109 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
   late List<dynamic> _selectedServices;
   late TextEditingController _notesController;
   late List<TextEditingController> _serviceControllers;
+  //variables de estado 
+  String? _selectedStaffId;
+  List<Staff> _staffList = [];
+// En tu clase _AppointmentDetailPageState
+Set<String> _selectedServiceIds = {};
+
+  //  AGREGAR ESTAS NUEVAS VARIABLES
+  List<Service> _allServices = []; // Todos los servicios disponibles
+  bool _isLoadingServices = true;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedDate = widget.appointment.startAt;
-    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.label;
-    _selectedServices = List.from(widget.appointment.services);
-    _notesController = TextEditingController(text: widget.appointment.notes ?? '');
+  @override
+void initState() {
+  super.initState();
+  _selectedDate = widget.appointment.startAt;
+  _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+  _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+  _selectedStatus = widget.appointment.status.label;
+  _selectedServices = List.from(widget.appointment.services);
+  _notesController = TextEditingController(text: widget.appointment.notes ?? '');
+  
+  _serviceControllers = _selectedServices.map((s) {
+    return TextEditingController(text: (s as dynamic).name);
+  }).toList();
+  
+  // para staff
+  _selectedStaffId = widget.appointment.staff?.id;
+  
+  // ✅ Inicializar el Set de IDs seleccionados
+  _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
+  
+  loadAllServices();
+}
 
-    _serviceControllers = _selectedServices.map((s) {
-      return TextEditingController(text: (s as dynamic).name);
-    }).toList();
+
+ @override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  // Cargar staff desde el provider
+  final staffAsync = ref.watch(staffListProvider);
+  staffAsync.whenData((list) {
+    if (mounted && _staffList.isEmpty) {
+      setState(() {
+        _staffList = list;
+      });
+    }
+  });
+}
+void _recalculateEndTimeFromStart() {
+  if (_selectedServices.isEmpty) {
+    // Si no hay servicios, mantener la hora de fin igual a la de inicio
+    _endTime = _startTime;
+    return;
   }
+
+  // Sumar todas las duraciones
+  int totalMinutes = 0;
+  for (var service in _selectedServices) {
+    totalMinutes += (service as dynamic).duration.inMinutes as int;
+  }
+
+  // Calcular nueva hora de fin basada en la hora de inicio
+  final startDateTime = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
+
+  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+  setState(() {
+    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+  });
+}
+void _recalculateEndTime() {
+  if (_selectedServices.isEmpty) {
+    return;
+  }
+
+  // Sumar todas las duraciones
+  int totalMinutes = 0;
+  for (var service in _selectedServices) {
+    totalMinutes += (service as dynamic).duration.inMinutes as int;
+  }
+
+  // Calcular nuevo end time
+  final startDateTime = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
+
+  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+  setState(() {
+    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+  });
+}
+
 
   @override
   void dispose() {
@@ -48,6 +147,28 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
     }
     super.dispose();
   }
+  
+  Future<void> loadAllServices() async {
+  try {
+    final jsonString = await rootBundle.loadString('assets/data/owner/catalogues/services_mock.json');
+    
+    // ✅ Primero decodifica como Map
+    final Map<String, dynamic> jsonData = json.decode(jsonString);
+    
+    // ✅ Luego extrae el array "data"
+    final List<dynamic> jsonList = jsonData['data'];
+    
+    setState(() {
+      _allServices = jsonList.map((json) => Service.fromJson(json)).toList();
+      _isLoadingServices = false;
+    });
+  } catch (e) {
+    print('Error cargando servicios: $e');
+    setState(() {
+      _isLoadingServices = false;
+    });
+  }
+}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -93,34 +214,39 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
 }
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: isStartTime ? _startTime : _endTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF7C3AED),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF1F2937),
-            ),
+  final TimeOfDay? picked = await showTimePicker(
+    context: context,
+    initialTime: isStartTime ? _startTime : _endTime,
+    builder: (context, child) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF7C3AED),
+            onPrimary: Colors.white,
+            onSurface: Color(0xFF1F2937),
           ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        if (isStartTime) {
-          _startTime = picked;
-        } else {
-          _endTime = picked;
-        }
-      });
-    }
-  }
+        ),
+        child: child!,
+      );
+    },
+  );
 
-  void _saveChanges() {
+  if (picked != null) {
+    setState(() {
+      if (isStartTime) {
+        _startTime = picked;
+        // ✅ RECALCULAR automáticamente la hora de fin
+        _recalculateEndTimeFromStart();
+      } else {
+        // Ya no debería llegar aquí, pero por si acaso
+        _endTime = picked;
+      }
+    });
+  }
+}
+
+
+ void saveChanges() {
   final newStartAt = DateTime(
     _selectedDate.year,
     _selectedDate.month,
@@ -137,6 +263,41 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
     _endTime.minute,
   );
 
+  // MODIFICAR ESTA PARTE
+  Staff? selectedStaff;
+  if (_selectedStaffId != null) {
+    try {
+      selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
+    } catch (e) {
+      selectedStaff = null;
+    }
+  }
+
+  //  CONVERTIR LOS SERVICIOS SELECCIONADOS A AppointmentService
+  List<AppointmentService> appointmentServices = _selectedServices.map((service) {
+    // Si ya es AppointmentService, úsalo directamente
+    if (service is AppointmentService) {
+      return service;
+    }
+    // Si es Service, conviértelo a AppointmentService
+    else if (service is Service) {
+      return AppointmentService(
+        id: service.id,
+        name: service.name,
+        durationMinutes: service.durationMinutes,
+      );
+    }
+    // Por si acaso es un dynamic
+    else {
+      final s = service as dynamic;
+      return AppointmentService(
+        id: s.id,
+        name: s.name,
+        durationMinutes: s.duration.inMinutes,
+      );
+    }
+  }).toList();
+
   final updatedAppointment = widget.appointment.copyWith(
     startAt: newStartAt,
     endAt: newEndAt,
@@ -147,33 +308,56 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
       code: _selectedStatus.toLowerCase(),
       label: _selectedStatus,
     ),
-    services: List.from(_selectedServices),
+    services: appointmentServices, // ✅ Usa la lista convertida
+    staff: selectedStaff,
   );
 
   Navigator.pop(context, updatedAppointment);
 }
 
-  void _cancelEdit() {
-    setState(() {
-      _isEditing = false;
-      _selectedDate = widget.appointment.startAt;
-      _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-      _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-      _selectedStatus = widget.appointment.status.label;
-      _selectedServices = List.from(widget.appointment.services);
-      _notesController.text = widget.appointment.notes ?? '';
 
-      for (int i = 0; i < _serviceControllers.length; i++) {
-        _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
-      }
-    });
-  }
+void _cancelEdit() {
+  setState(() {
+    _isEditing = false;
+    _selectedDate = widget.appointment.startAt;
+    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+    _selectedStatus = widget.appointment.status.label;
+    _selectedServices = List.from(widget.appointment.services);
+    _notesController.text = widget.appointment.notes ?? '';
+    
+    // ✅ Resetear el Set de IDs
+    _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
+    
+    for (int i = 0; i < _serviceControllers.length; i++) {
+      _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
+    }
+  });
+}
+
 
   @override
-  Widget build(BuildContext context) {
-    final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
+Widget build(BuildContext context) {
+  final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
+  
+  // ✅ Observa el provider aquí
+  final staffAsync = ref.watch(staffListProvider);
+  
+  // ✅ Actualiza la lista cuando los datos estén disponibles
+  staffAsync.whenData((list) {
+    if (mounted && _staffList.isEmpty) {
+      // Usa addPostFrameCallback para evitar setState durante build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _staffList = list;
+          });
+        }
+      });
+    }
+  });
 
-    return Scaffold(
+  return Scaffold(
       backgroundColor: const Color(0xFFF5F3FF),
       body: CustomScrollView(
         slivers: [
@@ -208,7 +392,7 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.check, color: Colors.white),
-                    onPressed: _saveChanges,
+                    onPressed: saveChanges,
                     tooltip: 'Guardar',
                   ),
                 ),
@@ -355,20 +539,44 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF7C3AED)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    _isEditing
-                                        ? Icons.edit_calendar
-                                        : Icons.event,
-                                    color: const Color(0xFF7C3AED),
-                                    size: 24,
-                                  ),
-                                ),
+  padding: const EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        const Color(0xFF7C3AED).withOpacity(0.1),
+        const Color(0xFF9333EA).withOpacity(0.05),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceAround,
+    children: [
+      // ✅ INICIO - EDITABLE
+      InkWell(
+        onTap: _isEditing ? () => _selectTime(context, true) : null,
+        borderRadius: BorderRadius.circular(8),
+        child: _TimeBlock(
+          label: 'Inicio',
+          time: _startTime.format(context),
+          isEditable: _isEditing,
+        ),
+      ),
+      Container(
+        height: 40,
+        width: 2,
+        color: const Color(0xFF7C3AED).withOpacity(0.3),
+      ),
+      // ❌ FIN - NO EDITABLE (calculado automáticamente)
+      _TimeBlock(
+  label: 'Fin',
+  time: _endTime.format(context),
+  isEditable: false, // ✅ Siempre false
+),
+    ],
+  ),
+),
+
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -404,54 +612,134 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                         ),
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF7C3AED).withOpacity(0.1),
-                                const Color(0xFF9333EA).withOpacity(0.05),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              InkWell(
-                                onTap: _isEditing
-                                    ? () => _selectTime(context, true)
-                                    : null,
-                                borderRadius: BorderRadius.circular(8),
-                                child: _TimeBlock(
-                                  label: 'Inicio',
-                                  time: _startTime.format(context),
-                                  isEditable: _isEditing,
-                                ),
-                              ),
-                              Container(
-                                height: 40,
-                                width: 2,
-                                color: const Color(0xFF7C3AED).withOpacity(0.3),
-                              ),
-                              InkWell(
-                                onTap: _isEditing
-                                    ? () => _selectTime(context, false)
-                                    : null,
-                                borderRadius: BorderRadius.circular(8),
-                                child: _TimeBlock(
-                                  label: 'Fin',
-                                  time: _endTime.format(context),
-                                  isEditable: _isEditing,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+  padding: const EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        const Color(0xFF7C3AED).withOpacity(0.1),
+        const Color(0xFF9333EA).withOpacity(0.05),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceAround,
+    children: [
+      // ✅ INICIO - EDITABLE
+      InkWell(
+        onTap: _isEditing ? () => _selectTime(context, true) : null,
+        borderRadius: BorderRadius.circular(8),
+        child: _TimeBlock(
+          label: 'Inicio',
+          time: _startTime.format(context),
+          isEditable: _isEditing,
+        ),
+      ),
+      Container(
+        height: 40,
+        width: 2,
+        color: const Color(0xFF7C3AED).withOpacity(0.3),
+      ),
+      // ✅ FIN - NO EDITABLE (sin InkWell)
+      _TimeBlock(
+        label: 'Fin',
+        time: _endTime.format(context),
+        isEditable: false, // ✅ Siempre false
+      ),
+    ],
+  ),
+),
+
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 16),
+                  /// EMPLEADO/STAFF ASIGNADO
+                  _WhiteInfoCard(
+                    icon: Icons.person_outline_rounded,
+                    iconColor: const Color(0xFF3B82F6),
+                    title: 'Empleado Asignado',
+                    child: widget.appointment.staff != null
+                        ? (_isEditing
+                            ? _buildStaffSelector()
+                            : Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF3B82F6).withOpacity(0.1),
+                                      const Color(0xFF3B82F6).withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF3B82F6),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        widget.appointment.staff!.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1F2937),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                        : (_isEditing
+                            ? _buildStaffSelector()
+                            : Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.amber[200]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.amber[700],
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Sin empleado asignado',
+                                        style: TextStyle(
+                                          color: Colors.amber[900],
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                  ),
 
                   /// ESTADO
                   _WhiteInfoCard(
@@ -552,129 +840,16 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                           ),
                   ),
 
-                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
 
                   /// SERVICIOS
                   _WhiteInfoCard(
                     icon: Icons.spa_rounded,
                     iconColor: const Color(0xFF7C3AED),
                     title: 'Servicios',
-                    child: Column(
-                      children:
-                          List.generate(_selectedServices.length, (index) {
-                        final s = _selectedServices[index];
-                        final d = (s as dynamic).duration;
-                        final hours = d.inHours;
-                        final minutes = d.inMinutes.remainder(60);
-                        final label =
-                            hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF7C3AED).withOpacity(0.1),
-                                const Color(0xFF9333EA).withOpacity(0.05),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF7C3AED).withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF7C3AED),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _isEditing
-                                    ? TextField(
-                                        controller: _serviceControllers[index],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF1F2937),
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: 'Nombre del servicio',
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                              color: const Color(0xFF7C3AED)
-                                                  .withOpacity(0.3),
-                                            ),
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                              color: const Color(0xFF7C3AED)
-                                                  .withOpacity(0.3),
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF7C3AED),
-                                              width: 2,
-                                            ),
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                        ),
-                                      )
-                                    : Text(
-                                        (s as dynamic).name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF1F2937),
-                                        ),
-                                      ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF7C3AED),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  label,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
+                    child: _isEditing
+                        ? _buildServicesEditor() //  Nuevo widget para editar
+                        : _buildServicesDisplay(), //  Widget actual para visualizar
                   ),
 
                   const SizedBox(height: 16),
@@ -787,6 +962,264 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
           ),
         ],
       ),
+    );
+  }
+    Widget _buildServicesDisplay() {
+  return Column(
+    children: _selectedServices.map((s) {
+      final d = (s as dynamic).duration;
+      final hours = d.inHours;
+      final minutes = d.inMinutes.remainder(60);
+      final label = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+      
+      //  Buscar el precio desde allServices
+      final serviceId = (s as dynamic).id;
+      final serviceWithPrice = _allServices.firstWhere(
+        (service) => service.id == serviceId,
+        orElse: () => Service(
+          id: serviceId,
+          name: (s as dynamic).name,
+          durationMinutes: d.inMinutes,
+          price: 0.0,
+          category: '',
+        ),
+      );
+      final price = serviceWithPrice.price;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF7C3AED).withOpacity(0.1),
+                const Color(0xFF9333EA).withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF7C3AED).withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (s as dynamic).name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                              const SizedBox(height: 4),
+          Text(
+            '\$${price.toStringAsFixed(2)}', // Muestra el precio formateado
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+  Widget _buildServicesEditor() {
+  if (_isLoadingServices) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+  
+  if (_allServices.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text('No hay servicios disponibles'),
+    );
+  }
+  
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: _allServices.map((service) {
+      // ✅ Verificar selección usando el Set de IDs
+      final isSelected = _selectedServiceIds.contains(service.id);
+      final hours = service.duration.inHours;
+      final minutes = service.duration.inMinutes.remainder(60);
+      final durationLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+      
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFF7C3AED).withOpacity(0.1) 
+              : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? const Color(0xFF7C3AED) 
+                : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: CheckboxListTile(
+          value: isSelected,
+          onChanged: (checked) {
+            setState(() {
+              if (checked == true) {
+                // ✅ Agregar al Set de IDs
+                _selectedServiceIds.add(service.id);
+                // ✅ Agregar AppointmentService a la lista
+                _selectedServices.add(
+                  AppointmentService(
+                    id: service.id,
+                    name: service.name,
+                    durationMinutes: service.durationMinutes,
+                  ),
+                );
+              } else {
+                // ✅ Remover del Set de IDs
+                _selectedServiceIds.remove(service.id);
+                // ✅ Remover de la lista
+                _selectedServices.removeWhere((s) => (s as dynamic).id == service.id);
+              }
+              // Recalcular duración de la cita
+              _recalculateEndTime();
+            });
+          },
+          title: Text(
+            service.name,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected 
+                  ? const Color(0xFF7C3AED) 
+                  : const Color(0xFF1F2937),
+            ),
+          ),
+          subtitle: Row(
+            children: [
+              const Icon(Icons.access_time, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(durationLabel),
+              const SizedBox(width: 12),
+              const Icon(Icons.attach_money, size: 14, color: Colors.grey),
+              Text('\$${service.price.toStringAsFixed(2)}'),
+            ],
+          ),
+          activeColor: const Color(0xFF7C3AED),
+        ),
+      );
+    }).toList(),
+  );
+}
+
+
+  Widget _buildStaffSelector() {
+    if (_staffList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Cargando empleados...',
+              style: TextStyle(color: Colors.grey[600], fontSize: 15),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String>(
+      value: _selectedStaffId,
+      decoration: InputDecoration(
+        hintText: 'Seleccionar empleado',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: const Color(0xFF3B82F6).withOpacity(0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+        ),
+        filled: true,
+        fillColor: const Color(0xFF3B82F6).withOpacity(0.05),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3B82F6)),
+      ),
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('Sin asignar', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+        ),
+        ..._staffList.map((staff) => DropdownMenuItem<String>(
+              value: staff.id,
+              child: Text(staff.name),
+            )),
+      ],
+      onChanged: (value) {
+        setState(() => _selectedStaffId = value);
+      },
     );
   }
 

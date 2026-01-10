@@ -187,7 +187,7 @@ Future<void> _loadUpcoming() async {
                                         color: Colors.white.withOpacity(0.15),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withValues(alpha: 0.2),
                                           width: 1,
                                         ),
                                       ),

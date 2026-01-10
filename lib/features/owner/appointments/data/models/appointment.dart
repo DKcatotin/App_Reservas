@@ -12,14 +12,14 @@ class Appointment {
   final String ownerId;
   final String branchId;
   final String customerId;
-  final String? staffId;      // 👈 antes String
+  final String? staffId;      //  antes String
   final DateTime startAt;
   final DateTime endAt;
   final String? notes;
   final Status status;
   final Source source;
   final Customer customer;
-  final Staff? staff;         // 👈 antes Staff
+  final Staff? staff;         //  antes Staff
   final List<AppointmentService> services;
 
   const Appointment({

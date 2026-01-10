@@ -36,7 +36,7 @@ class CataloguesLocalDatasource implements CataloguesDatasource {
   @override
   Future<List<StaffFull>> getStaff() {
     return _load(
-      'assets/data/owner/catalogues/staff_mockjson',
+      'assets/data/owner/catalogues/staff_mock.json',
       (json) => StaffFull.fromJson(json),
     );
   }
