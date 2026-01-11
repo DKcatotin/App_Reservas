@@ -58,12 +58,10 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
     Map<String, List<Appointment>> grouped = {};
 
     for (var appointment in appointments) {
-      // Obtener el inicio de la semana (lunes)
       DateTime appointmentDate = appointment.startAt;
       DateTime weekStart = _getWeekStart(appointmentDate);
       DateTime weekEnd = weekStart.add(const Duration(days: 6));
 
-      // Formatear la clave como "dd MMM - dd MMM yyyy"
       String weekKey = '${DateFormat('dd MMM').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
 
       if (grouped[weekKey] == null) {
@@ -72,7 +70,6 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
       grouped[weekKey]!.add(appointment);
     }
 
-    // Ordenar cada grupo por fecha
     grouped.forEach((key, value) {
       value.sort((a, b) => a.startAt.compareTo(b.startAt));
     });
@@ -81,7 +78,6 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
   }
 
   DateTime _getWeekStart(DateTime date) {
-    // Obtener el lunes de la semana
     int daysToSubtract = date.weekday - 1;
     return DateTime(date.year, date.month, date.day).subtract(Duration(days: daysToSubtract));
   }
@@ -106,60 +102,78 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          // HEADER ELEGANTE
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: const Color(0xFF7C3AED),
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Citas Futuras',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF7C3AED),
-                      Color(0xFF9333EA),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const SizedBox(height: 60),
-                        Text(
-                          '${_upcomingAppointments.length} citas programadas',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+          // HEADER ELEGANTE CON GRADIENTE
+          // HEADER ELEGANTE CON GRADIENTE
+SliverAppBar(
+  expandedHeight: 200,
+  pinned: true,
+  backgroundColor: const Color(0xFF7C3AED),
+  leading: Container(
+    margin: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () => context.pop(),
+    ),
+  ),
+  flexibleSpace: FlexibleSpaceBar(
+    centerTitle: false,
+    titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+    title: const Text(
+      'Citas Futuras',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+        letterSpacing: -0.5,
+      ),
+    ),
+    background: Stack(
+      fit: StackFit.expand,
+      children: [
+        // GRADIENTE DE FONDO
+        Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
             ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.pop(),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF7C3AED).withOpacity(0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+        ),
+        
+        // CONTADOR DE CITAS (Posicionado arriba del título)
+        if (!_loading)
+          Positioned(
+            left: 24,
+            bottom: 50, 
+            child: Text(
+              '${_upcomingAppointments.length} ${_upcomingAppointments.length == 1 ? 'cita programada' : 'citas programadas'}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.3,
+              ),
             ),
           ),
+      ],
+    ),
+  ),
+),
+
 
           // CONTENIDO
           if (_loading)
@@ -196,6 +210,7 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Colors.grey[600],
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -285,11 +300,12 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${appointments.length} cita${appointments.length > 1 ? 's' : ''}',
+                        '${appointments.length} ${appointments.length == 1 ? 'cita' : 'citas'}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[600],
@@ -320,29 +336,37 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
   }
 
   Widget _buildAppointmentCard(Appointment appointment) {
-    final time = TimeOfDay.fromDateTime(appointment.startAt).format(context);
-    final serviceName = appointment.services.isNotEmpty 
-        ? appointment.services.first.name 
-        : 'Sin servicio';
-    final statusColor = _getStatusColor(appointment.status.label);
+  final time = TimeOfDay.fromDateTime(appointment.startAt).format(context);
+  final serviceName = appointment.services.isNotEmpty 
+      ? appointment.services.first.name 
+      : 'Sin servicio';
+  final statusColor = _getStatusColor(appointment.status.label);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () async {
-            await context.push('/owner/appointments/${appointment.id}');
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.grey[50],
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.grey[200]!, width: 1),
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          //  CORREGIDO: Navegar al detalle con el appointment como extra
+          final result = await context.push(
+            '/owner/appointments/${appointment.id}',
+            extra: appointment,
+          );
+          
+          //  Si se modificó o eliminó, recargar datos
+          if (result != null) {
             await _loadUpcomingAppointments();
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
               children: [
                 // FECHA Y HORA
                 Container(
@@ -469,7 +493,7 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
                   ),
                 ),
 
-                              // FLECHA
+                // FLECHA
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -534,11 +558,11 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Todas las citas están al día . Puedes agendar nuevas citas cuando lo necesites.',
+                'Todas las citas están al día.\nPuedes agendar nuevas citas cuando lo necesites.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: Colors.grey[600],
                   height: 1.6,
                 ),
               ),

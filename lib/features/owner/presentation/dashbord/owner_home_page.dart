@@ -17,57 +17,96 @@ class OwnerHomePage extends StatefulWidget {
 }
 
 class _OwnerHomePageState extends State<OwnerHomePage> {
+  //  VARIABLES DE ESTADO (SOLO UNA VEZ)
+  List<Appointment> _servicios = [];
+  List<Appointment> _upcoming = [];
+  bool _loading = true;
+  bool _loadingUpcoming = true;
+  bool _isInitialized = false;
+  String? _error;
   
   @override
   void initState() {
     super.initState();
-    _loadServicios();
-  }
-List<Appointment> _upcoming = [];
-bool _loadingUpcoming = true;
-
-Future<void> _loadUpcoming() async {
-  try {
-    final data = await widget.repo.getUpcoming();
-    if (!mounted) return;
-    setState(() {
-      _upcoming = data;
-      _loadingUpcoming = false;
+    // Cargar datos DESPUÉS del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAllData();
     });
-  } catch (_) {
-    if (!mounted) return;
-    setState(() => _loadingUpcoming = false);
   }
-}
 
-  List<Appointment> _servicios = [];
-  bool _loading = true;
-  String? _error;
+  Future<void> _loadAllData() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _loading = true;
+      _loadingUpcoming = true;
+    });
 
-  Future<void> _loadServicios() async {
     try {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-
-      final data = await widget.repo.getToday();
-      
-      if (mounted) {
-        setState(() {
-          _servicios = data;
-          _loading = false;
-        });
-      }
+      await Future.wait([
+        _loadServicios(),
+        _loadUpcoming(),
+      ]);
     } catch (e) {
+      debugPrint('Error en _loadAllData: $e');
+    } finally {
       if (mounted) {
         setState(() {
-          _error = 'Error al cargar las citas: $e';
           _loading = false;
+          _loadingUpcoming = false;
+          _isInitialized = true;
         });
       }
     }
   }
+
+  Future<void> _loadServicios() async {
+  try {
+    final data = await widget.repo.getToday();
+    
+    if (mounted) {
+      setState(() {
+        //  Eliminar duplicados basándose en el ID de la cita
+        final Map<String, Appointment> uniqueMap = {};
+        for (var appointment in data) {
+          uniqueMap[appointment.id] = appointment;
+        }
+        _servicios = uniqueMap.values.toList();
+        _error = null;
+      });
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _error = 'Error al cargar las citas: $e';
+      });
+    }
+  }
+}
+  Future<void> _loadUpcoming() async {
+  try {
+    final data = await widget.repo.getUpcoming();
+    if (mounted) {
+      setState(() {
+        //  Filtrar para excluir las citas de HOY
+        final today = DateTime.now();
+        final todayStart = DateTime(today.year, today.month, today.day);
+        final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+        
+        // Solo incluir citas que NO sean de hoy
+        _upcoming = data.where((appointment) {
+          return appointment.startAt.isAfter(todayEnd);
+        }).toList();
+      });
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _upcoming = [];
+      });
+    }
+  }
+}
 
   Future<void> _logout(BuildContext context) async {
     await TokenStorage().clear();
@@ -100,296 +139,311 @@ Future<void> _loadUpcoming() async {
 
   @override
   Widget build(BuildContext context) {
+    // PANTALLA DE CARGA
+    if (!_isInitialized || _loading || _loadingUpcoming) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withOpacity(0.2),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+                    strokeWidth: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Cargando...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // PANTALLA DE ERROR
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: _buildErrorView(),
+      );
+    }
+    
+    // CONTENIDO PRINCIPAL
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      body: _loading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: _loadAllData,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+  /// HEADER
+  SliverToBoxAdapter(
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withOpacity(0.3),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF7C3AED).withOpacity(0.2),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.spa, color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Francis Nails & Beauty Spa',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
-                        strokeWidth: 3,
-                      ),
-                    ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Cargando...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[600],
-                      letterSpacing: 0.5,
-                    ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_none, color: Colors.white),
+                        onPressed: () {},
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: () => _logout(context),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            )
-          : _error != null
-              ? _buildErrorView()
-              : CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    /// HEADER ULTRA ELEGANTE
-                    SliverToBoxAdapter(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF7C3AED),
-                              Color(0xFF9333EA),
-                            ],
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(40),
-                            bottomRight: Radius.circular(40),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF7C3AED).withOpacity(0.3),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: SafeArea(
-                          bottom: false,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// TOP BAR
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(alpha: 0.2),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.spa, color: Colors.white, size: 18),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Francis Nails & Beauty Spa',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: IconButton(
-                                            icon: const Icon(Icons.notifications_none, color: Colors.white, size: 22),
-                                            onPressed: () {},
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: IconButton(
-                                            icon: const Icon(Icons.logout, color: Colors.white, size: 22),
-                                            onPressed: () => _logout(context),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 32),
-
-                                /// SALUDO
-                                Text(
-                                  _getGreeting(),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Tu agenda de hoy',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    height: 1.2,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    /// ESTADÍSTICAS FLOTANTES
-                    SliverToBoxAdapter(
-                      child: Transform.translate(
-                        offset: const Offset(0, -20),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _buildModernStatCard(
-                                  icon: Icons.event_available,
-                                  value: '${_servicios.length}',
-                                  label: 'Citas hoy',
-                                  color: const Color(0xFF7C3AED),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildModernStatCard(
-                                  icon: Icons.people,
-                                  value: '${_servicios.map((e) => e.customer.id).toSet().length}',
-                                  label: 'Clientas',
-                                  color: const Color(0xFF9333EA),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    /// SECCIÓN CITAS
-      // SECCIÓN CITAS FUTURAS
-SliverToBoxAdapter(
-  child: Padding(
-    padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        Text(
-          'Citas futuras',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-            letterSpacing: -0.5,
+              const SizedBox(height: 32),
+              Text(
+                _getGreeting(),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tu agenda de hoy',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  ),
-),
-if (_upcoming.isEmpty)
-  const SliverToBoxAdapter(
-    child: Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Text('No hay citas futuras'),
-    ),
-  )
-else
-  SliverPadding(
-    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-    sliver: SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final cita = _upcoming[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildPremiumCitaCard(cita),
-          );
-        },
-        childCount: _upcoming.length,
       ),
     ),
   ),
 
+  /// ESTADÍSTICAS
+  SliverToBoxAdapter(
+    child: Transform.translate(
+      offset: const Offset(0, -20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildModernStatCard(
+                icon: Icons.event_available,
+                value: '${_servicios.length}',
+                label: 'Citas hoy',
+                color: const Color(0xFF7C3AED),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildModernStatCard(
+                icon: Icons.people,
+                value: '${_servicios.map((e) => e.customer.id).toSet().length}',
+                label: 'Clientas',
+                color: const Color(0xFF9333EA),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
 
-                    /// LISTA DE CITAS
-                    if (_servicios.isEmpty)
-                      SliverToBoxAdapter(child: _buildEmptyState())
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _buildPremiumCitaCard(_servicios[index]),
-                            ),
-                            childCount: _servicios.length,
-                          ),
-                        ),
-                      ),
+  /// =======================
+  /// CITAS DE HOY - HEADER
+  /// =======================
+  SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: const Text(
+        'Citas de hoy',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1F2937),
+        ),
+      ),
+    ),
+  ),
 
-                    /// BOTONES
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                        child: Column(
-                          children: [
-                            _buildPrimaryButton(
-  label: 'Agendar nueva cita',
-  icon: Icons.add_circle_outline,
-  onPressed: () async {
-    await context.push('/owner/appointments/cliente/buscar');
-    // Aquí NO recargas todavía, porque aún no se ha creado la cita.
-  },
-),
+  /// CITAS DE HOY - LISTA
+  if (_servicios.isEmpty)
+    SliverToBoxAdapter(child: _buildEmptyState())
+  else
+    SliverPadding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildPremiumCitaCard(_servicios[index]),
+          ),
+          childCount: _servicios.length,
+        ),
+      ),
+    ),
 
+  /// ==========================
+  /// PRÓXIMAS CITAS - HEADER
+  /// ==========================
+  SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Próximas citas',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          if (_upcoming.isNotEmpty)
+            TextButton.icon(
+              onPressed: () async {
+                await context.push('/owner/appointments/upcoming');
+                await _loadAllData();
+              },
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('Ver todas'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF7C3AED),
+              ),
+            ),
+        ],
+      ),
+    ),
+  ),
 
+  /// PRÓXIMAS CITAS - LISTA (máx 3)
+  if (_upcoming.isEmpty)
+    const SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: Text(
+          'No hay citas futuras programadas',
+          style: TextStyle(color: Colors.grey),
+        ),
+      ),
+    )
+  else
+    SliverPadding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildPremiumCitaCard(_upcoming[index]),
+          ),
+          childCount: _upcoming.length > 3 ? 3 : _upcoming.length,
+        ),
+      ),
+    ),
 
-                            const SizedBox(height: 12),
-                            _buildSecondaryButton(
-                              label: 'Probar ruta privada',
-                              icon: Icons.bug_report_outlined,
-                              onPressed: () => context.go('/owner/test1'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+  /// BOTONES
+  SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      child: Column(
+        children: [
+          _buildPrimaryButton(
+            label: 'Agendar nueva cita',
+            icon: Icons.add_circle_outline,
+            onPressed: () async {
+              await context.push('/owner/appointments/cliente/buscar');
+              await _loadAllData();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildSecondaryButton(
+            label: 'Probar ruta privada',
+            icon: Icons.bug_report_outlined,
+            onPressed: () => context.go('/owner/test1'),
+          ),
+        ],
+      ),
+    ),
+  ),
 
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                  ],
-                ),
+  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+],
+
+        ),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -408,7 +462,10 @@ else
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildNavItem(Icons.home_rounded, 'Inicio', true, () {}),
-                _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {await context.push('/owner/agenda'); await _loadServicios();}),
+                _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {
+                  await context.push('/owner/agenda'); 
+                  await _loadAllData();
+                }),
                 _buildNavItem(Icons.people_rounded, 'Clientas', false, () {}),
                 _buildNavItem(Icons.person_rounded, 'Perfil', false, () {}),
               ],
@@ -418,17 +475,6 @@ else
       ),
     );
   }
- Future<void> _irACrearCita(BuildContext context) async {
-  final result = await context.push('/owner/citas');
-  if (result == true && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cita creada correctamente')),
-    );
-    await _loadServicios(); // recargar lista de hoy
-  }
-}
-
-
 
   Widget _buildModernStatCard({
     required IconData icon,
@@ -505,13 +551,15 @@ else
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () async { await context.push('/owner/agenda'); await _loadServicios(); },
+          onTap: () async { 
+            await context.push('/owner/agenda'); 
+            await _loadAllData(); 
+          },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                /// INDICADOR DE COLOR
                 Container(
                   width: 4,
                   height: 60,
@@ -521,8 +569,6 @@ else
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                /// HORA
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
@@ -548,10 +594,7 @@ else
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 16),
-
-                /// INFO
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,11 +611,7 @@ else
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(
-                            Icons.spa,
-                            size: 14,
-                            color: Colors.grey[400],
-                          ),
+                          Icon(Icons.spa, size: 14, color: Colors.grey[400]),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -606,8 +645,6 @@ else
                     ],
                   ),
                 ),
-
-                /// FLECHA
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -799,7 +836,7 @@ else
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _loadServicios,
+              onPressed: _loadAllData,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7C3AED),
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),

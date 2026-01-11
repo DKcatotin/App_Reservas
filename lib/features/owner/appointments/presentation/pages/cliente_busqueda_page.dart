@@ -159,7 +159,7 @@ Widget build(BuildContext context) {
             ElevatedButton.icon(
  onPressed: () {
     // El provider ya tiene el cliente (porque lo cargaste en _buscarCliente)
-    context.push('/owner/citas'); // 👈 antes era go
+    context.push('/owner/citas'); 
   },
   icon: const Icon(Icons.check),
   label: const Text('Seleccionar este cliente'),

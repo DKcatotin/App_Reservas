@@ -3,7 +3,7 @@ import 'package:agenda_app/features/owner/appointments/data/sources/appointments
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:provider/provider.dart' as classic_provider; // 👈 Añadir alias
+import 'package:provider/provider.dart' as classic_provider; //  Añadir alias
 import 'app.dart';
 
 
@@ -14,9 +14,9 @@ void main() async {
   
   runApp(
     ProviderScope(
-      child: classic_provider.MultiProvider(  // 👈 Usar el alias
+      child: classic_provider.MultiProvider(  //  Usar el alias
         providers: [
-          classic_provider.Provider<AppointmentsRepository>(  // 👈 Usar el alias
+          classic_provider.Provider<AppointmentsRepository>(  //  Usar el alias
             create: (_) => AppointmentsRepository(
               datasource: AppointmentsMemoryDatasource(),
             ),

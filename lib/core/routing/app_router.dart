@@ -1,6 +1,9 @@
+import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_form_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/cliente_busqueda_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/cliente_form_page.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/upcoming_appointments_page.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/pages/catalogue_test_page.dart';
 import '../../features/auth/data/presentation/pages/login_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/diary_page.dart';
@@ -25,13 +28,27 @@ class AppRouter {
             repo: deps.appointmentsRepository,
           ),
         ),
-        
+        // 📅 Citas futuras/próximas
+        GoRoute(
+          path: '/owner/appointments/upcoming',
+          builder: (_, __) => UpcomingAppointmentsPage(
+            repo: deps.appointmentsRepository,
+          ),
+        ),
+//Detalles de cita
+        GoRoute(
+          path: '/owner/appointments/:id',
+          builder: (context, state) {
+            final appointment = state.extra as Appointment;
+            return AppointmentDetailPage(appointment: appointment);
+          },
+        ),
         // 🔍 Nueva ruta: Buscar cliente
         GoRoute(
           path: '/owner/appointments/cliente/buscar',
           builder: (_, __) => const ClienteBusquedaPage(),
         ),
-        
+
         // ➕ Nueva ruta: Crear cliente
         GoRoute(
           path: '/owner/appointments/cliente/new',
@@ -40,7 +57,7 @@ class AppRouter {
             return ClienteFormPage(cedulaPrellenada: cedula);
           },
         ),
-        
+
         // 📝 Ruta existente: Crear cita
         GoRoute(
           path: '/owner/citas',
@@ -48,7 +65,7 @@ class AppRouter {
             repo: deps.appointmentsRepository,
           ),
         ),
-        
+
         // 📔 Agenda (JSON hoy)
         GoRoute(
           path: '/owner/agenda',

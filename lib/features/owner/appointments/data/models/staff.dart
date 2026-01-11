@@ -1,8 +1,8 @@
 class Staff {
   final String id;
   final String name;
-  final String? specialty; // 👈 OPCIONAL: agregar especialidad
-  final String? colorTag;  // 👈 OPCIONAL: para UI de agenda
+  final String? specialty; //  OPCIONAL: agregar especialidad
+  final String? colorTag;  //  OPCIONAL: para UI de agenda
 
   Staff({
     required this.id,
