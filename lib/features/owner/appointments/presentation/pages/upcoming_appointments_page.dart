@@ -3,7 +3,7 @@ import 'package:agenda_app/features/owner/appointments/domain/entities/appointme
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upcoming_appointments.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:intl/intl.dart';
 
 class UpcomingAppointmentsPage extends StatefulWidget {
@@ -166,27 +166,19 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () async {
-        // Pasar callbacks para poder editar/eliminar
-        final result = await Navigator.push(
+        // ✅ PASAR EL REPOSITORIO Y RECARGAR AL VOLVER
+        final result = await Navigator.push<AppointmentEntity>(
           context,
           MaterialPageRoute(
             builder: (_) => AppointmentDetailPage(
               appointment: appointment,
-              //  AGREGAR CALLBACKS
-              onAppointmentUpdated: (updated) async {
-                // Recargar la lista cuando se actualice
-                await _loadUpcomingAppointments();
-              },
-              onAppointmentDeleted: (id) async {
-                // Recargar la lista cuando se elimine
-                await _loadUpcomingAppointments();
-              },
+              repository: widget.repo,  // ← AGREGAR ESTO!
             ),
           ),
         );
 
-        // Si se modificó, recargar
-        if (result != null) {
+        // Si se modificó o eliminó, recargar
+        if (result != null && mounted) {
           await _loadUpcomingAppointments();
         }
       },

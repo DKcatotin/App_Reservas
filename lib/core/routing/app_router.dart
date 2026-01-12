@@ -43,7 +43,8 @@ class AppRouter {
             final appointment = state.extra as AppointmentEntity;
             return AppointmentDetailPage(
               appointment: appointment,
-              //  OPCIONAL: Agregar callbacks si los necesitas
+              repository: deps.appointmentsRepository, // ✅ USAR deps, NO widget
+              // OPCIONAL: Agregar callbacks si los necesitas
               onAppointmentUpdated: (updated) async {
                 // Aquí podrías actualizar el estado global si usas providers
               },

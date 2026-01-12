@@ -9,7 +9,9 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
     final raw = await rootBundle.loadString(path);
     final decoded = jsonDecode(raw) as Map;
     final list = decoded['data'];
+    
     if (list is! List) return [];
+    
     return list
         .map((e) => Appointment.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
@@ -20,10 +22,19 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
     final today = await _load('assets/data/owner/appointments/appointments_today.json');
     final past = await _load('assets/data/owner/appointments/appointments_past.json');
     final upcoming = await _load('assets/data/owner/appointments/appointments_upcoming.json');
-
+    
     final all = [...past, ...today, ...upcoming];
-    all.sort((a, b) => a.startAt.compareTo(b.startAt));
-    return all;
+    
+    // ✅ CORRECCIÓN: Eliminar duplicados basándose en el ID
+    final Map<String, Appointment> uniqueMap = {};
+    for (var appointment in all) {
+      uniqueMap[appointment.id] = appointment;
+    }
+    
+    final uniqueAppointments = uniqueMap.values.toList();
+    uniqueAppointments.sort((a, b) => a.startAt.compareTo(b.startAt));
+    
+    return uniqueAppointments;
   }
 
   @override
@@ -41,4 +52,3 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
     throw UnimplementedError('AppointmentsJsonDatasource is read-only');
   }
 }
-

@@ -1,3 +1,4 @@
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart'; // ← AGREGAR
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:flutter/material.dart';
@@ -5,12 +6,14 @@ import 'package:intl/intl.dart';
 
 class AppointmentCard extends StatelessWidget {
   final AppointmentEntity a;
+  final AppointmentsRepositoryImpl repository;  // ← AGREGAR ESTO
   final Future<void> Function(AppointmentEntity)? onAppointmentUpdated;
   final Future<void> Function(String)? onAppointmentDeleted;
 
   const AppointmentCard({
     super.key,
     required this.a,
+    required this.repository,  // ← AGREGAR ESTO
     this.onAppointmentUpdated,
     this.onAppointmentDeleted,
   });
@@ -28,8 +31,9 @@ class AppointmentCard extends StatelessWidget {
             MaterialPageRoute(
               builder: (_) => AppointmentDetailPage(
                 appointment: a,
-                onAppointmentUpdated: onAppointmentUpdated, //  CORRECCIÓN
-                onAppointmentDeleted: onAppointmentDeleted, //  CORRECCIÓN
+                repository: repository,  // ← AGREGAR ESTO
+                onAppointmentUpdated: onAppointmentUpdated,
+                onAppointmentDeleted: onAppointmentDeleted,
               ),
             ),
           );
@@ -111,7 +115,7 @@ class AppointmentCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1), // ✅ CORRECCIÓN
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -193,7 +197,7 @@ class AppointmentCard extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: _getStatusColor(a.status.code).withValues(alpha: 0.1), // ✅ CORRECCIÓN
+        color: _getStatusColor(a.status.code).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _getStatusColor(a.status.code),

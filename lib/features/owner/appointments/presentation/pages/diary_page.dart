@@ -254,6 +254,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   _filteredAppointments[i];
                               return AppointmentCard(
                                 a: appointment,
+                                repository: widget.repo, 
                                 onAppointmentUpdated: _handleAppointmentUpdated,
                                 onAppointmentDeleted: _handleAppointmentDeleted,
                               );
@@ -263,15 +264,15 @@ class _DiaryPageState extends State<DiaryPage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AppointmentFormPage(repo: widget.repo),
-            ),
-          );
-          if (created == true) {
+     floatingActionButton: FloatingActionButton.extended(
+  onPressed: () async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AppointmentFormPage(repo: widget.repo),
+      ),
+    );
+         await _loadAllAppointments();{
             _loadAllAppointments();
           }
         },

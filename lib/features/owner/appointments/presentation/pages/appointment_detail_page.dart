@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_appointment.dart';
 
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:flutter/material.dart';
@@ -7,22 +9,20 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/appointment_entity.dart';
 
+import '../../domain/use_cases/delete_appointment.dart';
 
 import '../../domain/entities/service_entity.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../../domain/entities/status_entity.dart';
-import '../../data/models/staff.dart';
-
-
 
 //tres imports para staff
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../data/models/staff.dart';
 import '../providers/staff_provider.dart';
 
 class AppointmentDetailPage extends ConsumerStatefulWidget {
-
-final AppointmentEntity appointment;
+  final AppointmentEntity appointment;
+  final AppointmentsRepositoryImpl repository; // ← AGREGAR
   final Future<void> Function(AppointmentEntity)? onAppointmentUpdated;
   final Future<void> Function(String)? onAppointmentDeleted;
 
@@ -31,11 +31,12 @@ final AppointmentEntity appointment;
     required this.appointment,
     this.onAppointmentUpdated,
     this.onAppointmentDeleted,
+    required this.repository,
   });
 
   @override
-   ConsumerState<AppointmentDetailPage> createState() => _AppointmentDetailPageState();
-
+  ConsumerState<AppointmentDetailPage> createState() =>
+      _AppointmentDetailPageState();
 }
 
 class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
@@ -47,109 +48,112 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late List<dynamic> _selectedServices;
   late TextEditingController _notesController;
   late List<TextEditingController> _serviceControllers;
-  //variables de estado 
+  //variables de estado
   String? _selectedStaffId;
   List<Staff> _staffList = [];
-// En tu clase _AppointmentDetailPageState
-Set<String> _selectedServiceIds = {};
-
-  //  AGREGAR ESTAS NUEVAS VARIABLES
+  // En tu clase _AppointmentDetailPageState
+  Set<String> _selectedServiceIds = {};
   List<Service> _allServices = []; // Todos los servicios disponibles
   bool _isLoadingServices = true;
+  late UpdateAppointmentUseCase _updateAppointmentUseCase;
+  late DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
   @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.appointment.startAt;
+    _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repository);
+    _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repository);
+    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+    _selectedStatus = widget.appointment.status.label;
+    _selectedServices = List.from(widget.appointment.services);
+    _notesController =
+        TextEditingController(text: widget.appointment.notes ?? '');
+
+    _serviceControllers = _selectedServices.map((s) {
+      return TextEditingController(text: (s as dynamic).name);
+    }).toList();
+
+    // para staff
+    _selectedStaffId = widget.appointment.staff?.id;
+
+    // ✅ Inicializar el Set de IDs seleccionados
+    _selectedServiceIds =
+        _selectedServices.map((s) => (s as dynamic).id as String).toSet();
+
+    loadAllServices();
+  }
+
   @override
-void initState() {
-  super.initState();
-  _selectedDate = widget.appointment.startAt;
-  _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-  _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-  _selectedStatus = widget.appointment.status.label;
-  _selectedServices = List.from(widget.appointment.services);
-  _notesController = TextEditingController(text: widget.appointment.notes ?? '');
-  
-  _serviceControllers = _selectedServices.map((s) {
-    return TextEditingController(text: (s as dynamic).name);
-  }).toList();
-  
-  // para staff
-  _selectedStaffId = widget.appointment.staff?.id;
-  
-  // ✅ Inicializar el Set de IDs seleccionados
-  _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
-  
-  loadAllServices();
-}
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cargar staff desde el provider
+    final staffAsync = ref.watch(staffListProvider);
+    staffAsync.whenData((list) {
+      if (mounted && _staffList.isEmpty) {
+        setState(() {
+          _staffList = list;
+        });
+      }
+    });
+  }
 
-
- @override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  // Cargar staff desde el provider
-  final staffAsync = ref.watch(staffListProvider);
-  staffAsync.whenData((list) {
-    if (mounted && _staffList.isEmpty) {
-      setState(() {
-        _staffList = list;
-      });
+  void _recalculateEndTimeFromStart() {
+    if (_selectedServices.isEmpty) {
+      // Si no hay servicios, mantener la hora de fin igual a la de inicio
+      _endTime = _startTime;
+      return;
     }
-  });
-}
-void _recalculateEndTimeFromStart() {
-  if (_selectedServices.isEmpty) {
-    // Si no hay servicios, mantener la hora de fin igual a la de inicio
-    _endTime = _startTime;
-    return;
+
+    // Sumar todas las duraciones
+    int totalMinutes = 0;
+    for (var service in _selectedServices) {
+      totalMinutes += (service as dynamic).duration.inMinutes as int;
+    }
+
+    // Calcular nueva hora de fin basada en la hora de inicio
+    final startDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+
+    final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+    setState(() {
+      _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+    });
   }
 
-  // Sumar todas las duraciones
-  int totalMinutes = 0;
-  for (var service in _selectedServices) {
-    totalMinutes += (service as dynamic).duration.inMinutes as int;
+  void _recalculateEndTime() {
+    if (_selectedServices.isEmpty) {
+      return;
+    }
+
+    // Sumar todas las duraciones
+    int totalMinutes = 0;
+    for (var service in _selectedServices) {
+      totalMinutes += (service as dynamic).duration.inMinutes as int;
+    }
+
+    // Calcular nuevo end time
+    final startDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+
+    final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+    setState(() {
+      _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+    });
   }
-
-  // Calcular nueva hora de fin basada en la hora de inicio
-  final startDateTime = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _startTime.hour,
-    _startTime.minute,
-  );
-
-  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
-
-  setState(() {
-    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
-  });
-}
-void _recalculateEndTime() {
-  if (_selectedServices.isEmpty) {
-    return;
-  }
-
-  // Sumar todas las duraciones
-  int totalMinutes = 0;
-  for (var service in _selectedServices) {
-    totalMinutes += (service as dynamic).duration.inMinutes as int;
-  }
-
-  // Calcular nuevo end time
-  final startDateTime = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _startTime.hour,
-    _startTime.minute,
-  );
-
-  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
-
-  setState(() {
-    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
-  });
-}
-
 
   @override
   void dispose() {
@@ -159,28 +163,29 @@ void _recalculateEndTime() {
     }
     super.dispose();
   }
-  
+
   Future<void> loadAllServices() async {
-  try {
-    final jsonString = await rootBundle.loadString('assets/data/owner/catalogues/services_mock.json');
-    
-    // ✅ Primero decodifica como Map
-    final Map<String, dynamic> jsonData = json.decode(jsonString);
-    
-    // ✅ Luego extrae el array "data"
-    final List<dynamic> jsonList = jsonData['data'];
-    
-    setState(() {
-      _allServices = jsonList.map((json) => Service.fromJson(json)).toList();
-      _isLoadingServices = false;
-    });
-  } catch (e) {
-    print('Error cargando servicios: $e');
-    setState(() {
-      _isLoadingServices = false;
-    });
+    try {
+      final jsonString = await rootBundle
+          .loadString('assets/data/owner/catalogues/services_mock.json');
+
+      // ✅ Primero decodifica como Map
+      final Map<String, dynamic> jsonData = json.decode(jsonString);
+
+      // ✅ Luego extrae el array "data"
+      final List<dynamic> jsonList = jsonData['data'];
+
+      setState(() {
+        _allServices = jsonList.map((json) => Service.fromJson(json)).toList();
+        _isLoadingServices = false;
+      });
+    } catch (e) {
+      print('Error cargando servicios: $e');
+      setState(() {
+        _isLoadingServices = false;
+      });
+    }
   }
-}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -207,187 +212,238 @@ void _recalculateEndTime() {
       });
     }
   }
-  Future<void> _confirmDelete() async {
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Eliminar cita'),
-      content: const Text('¿Seguro que deseas eliminar esta cita?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
-      ],
-    ),
-  );
 
-  if (ok == true && mounted) {
-    Navigator.pop(context, {'deleteId': widget.appointment.id});
+  Future<void> confirmDelete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar cita'),
+        content: const Text('¿Seguro que deseas eliminar esta cita?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true && mounted) {
+      try {
+        // ✅ ELIMINAR usando el use case
+        await _deleteAppointmentUseCase.call(widget.appointment.id);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Cita eliminada exitosamente'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+
+          // Llamar al callback si existe
+          if (widget.onAppointmentDeleted != null) {
+            await widget.onAppointmentDeleted!(widget.appointment.id);
+          }
+
+          // Volver a la pantalla anterior
+          Navigator.pop(
+              context, true); // Devuelve true para indicar que se eliminó
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ Error al eliminar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
-}
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
-  final TimeOfDay? picked = await showTimePicker(
-    context: context,
-    initialTime: isStartTime ? _startTime : _endTime,
-    builder: (context, child) {
-      return Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF7C3AED),
-            onPrimary: Colors.white,
-            onSurface: Color(0xFF1F2937),
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStartTime ? _startTime : _endTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF7C3AED),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1F2937),
+            ),
           ),
-        ),
-        child: child!,
-      );
-    },
-  );
+          child: child!,
+        );
+      },
+    );
 
-  if (picked != null) {
-    setState(() {
-      if (isStartTime) {
-        _startTime = picked;
-        // ✅ RECALCULAR automáticamente la hora de fin
-        _recalculateEndTimeFromStart();
-      } else {
-        // Ya no debería llegar aquí, pero por si acaso
-        _endTime = picked;
-      }
-    });
-  }
-}
-
-
- void saveChanges() {
-  final newStartAt = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _startTime.hour,
-    _startTime.minute,
-  );
-
-  final newEndAt = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _endTime.hour,
-    _endTime.minute,
-  );
-
-  //  CORRECCIÓN: Convertir Staff (data) a StaffEntity (domain)
-  StaffEntity? selectedStaffEntity;
-  if (_selectedStaffId != null) {
-    try {
-      final selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
-      // Mapear Staff a StaffEntity
-      selectedStaffEntity = StaffEntity(
-        id: selectedStaff.id,
-        name: selectedStaff.name,
-        specialty: selectedStaff.specialty,
-        colorTag: selectedStaff.colorTag,
-      );
-    } catch (e) {
-      selectedStaffEntity = null;
-    }
-  }
-
-  //  CORRECCIÓN: Convertir AppointmentService a ServiceEntity
-  List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
-    // Si ya es AppointmentService o dynamic, extraer los datos
-    if (service is AppointmentService) {
-      return ServiceEntity(
-        id: service.id,
-        name: service.name,
-        durationMinutes: service.durationMinutes,
-      );
-    } else if (service is Service) {
-      return ServiceEntity(
-        id: service.id,
-        name: service.name,
-        durationMinutes: service.durationMinutes,
-      );
-    } else {
-      // Por si acaso es un dynamic
-      final s = service as dynamic;
-      return ServiceEntity(
-        id: s.id,
-        name: s.name,
-        durationMinutes: s.duration.inMinutes,
-      );
-    }
-  }).toList();
-
-  //  CORRECCIÓN: Crear StatusEntity
-  final statusEntity = StatusEntity(
-    code: _selectedStatus.toLowerCase(),
-    label: _selectedStatus,
-  );
-
-  //  Actualizar el appointment con entities
-  final updatedAppointment = widget.appointment.copyWith(
-    startAt: newStartAt,
-    endAt: newEndAt,
-    notes: _notesController.text.trim().isEmpty 
-        ? null 
-        : _notesController.text.trim(),
-    status: statusEntity,
-    services: serviceEntities,
-    staff: selectedStaffEntity,
-  );
-
-  // Notificar al padre y cerrar
-  if (widget.onAppointmentUpdated != null) {
-    widget.onAppointmentUpdated!(updatedAppointment);
-  }
-  
-  Navigator.pop(context, updatedAppointment);
-}
-
-
-
-void _cancelEdit() {
-  setState(() {
-    _isEditing = false;
-    _selectedDate = widget.appointment.startAt;
-    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.label;
-    _selectedServices = List.from(widget.appointment.services);
-    _notesController.text = widget.appointment.notes ?? '';
-    
-    //  Resetear el Set de IDs
-    _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
-    
-    for (int i = 0; i < _serviceControllers.length; i++) {
-      _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
-    }
-  });
-}
-
-
-  @override
-Widget build(BuildContext context) {
-  final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
-  
-  //  Observa el provider aquí
-  final staffAsync = ref.watch(staffListProvider);
-  
-  //  Actualiza la lista cuando los datos estén disponibles
-  staffAsync.whenData((list) {
-    if (mounted && _staffList.isEmpty) {
-      // Usa addPostFrameCallback para evitar setState durante build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _staffList = list;
-          });
+    if (picked != null) {
+      setState(() {
+        if (isStartTime) {
+          _startTime = picked;
+          // ✅ RECALCULAR automáticamente la hora de fin
+          _recalculateEndTimeFromStart();
+        } else {
+          // Ya no debería llegar aquí, pero por si acaso
+          _endTime = picked;
         }
       });
     }
-  });
+  }
 
-  return Scaffold(
+  Future<void> saveChanges() async {
+    // ✅ CREAR newStartAt
+    final newStartAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+
+    // ✅ CREAR newEndAt (¡ESTO FALTABA!)
+    final newEndAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+
+    // Staff seleccionado
+    Staff? selectedStaff;
+    if (_selectedStaffId != null) {
+      try {
+        selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
+      } catch (e) {
+        selectedStaff = null;
+      }
+    }
+
+    // Convertir servicios a ServiceEntity
+    List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
+      if (service is AppointmentService) {
+        return ServiceEntity(
+          id: service.id,
+          name: service.name,
+          durationMinutes: service.durationMinutes,
+        );
+      } else if (service is Service) {
+        return ServiceEntity(
+          id: service.id,
+          name: service.name,
+          durationMinutes: service.durationMinutes,
+        );
+      } else {
+        final s = service as dynamic;
+        return ServiceEntity(
+          id: s.id,
+          name: s.name,
+          durationMinutes: s.duration.inMinutes as int,
+        );
+      }
+    }).toList();
+
+    final updatedAppointment = widget.appointment.copyWith(
+      startAt: newStartAt,
+      endAt: newEndAt, // ✅ Ahora está definido
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+      status: StatusEntity(
+        code: _selectedStatus.toLowerCase(),
+        label: _selectedStatus,
+      ),
+      services: serviceEntities,
+      staff: selectedStaff != null
+          ? StaffEntity(
+              id: selectedStaff.id,
+              name: selectedStaff.name,
+              specialty: selectedStaff.specialty,
+              colorTag: selectedStaff.colorTag,
+            )
+          : null,
+    );
+
+    // ✅ GUARDAR EN EL REPOSITORIO usando call() NO execute()
+    try {
+      await _updateAppointmentUseCase
+          .call(updatedAppointment); // ← call() no execute()
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Cita actualizada exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Devolver la cita actualizada
+        Navigator.pop(context, updatedAppointment);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al guardar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _isEditing = false;
+      _selectedDate = widget.appointment.startAt;
+      _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+      _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+      _selectedStatus = widget.appointment.status.label;
+      _selectedServices = List.from(widget.appointment.services);
+      _notesController.text = widget.appointment.notes ?? '';
+
+      //  Resetear el Set de IDs
+      _selectedServiceIds =
+          _selectedServices.map((s) => (s as dynamic).id as String).toSet();
+
+      for (int i = 0; i < _serviceControllers.length; i++) {
+        _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
+
+    //  Observa el provider aquí
+    final staffAsync = ref.watch(staffListProvider);
+
+    //  Actualiza la lista cuando los datos estén disponibles
+    staffAsync.whenData((list) {
+      if (mounted && _staffList.isEmpty) {
+        // Usa addPostFrameCallback para evitar setState durante build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _staffList = list;
+            });
+          }
+        });
+      }
+    });
+
+    return Scaffold(
       backgroundColor: const Color(0xFFF5F3FF),
       body: CustomScrollView(
         slivers: [
@@ -405,7 +461,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -417,7 +473,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -430,7 +486,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -443,20 +499,19 @@ Widget build(BuildContext context) {
                     tooltip: 'Editar',
                   ),
                 ),
-                if (!_isEditing)
-  Container(
-    margin: const EdgeInsets.only(right: 8),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha:0.2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: IconButton(
-      icon: const Icon(Icons.delete_outline, color: Colors.white),
-      onPressed: _confirmDelete,
-      tooltip: 'Eliminar',
-    ),
-  ),
-
+              if (!_isEditing)
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.white),
+                    onPressed: confirmDelete,
+                    tooltip: 'Eliminar',
+                  ),
+                ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
@@ -482,7 +537,6 @@ Widget build(BuildContext context) {
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -513,7 +567,7 @@ Widget build(BuildContext context) {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha:0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -555,13 +609,14 @@ Widget build(BuildContext context) {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: _isEditing
-                                  ? const Color(0xFF7C3AED).withValues(alpha:0.05)
+                                  ? const Color(0xFF7C3AED)
+                                      .withValues(alpha: 0.05)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                               border: _isEditing
                                   ? Border.all(
                                       color: const Color(0xFF7C3AED)
-                                          .withValues(alpha:0.3),
+                                          .withValues(alpha: 0.3),
                                       width: 1,
                                     )
                                   : null,
@@ -569,44 +624,49 @@ Widget build(BuildContext context) {
                             child: Row(
                               children: [
                                 Container(
-  padding: const EdgeInsets.all(16),
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: [
-        const Color(0xFF7C3AED).withValues(alpha:0.1),
-        const Color(0xFF9333EA).withValues(alpha:0.05),
-      ],
-    ),
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceAround,
-    children: [
-      // ✅ INICIO - EDITABLE
-      InkWell(
-        onTap: _isEditing ? () => _selectTime(context, true) : null,
-        borderRadius: BorderRadius.circular(8),
-        child: _TimeBlock(
-          label: 'Inicio',
-          time: _startTime.format(context),
-          isEditable: _isEditing,
-        ),
-      ),
-      Container(
-        height: 40,
-        width: 2,
-        color: const Color(0xFF7C3AED).withValues(alpha:0.3),
-      ),
-      // ❌ FIN - NO EDITABLE (calculado automáticamente)
-      _TimeBlock(
-  label: 'Fin',
-  time: _endTime.format(context),
-  isEditable: false, // ✅ Siempre false
-),
-    ],
-  ),
-),
-
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF7C3AED)
+                                            .withValues(alpha: 0.1),
+                                        const Color(0xFF9333EA)
+                                            .withValues(alpha: 0.05),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      // ✅ INICIO - EDITABLE
+                                      InkWell(
+                                        onTap: _isEditing
+                                            ? () => _selectTime(context, true)
+                                            : null,
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: _TimeBlock(
+                                          label: 'Inicio',
+                                          time: _startTime.format(context),
+                                          isEditable: _isEditing,
+                                        ),
+                                      ),
+                                      Container(
+                                        height: 40,
+                                        width: 2,
+                                        color: const Color(0xFF7C3AED)
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                      // ❌ FIN - NO EDITABLE (calculado automáticamente)
+                                      _TimeBlock(
+                                        label: 'Fin',
+                                        time: _endTime.format(context),
+                                        isEditable: false, // ✅ Siempre false
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -641,50 +701,12 @@ Widget build(BuildContext context) {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(
-  padding: const EdgeInsets.all(16),
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: [
-        const Color(0xFF7C3AED).withValues(alpha:0.1),
-        const Color(0xFF9333EA).withValues(alpha:0.05),
-      ],
-    ),
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceAround,
-    children: [
-      // ✅ INICIO - EDITABLE
-      InkWell(
-        onTap: _isEditing ? () => _selectTime(context, true) : null,
-        borderRadius: BorderRadius.circular(8),
-        child: _TimeBlock(
-          label: 'Inicio',
-          time: _startTime.format(context),
-          isEditable: _isEditing,
-        ),
-      ),
-      Container(
-        height: 40,
-        width: 2,
-        color: const Color(0xFF7C3AED).withValues(alpha:0.3),
-      ),
-      // ✅ FIN - NO EDITABLE (sin InkWell)
-      _TimeBlock(
-        label: 'Fin',
-        time: _endTime.format(context),
-        isEditable: false, // ✅ Siempre false
-      ),
-    ],
-  ),
-),
-
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 16),
+
                   /// EMPLEADO/STAFF ASIGNADO
                   _WhiteInfoCard(
                     icon: Icons.person_outline_rounded,
@@ -698,13 +720,16 @@ Widget build(BuildContext context) {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      const Color(0xFF3B82F6).withValues(alpha:0.1),
-                                      const Color(0xFF3B82F6).withValues(alpha:0.05),
+                                      const Color(0xFF3B82F6)
+                                          .withValues(alpha: 0.1),
+                                      const Color(0xFF3B82F6)
+                                          .withValues(alpha: 0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFF3B82F6).withValues(alpha:0.2),
+                                    color: const Color(0xFF3B82F6)
+                                        .withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -778,7 +803,7 @@ Widget build(BuildContext context) {
                     title: 'Estado',
                     child: _isEditing
                         ? DropdownButtonFormField<String>(
-                            value: _selectedStatus,
+                            initialValue: _selectedStatus,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -789,8 +814,8 @@ Widget build(BuildContext context) {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color:
-                                      const Color(0xFF7C3AED).withValues(alpha:0.3),
+                                  color: const Color(0xFF7C3AED)
+                                      .withValues(alpha: 0.3),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -835,14 +860,14 @@ Widget build(BuildContext context) {
                                 colors: [
                                   _statusColor(_selectedStatus),
                                   _statusColor(_selectedStatus)
-                                      .withValues(alpha:0.7),
+                                      .withValues(alpha: 0.7),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(25),
                               boxShadow: [
                                 BoxShadow(
                                   color: _statusColor(_selectedStatus)
-                                      .withValues(alpha:0.3),
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -870,7 +895,7 @@ Widget build(BuildContext context) {
                           ),
                   ),
 
-                                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   /// SERVICIOS
                   _WhiteInfoCard(
@@ -898,20 +923,23 @@ Widget build(BuildContext context) {
                               color: Color(0xFF1F2937),
                             ),
                             decoration: InputDecoration(
-                              hintText: 'Escribe notas adicionales sobre la cita...',
+                              hintText:
+                                  'Escribe notas adicionales sobre la cita...',
                               hintStyle: TextStyle(
                                 color: Colors.grey[400],
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF7C3AED).withValues(alpha:0.3),
+                                  color: const Color(0xFF7C3AED)
+                                      .withValues(alpha: 0.3),
                                 ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF7C3AED).withValues(alpha:0.3),
+                                  color: const Color(0xFF7C3AED)
+                                      .withValues(alpha: 0.3),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -922,12 +950,13 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF7C3AED).withValues(alpha:0.05),
+                              fillColor: const Color(0xFF7C3AED)
+                                  .withValues(alpha: 0.05),
                               contentPadding: const EdgeInsets.all(16),
                             ),
                           )
-                        : (widget.appointment.notes == null || 
-                           widget.appointment.notes!.isEmpty)
+                        : (widget.appointment.notes == null ||
+                                widget.appointment.notes!.isEmpty)
                             ? Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
@@ -964,13 +993,16 @@ Widget build(BuildContext context) {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      const Color(0xFFF59E0B).withValues(alpha:0.1),
-                                      const Color(0xFFF59E0B).withValues(alpha:0.05),
+                                      const Color(0xFFF59E0B)
+                                          .withValues(alpha: 0.1),
+                                      const Color(0xFFF59E0B)
+                                          .withValues(alpha: 0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFFF59E0B).withValues(alpha:0.2),
+                                    color: const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -994,27 +1026,28 @@ Widget build(BuildContext context) {
       ),
     );
   }
-    Widget _buildServicesDisplay() {
-  return Column(
-    children: _selectedServices.map((s) {
-      final d = (s as dynamic).duration;
-      final hours = d.inHours;
-      final minutes = d.inMinutes.remainder(60);
-      final label = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-      
-      //  Buscar el precio desde allServices
-      final serviceId = (s as dynamic).id;
-      final serviceWithPrice = _allServices.firstWhere(
-        (service) => service.id == serviceId,
-        orElse: () => Service(
-          id: serviceId,
-          name: (s as dynamic).name,
-          durationMinutes: d.inMinutes,
-          price: 0.0,
-          category: '',
-        ),
-      );
-      final price = serviceWithPrice.price;
+
+  Widget _buildServicesDisplay() {
+    return Column(
+      children: _selectedServices.map((s) {
+        final d = (s as dynamic).duration;
+        final hours = d.inHours;
+        final minutes = d.inMinutes.remainder(60);
+        final label = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+
+        //  Buscar el precio desde allServices
+        final serviceId = (s as dynamic).id;
+        final serviceWithPrice = _allServices.firstWhere(
+          (service) => service.id == serviceId,
+          orElse: () => Service(
+            id: serviceId,
+            name: (s as dynamic).name,
+            durationMinutes: d.inMinutes,
+            price: 0.0,
+            category: '',
+          ),
+        );
+        final price = serviceWithPrice.price;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1022,13 +1055,13 @@ Widget build(BuildContext context) {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF7C3AED).withValues(alpha:0.1),
-                const Color(0xFF9333EA).withValues(alpha:0.05),
+                const Color(0xFF7C3AED).withValues(alpha: 0.1),
+                const Color(0xFF9333EA).withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF7C3AED).withValues(alpha:0.2),
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -1059,20 +1092,21 @@ Widget build(BuildContext context) {
                         color: Color(0xFF1F2937),
                       ),
                     ),
-                              const SizedBox(height: 4),
-          Text(
-            '\$${price.toStringAsFixed(2)}', // Muestra el precio formateado
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '\$${price.toStringAsFixed(2)}', // Muestra el precio formateado
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7C3AED),
                   borderRadius: BorderRadius.circular(20),
@@ -1092,183 +1126,185 @@ Widget build(BuildContext context) {
       }).toList(),
     );
   }
+
   Widget _buildServicesEditor() {
-  if (_isLoadingServices) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-  
-  if (_allServices.isEmpty) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Text('No hay servicios disponibles'),
-    );
-  }
-  
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: _allServices.map((service) {
-      // ✅ Verificar selección usando el Set de IDs
-      final isSelected = _selectedServiceIds.contains(service.id);
-      final hours = service.duration.inHours;
-      final minutes = service.duration.inMinutes.remainder(60);
-      final durationLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-      
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFF7C3AED).withValues(alpha:0.1) 
-              : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected 
-                ? const Color(0xFF7C3AED) 
-                : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: CheckboxListTile(
-          value: isSelected,
-          onChanged: (checked) {
-            setState(() {
-              if (checked == true) {
-                // ✅ Agregar al Set de IDs
-                _selectedServiceIds.add(service.id);
-                // ✅ Agregar AppointmentService a la lista
-                _selectedServices.add(
-                  AppointmentService(
-                    id: service.id,
-                    name: service.name,
-                    durationMinutes: service.durationMinutes,
-                  ),
-                );
-              } else {
-                // ✅ Remover del Set de IDs
-                _selectedServiceIds.remove(service.id);
-                // ✅ Remover de la lista
-                _selectedServices.removeWhere((s) => (s as dynamic).id == service.id);
-              }
-              // Recalcular duración de la cita
-              _recalculateEndTime();
-            });
-          },
-          title: Text(
-            service.name,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected 
-                  ? const Color(0xFF7C3AED) 
-                  : const Color(0xFF1F2937),
-            ),
-          ),
-          subtitle: Row(
-            children: [
-              const Icon(Icons.access_time, size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(durationLabel),
-              const SizedBox(width: 12),
-              const Icon(Icons.attach_money, size: 14, color: Colors.grey),
-              Text('\$${service.price.toStringAsFixed(2)}'),
-            ],
-          ),
-          activeColor: const Color(0xFF7C3AED),
+    if (_isLoadingServices) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
         ),
       );
-    }).toList(),
-  );
-}
+    }
 
-Widget _buildStaffSelector() {
-  if (_staffList.isEmpty) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
-      ),
-      child: const Row(
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
+    if (_allServices.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text('No hay servicios disponibles'),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _allServices.map((service) {
+        // ✅ Verificar selección usando el Set de IDs
+        final isSelected = _selectedServiceIds.contains(service.id);
+        final hours = service.duration.inHours;
+        final minutes = service.duration.inMinutes.remainder(60);
+        final durationLabel =
+            hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF7C3AED).withValues(alpha: 0.1)
+                : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF7C3AED) : Colors.grey[300]!,
+              width: isSelected ? 2 : 1,
+            ),
           ),
-          SizedBox(width: 12),
-          Text(
-            'Cargando empleados...',
-            style: TextStyle(color: Colors.grey, fontSize: 15),
+          child: CheckboxListTile(
+            value: isSelected,
+            onChanged: (checked) {
+              setState(() {
+                if (checked == true) {
+                  // ✅ Agregar al Set de IDs
+                  _selectedServiceIds.add(service.id);
+                  // ✅ Agregar AppointmentService a la lista
+                  _selectedServices.add(
+                    AppointmentService(
+                      id: service.id,
+                      name: service.name,
+                      durationMinutes: service.durationMinutes,
+                    ),
+                  );
+                } else {
+                  // ✅ Remover del Set de IDs
+                  _selectedServiceIds.remove(service.id);
+                  // ✅ Remover de la lista
+                  _selectedServices
+                      .removeWhere((s) => (s as dynamic).id == service.id);
+                }
+                // Recalcular duración de la cita
+                _recalculateEndTime();
+              });
+            },
+            title: Text(
+              service.name,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? const Color(0xFF7C3AED)
+                    : const Color(0xFF1F2937),
+              ),
+            ),
+            subtitle: Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(durationLabel),
+                const SizedBox(width: 12),
+                const Icon(Icons.attach_money, size: 14, color: Colors.grey),
+                Text('\$${service.price.toStringAsFixed(2)}'),
+              ],
+            ),
+            activeColor: const Color(0xFF7C3AED),
           ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
-  // ✅ CORRECCIÓN CRÍTICA: Eliminar duplicados y validar valor
-  final uniqueStaffList = <String, Staff>{};
-  for (var staff in _staffList) {
-    uniqueStaffList[staff.id] = staff;
+  Widget _buildStaffSelector() {
+    if (_staffList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Cargando empleados...',
+              style: TextStyle(color: Colors.grey, fontSize: 15),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ✅ CORRECCIÓN CRÍTICA: Eliminar duplicados y validar valor
+    final uniqueStaffList = <String, Staff>{};
+    for (var staff in _staffList) {
+      uniqueStaffList[staff.id] = staff;
+    }
+    final cleanStaffList = uniqueStaffList.values.toList();
+
+    // Validar que el valor seleccionado exista
+    final validValue = (cleanStaffList.any((s) => s.id == _selectedStaffId))
+        ? _selectedStaffId
+        : null;
+
+    return DropdownButtonFormField<String>(
+      value: validValue, // ✅ Usar valor validado
+      decoration: InputDecoration(
+        hintText: 'Seleccionar empleado',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+        ),
+        filled: true,
+        fillColor: const Color(0xFF3B82F6).withValues(alpha: 0.05),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        prefixIcon:
+            const Icon(Icons.person_outline_rounded, color: Color(0xFF3B82F6)),
+      ),
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text(
+            'Sin asignar',
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+          ),
+        ),
+        ...cleanStaffList.map((staff) => DropdownMenuItem<String>(
+              value: staff.id,
+              child: Text(staff.name),
+            )),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedStaffId = value;
+        });
+      },
+    );
   }
-  final cleanStaffList = uniqueStaffList.values.toList();
-
-  // Validar que el valor seleccionado exista
-  final validValue = (cleanStaffList.any((s) => s.id == _selectedStaffId))
-      ? _selectedStaffId
-      : null;
-
-  return DropdownButtonFormField<String>(
-    value: validValue, // ✅ Usar valor validado
-    decoration: InputDecoration(
-      hintText: 'Seleccionar empleado',
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3B82F6)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-      ),
-      filled: true,
-      fillColor: const Color(0xFF3B82F6).withValues(alpha: 0.05),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3B82F6)),
-    ),
-    items: [
-      const DropdownMenuItem<String>(
-        value: null,
-        child: Text(
-          'Sin asignar',
-          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-        ),
-      ),
-      ...cleanStaffList.map((staff) => DropdownMenuItem<String>(
-            value: staff.id,
-            child: Text(staff.name),
-          )),
-    ],
-    onChanged: (value) {
-      setState(() {
-        _selectedStaffId = value;
-      });
-    },
-  );
-}
-
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
@@ -1319,7 +1355,7 @@ class _ModernInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C3AED).withValues(alpha:0.3),
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -1335,7 +1371,7 @@ class _ModernInfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: Colors.white, size: 24),
@@ -1382,7 +1418,7 @@ class _WhiteInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1398,7 +1434,7 @@ class _WhiteInfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha:0.1),
+                    color: iconColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),
