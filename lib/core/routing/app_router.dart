@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart'; // ✅ CAMBIAR IMPORT
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_form_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/cliente_busqueda_page.dart';
@@ -28,28 +28,38 @@ class AppRouter {
             repo: deps.appointmentsRepository,
           ),
         ),
-        // 📅 Citas futuras/próximas
+        // Citas futuras/próximas
         GoRoute(
           path: '/owner/appointments/upcoming',
           builder: (_, __) => UpcomingAppointmentsPage(
             repo: deps.appointmentsRepository,
           ),
         ),
-//Detalles de cita
+        //  Detalles de cita
         GoRoute(
           path: '/owner/appointments/:id',
           builder: (context, state) {
-            final appointment = state.extra as Appointment;
-            return AppointmentDetailPage(appointment: appointment);
+            // CORRECCIÓN: Cast a AppointmentEntity
+            final appointment = state.extra as AppointmentEntity;
+            return AppointmentDetailPage(
+              appointment: appointment,
+              //  OPCIONAL: Agregar callbacks si los necesitas
+              onAppointmentUpdated: (updated) async {
+                // Aquí podrías actualizar el estado global si usas providers
+              },
+              onAppointmentDeleted: (id) async {
+                // Aquí podrías actualizar el estado global si usas providers
+              },
+            );
           },
         ),
-        // 🔍 Nueva ruta: Buscar cliente
+        //  Nueva ruta: Buscar cliente
         GoRoute(
           path: '/owner/appointments/cliente/buscar',
           builder: (_, __) => const ClienteBusquedaPage(),
         ),
 
-        // ➕ Nueva ruta: Crear cliente
+        //  Nueva ruta: Crear cliente
         GoRoute(
           path: '/owner/appointments/cliente/new',
           builder: (context, state) {
@@ -58,7 +68,7 @@ class AppRouter {
           },
         ),
 
-        // 📝 Ruta existente: Crear cita
+        //  Ruta existente: Crear cita
         GoRoute(
           path: '/owner/citas',
           builder: (_, __) => AppointmentFormPage(

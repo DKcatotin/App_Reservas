@@ -1,24 +1,36 @@
 import 'dart:convert';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
+
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../../data/models/appointment.dart';
+import '../../domain/entities/appointment_entity.dart';
+
+
+import '../../domain/entities/service_entity.dart';
+import '../../domain/entities/staff_entity.dart';
+import '../../domain/entities/status_entity.dart';
+import '../../data/models/staff.dart';
+
+
 
 //tres imports para staff
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/staff.dart';
+
 import '../providers/staff_provider.dart';
 
 class AppointmentDetailPage extends ConsumerStatefulWidget {
 
-  final Appointment appointment;
+final AppointmentEntity appointment;
+  final Future<void> Function(AppointmentEntity)? onAppointmentUpdated;
+  final Future<void> Function(String)? onAppointmentDeleted;
 
   const AppointmentDetailPage({
     super.key,
     required this.appointment,
+    this.onAppointmentUpdated,
+    this.onAppointmentDeleted,
   });
 
   @override
@@ -263,34 +275,42 @@ void _recalculateEndTime() {
     _endTime.minute,
   );
 
-  // MODIFICAR ESTA PARTE
-  Staff? selectedStaff;
+  //  CORRECCIÓN: Convertir Staff (data) a StaffEntity (domain)
+  StaffEntity? selectedStaffEntity;
   if (_selectedStaffId != null) {
     try {
-      selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
+      final selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
+      // Mapear Staff a StaffEntity
+      selectedStaffEntity = StaffEntity(
+        id: selectedStaff.id,
+        name: selectedStaff.name,
+        specialty: selectedStaff.specialty,
+        colorTag: selectedStaff.colorTag,
+      );
     } catch (e) {
-      selectedStaff = null;
+      selectedStaffEntity = null;
     }
   }
 
-  //  CONVERTIR LOS SERVICIOS SELECCIONADOS A AppointmentService
-  List<AppointmentService> appointmentServices = _selectedServices.map((service) {
-    // Si ya es AppointmentService, úsalo directamente
+  //  CORRECCIÓN: Convertir AppointmentService a ServiceEntity
+  List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
+    // Si ya es AppointmentService o dynamic, extraer los datos
     if (service is AppointmentService) {
-      return service;
-    }
-    // Si es Service, conviértelo a AppointmentService
-    else if (service is Service) {
-      return AppointmentService(
+      return ServiceEntity(
         id: service.id,
         name: service.name,
         durationMinutes: service.durationMinutes,
       );
-    }
-    // Por si acaso es un dynamic
-    else {
+    } else if (service is Service) {
+      return ServiceEntity(
+        id: service.id,
+        name: service.name,
+        durationMinutes: service.durationMinutes,
+      );
+    } else {
+      // Por si acaso es un dynamic
       final s = service as dynamic;
-      return AppointmentService(
+      return ServiceEntity(
         id: s.id,
         name: s.name,
         durationMinutes: s.duration.inMinutes,
@@ -298,22 +318,32 @@ void _recalculateEndTime() {
     }
   }).toList();
 
+  //  CORRECCIÓN: Crear StatusEntity
+  final statusEntity = StatusEntity(
+    code: _selectedStatus.toLowerCase(),
+    label: _selectedStatus,
+  );
+
+  //  Actualizar el appointment con entities
   final updatedAppointment = widget.appointment.copyWith(
     startAt: newStartAt,
     endAt: newEndAt,
-    notes: _notesController.text.trim().isEmpty
-        ? null
+    notes: _notesController.text.trim().isEmpty 
+        ? null 
         : _notesController.text.trim(),
-    status: Status(
-      code: _selectedStatus.toLowerCase(),
-      label: _selectedStatus,
-    ),
-    services: appointmentServices, // ✅ Usa la lista convertida
-    staff: selectedStaff,
+    status: statusEntity,
+    services: serviceEntities,
+    staff: selectedStaffEntity,
   );
 
+  // Notificar al padre y cerrar
+  if (widget.onAppointmentUpdated != null) {
+    widget.onAppointmentUpdated!(updatedAppointment);
+  }
+  
   Navigator.pop(context, updatedAppointment);
 }
+
 
 
 void _cancelEdit() {
@@ -326,7 +356,7 @@ void _cancelEdit() {
     _selectedServices = List.from(widget.appointment.services);
     _notesController.text = widget.appointment.notes ?? '';
     
-    // ✅ Resetear el Set de IDs
+    //  Resetear el Set de IDs
     _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
     
     for (int i = 0; i < _serviceControllers.length; i++) {
@@ -340,10 +370,10 @@ void _cancelEdit() {
 Widget build(BuildContext context) {
   final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
   
-  // ✅ Observa el provider aquí
+  //  Observa el provider aquí
   final staffAsync = ref.watch(staffListProvider);
   
-  // ✅ Actualiza la lista cuando los datos estén disponibles
+  //  Actualiza la lista cuando los datos estén disponibles
   staffAsync.whenData((list) {
     if (mounted && _staffList.isEmpty) {
       // Usa addPostFrameCallback para evitar setState durante build
@@ -375,7 +405,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -387,7 +417,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -400,7 +430,7 @@ Widget build(BuildContext context) {
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -417,7 +447,7 @@ Widget build(BuildContext context) {
   Container(
     margin: const EdgeInsets.only(right: 8),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
+      color: Colors.white.withValues(alpha:0.2),
       borderRadius: BorderRadius.circular(12),
     ),
     child: IconButton(
@@ -483,7 +513,7 @@ Widget build(BuildContext context) {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha:0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -525,13 +555,13 @@ Widget build(BuildContext context) {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: _isEditing
-                                  ? const Color(0xFF7C3AED).withOpacity(0.05)
+                                  ? const Color(0xFF7C3AED).withValues(alpha:0.05)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                               border: _isEditing
                                   ? Border.all(
                                       color: const Color(0xFF7C3AED)
-                                          .withOpacity(0.3),
+                                          .withValues(alpha:0.3),
                                       width: 1,
                                     )
                                   : null,
@@ -543,8 +573,8 @@ Widget build(BuildContext context) {
   decoration: BoxDecoration(
     gradient: LinearGradient(
       colors: [
-        const Color(0xFF7C3AED).withOpacity(0.1),
-        const Color(0xFF9333EA).withOpacity(0.05),
+        const Color(0xFF7C3AED).withValues(alpha:0.1),
+        const Color(0xFF9333EA).withValues(alpha:0.05),
       ],
     ),
     borderRadius: BorderRadius.circular(12),
@@ -565,7 +595,7 @@ Widget build(BuildContext context) {
       Container(
         height: 40,
         width: 2,
-        color: const Color(0xFF7C3AED).withOpacity(0.3),
+        color: const Color(0xFF7C3AED).withValues(alpha:0.3),
       ),
       // ❌ FIN - NO EDITABLE (calculado automáticamente)
       _TimeBlock(
@@ -616,8 +646,8 @@ Widget build(BuildContext context) {
   decoration: BoxDecoration(
     gradient: LinearGradient(
       colors: [
-        const Color(0xFF7C3AED).withOpacity(0.1),
-        const Color(0xFF9333EA).withOpacity(0.05),
+        const Color(0xFF7C3AED).withValues(alpha:0.1),
+        const Color(0xFF9333EA).withValues(alpha:0.05),
       ],
     ),
     borderRadius: BorderRadius.circular(12),
@@ -638,7 +668,7 @@ Widget build(BuildContext context) {
       Container(
         height: 40,
         width: 2,
-        color: const Color(0xFF7C3AED).withOpacity(0.3),
+        color: const Color(0xFF7C3AED).withValues(alpha:0.3),
       ),
       // ✅ FIN - NO EDITABLE (sin InkWell)
       _TimeBlock(
@@ -668,13 +698,13 @@ Widget build(BuildContext context) {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      const Color(0xFF3B82F6).withOpacity(0.1),
-                                      const Color(0xFF3B82F6).withOpacity(0.05),
+                                      const Color(0xFF3B82F6).withValues(alpha:0.1),
+                                      const Color(0xFF3B82F6).withValues(alpha:0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                                    color: const Color(0xFF3B82F6).withValues(alpha:0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -760,7 +790,7 @@ Widget build(BuildContext context) {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
                                   color:
-                                      const Color(0xFF7C3AED).withOpacity(0.3),
+                                      const Color(0xFF7C3AED).withValues(alpha:0.3),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -805,14 +835,14 @@ Widget build(BuildContext context) {
                                 colors: [
                                   _statusColor(_selectedStatus),
                                   _statusColor(_selectedStatus)
-                                      .withOpacity(0.7),
+                                      .withValues(alpha:0.7),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(25),
                               boxShadow: [
                                 BoxShadow(
                                   color: _statusColor(_selectedStatus)
-                                      .withOpacity(0.3),
+                                      .withValues(alpha:0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -875,13 +905,13 @@ Widget build(BuildContext context) {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF7C3AED).withOpacity(0.3),
+                                  color: const Color(0xFF7C3AED).withValues(alpha:0.3),
                                 ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF7C3AED).withOpacity(0.3),
+                                  color: const Color(0xFF7C3AED).withValues(alpha:0.3),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -892,7 +922,7 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF7C3AED).withOpacity(0.05),
+                              fillColor: const Color(0xFF7C3AED).withValues(alpha:0.05),
                               contentPadding: const EdgeInsets.all(16),
                             ),
                           )
@@ -934,13 +964,13 @@ Widget build(BuildContext context) {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      const Color(0xFFF59E0B).withOpacity(0.1),
-                                      const Color(0xFFF59E0B).withOpacity(0.05),
+                                      const Color(0xFFF59E0B).withValues(alpha:0.1),
+                                      const Color(0xFFF59E0B).withValues(alpha:0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFFF59E0B).withOpacity(0.2),
+                                    color: const Color(0xFFF59E0B).withValues(alpha:0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -992,13 +1022,13 @@ Widget build(BuildContext context) {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF7C3AED).withOpacity(0.1),
-                const Color(0xFF9333EA).withOpacity(0.05),
+                const Color(0xFF7C3AED).withValues(alpha:0.1),
+                const Color(0xFF9333EA).withValues(alpha:0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF7C3AED).withOpacity(0.2),
+              color: const Color(0xFF7C3AED).withValues(alpha:0.2),
               width: 1,
             ),
           ),
@@ -1096,7 +1126,7 @@ Widget build(BuildContext context) {
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF7C3AED).withOpacity(0.1) 
+              ? const Color(0xFF7C3AED).withValues(alpha:0.1) 
               : Colors.grey[50],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -1157,71 +1187,88 @@ Widget build(BuildContext context) {
   );
 }
 
-
-  Widget _buildStaffSelector() {
-    if (_staffList.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Cargando empleados...',
-              style: TextStyle(color: Colors.grey[600], fontSize: 15),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return DropdownButtonFormField<String>(
-      value: _selectedStaffId,
-      decoration: InputDecoration(
-        hintText: 'Seleccionar empleado',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-        ),
-        filled: true,
-        fillColor: const Color(0xFF3B82F6).withOpacity(0.05),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3B82F6)),
+Widget _buildStaffSelector() {
+  if (_staffList.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
       ),
-      items: [
-        const DropdownMenuItem<String>(
-          value: null,
-          child: Text('Sin asignar', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
-        ),
-        ..._staffList.map((staff) => DropdownMenuItem<String>(
-              value: staff.id,
-              child: Text(staff.name),
-            )),
-      ],
-      onChanged: (value) {
-        setState(() => _selectedStaffId = value);
-      },
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 12),
+          Text(
+            'Cargando empleados...',
+            style: TextStyle(color: Colors.grey, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
+
+  // ✅ CORRECCIÓN CRÍTICA: Eliminar duplicados y validar valor
+  final uniqueStaffList = <String, Staff>{};
+  for (var staff in _staffList) {
+    uniqueStaffList[staff.id] = staff;
+  }
+  final cleanStaffList = uniqueStaffList.values.toList();
+
+  // Validar que el valor seleccionado exista
+  final validValue = (cleanStaffList.any((s) => s.id == _selectedStaffId))
+      ? _selectedStaffId
+      : null;
+
+  return DropdownButtonFormField<String>(
+    value: validValue, // ✅ Usar valor validado
+    decoration: InputDecoration(
+      hintText: 'Seleccionar empleado',
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+      ),
+      filled: true,
+      fillColor: const Color(0xFF3B82F6).withValues(alpha: 0.05),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3B82F6)),
+    ),
+    items: [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: Text(
+          'Sin asignar',
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+        ),
+      ),
+      ...cleanStaffList.map((staff) => DropdownMenuItem<String>(
+            value: staff.id,
+            child: Text(staff.name),
+          )),
+    ],
+    onChanged: (value) {
+      setState(() {
+        _selectedStaffId = value;
+      });
+    },
+  );
+}
+
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
@@ -1272,7 +1319,7 @@ class _ModernInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C3AED).withOpacity(0.3),
+            color: const Color(0xFF7C3AED).withValues(alpha:0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -1288,7 +1335,7 @@ class _ModernInfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: Colors.white, size: 24),
@@ -1335,7 +1382,7 @@ class _WhiteInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1351,7 +1398,7 @@ class _WhiteInfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
+                    color: iconColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),

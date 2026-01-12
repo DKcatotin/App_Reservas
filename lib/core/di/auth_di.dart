@@ -15,7 +15,7 @@ import 'package:agenda_app/features/owner/catalogues/data/repositories/catalogue
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 
 // ==================== APPOINTMENTS ====================
-import '../../features/owner/appointments/data/repositories/appointments_repository.dart';
+import '../../features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import '../../features/owner/appointments/data/sources/appointments_json_datasource.dart';
 import '../../features/owner/appointments/data/sources/appointments_memory_datasource.dart';
 import '../../features/owner/appointments/data/sources/appointments_hybrid_datasource.dart';
@@ -36,7 +36,7 @@ class AppDependencies {
   late final CataloguesRepository cataloguesRepository;
 
   // ==================== APPOINTMENTS ====================
-  late final AppointmentsRepository appointmentsRepository;
+  late final AppointmentsRepositoryImpl appointmentsRepository;
 
   AppDependencies._() {
     _initCore();
@@ -61,9 +61,9 @@ class AppDependencies {
     );
   }
 
-  // ==================== CATALOGUES INIT ====================
+  // CATALOGUES INIT 
   void _initCatalogues() {
-    // TODO(backend): cambiar a CataloguesRemoteDatasource(dio)
+  //TODO(backend): cambiar a CataloguesRemoteDatasource(dio)
     _cataloguesDatasource = CataloguesLocalDatasource(dio);
 
     cataloguesRepository = CataloguesRepositoryImpl(
@@ -78,7 +78,7 @@ class AppDependencies {
       memory: AppointmentsMemoryDatasource(),
     );
 
-    appointmentsRepository = AppointmentsRepository(
+    appointmentsRepository = AppointmentsRepositoryImpl(
       datasource: appointmentsDatasource,
     );
   }

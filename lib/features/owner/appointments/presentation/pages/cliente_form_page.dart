@@ -73,7 +73,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
             Icon(
               Icons.person_add_alt_1,
               size: 80,
-              color: Theme.of(context).primaryColor.withOpacity(0.5),
+              color: Theme.of(context).primaryColor.withValues(alpha:0.5),
             ),
             const SizedBox(height: 24),
 

@@ -1,19 +1,18 @@
 import 'package:agenda_app/core/di/auth_di.dart';
-import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
-import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/create_appointment.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../catalogues/data/models/service.dart';
-
-
 class AppointmentFormPage extends ConsumerStatefulWidget {
-  final AppointmentsRepository repo;
+  final AppointmentsRepositoryImpl repo;
 
   const AppointmentFormPage({
     super.key,
@@ -25,8 +24,7 @@ class AppointmentFormPage extends ConsumerStatefulWidget {
       _AppointmentFormPageState();
 }
 
-class _AppointmentFormPageState
-    extends ConsumerState<AppointmentFormPage> {
+class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
 
@@ -74,104 +72,125 @@ class _AppointmentFormPageState
     }
   }
 
+  /// ✅ MÉTODO PRINCIPAL PARA GUARDAR (USAR SOLO ESTE)
   Future<void> _saveAppointment() async {
-  final clienteState = ref.read(clienteProvider);
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
-  if (clienteState.cliente == null) {
+    try {
+      // 1. Validar cliente
+      final clienteState = ref.read(clienteProvider);
+
+      if (clienteState.cliente == null) {
+        _showError('Debe seleccionar o crear un cliente');
+        return;
+      }
+
+      // 2. Validar servicios
+      if (_selectedServices.isEmpty) {
+        _showError('Debe seleccionar al menos un servicio');
+        return;
+      }
+
+      // 3. Construir fecha/hora completa
+      final startAt = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      // 4. Crear el input
+      final input = CreateAppointmentInput(
+        customerName: clienteState.cliente!.nombre,
+        customerPhone: clienteState.cliente!.celular,
+        startAt: startAt,
+        services: List<ServiceEntity>.from(_selectedServices),
+        source: _selectedSource,
+        notes: _notesController.text,
+      );
+
+      // 5. ✅ Usar el Use Case
+      final createUseCase = CreateAppointmentUseCase(widget.repo);
+      await createUseCase.call(input);
+
+      if (!mounted) return;
+
+      // 6. Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Cita creada exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // 7. Cerrar y devolver true
+      context.pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Error al crear la cita: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debe seleccionar o crear un cliente')),
-    );
-    return;
-  }
-
-  if (_selectedServices.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Selecciona al menos un servicio')),
-    );
-    return;
-  }
-
-  setState(() => _isSaving = true);
-
-  try {
-    final startAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
-
-    final input = CreateAppointmentInput(
-      customerName: clienteState.cliente!.nombre,
-      customerPhone: clienteState.cliente!.celular,
-      startAt: startAt,
-      services: List<ServiceEntity>.from(_selectedServices),
-      source: _selectedSource,
-      notes: _notesController.text,
-    );
-
-    await widget.repo.createFromInput(input);
-
-    if (!mounted) return;
-
-    // Cerrar devolviendo true al padre
-    context.pop(true);
-  } finally {
-    if (mounted) setState(() => _isSaving = false);
-  }
-}
-
-
-Widget _buildClienteSelector() {
-  final clienteState = ref.watch(clienteProvider);
-
-  if (clienteState.cliente == null) {
-    return OutlinedButton.icon(
-      onPressed: _irABuscarCliente,
-      icon: const Icon(Icons.person_search),
-      label: const Text('Buscar o crear cliente'),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(16),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
       ),
     );
   }
 
-  return Card(
-    color: Colors.green[50],
-    child: ListTile(
-      leading: const CircleAvatar(
-        child: Icon(Icons.person),
-      ),
-      title: Text(clienteState.cliente!.nombre),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('CI: ${clienteState.cliente!.cedula}'),
-          Text('Tel: ${clienteState.cliente!.celular}'),
-        ],
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.swap_horiz), // más claro que la X
-        onPressed: _irABuscarCliente,       // en vez de limpiar solo
-      ),
-    ),
-  );
-}
+  Widget _buildClienteSelector() {
+    final clienteState = ref.watch(clienteProvider);
 
-Future<void> _irABuscarCliente() async {
-  final clienteSeleccionado = await context.push(
-    '/owner/appointments/cliente/buscar',
-  );
-  
-  // El cliente ya está en el provider
-  if (clienteSeleccionado != null && mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cliente seleccionado')),
+    if (clienteState.cliente == null) {
+      return OutlinedButton.icon(
+        onPressed: _irABuscarCliente,
+        icon: const Icon(Icons.person_search),
+        label: const Text('Buscar o crear cliente'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.all(16),
+        ),
+      );
+    }
+
+    return Card(
+      color: Colors.green[50],
+      child: ListTile(
+        leading: const CircleAvatar(
+          child: Icon(Icons.person),
+        ),
+        title: Text(clienteState.cliente!.nombre),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('CI: ${clienteState.cliente!.cedula}'),
+            Text('Tel: ${clienteState.cliente!.celular}'),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.swap_horiz),
+          onPressed: _irABuscarCliente,
+        ),
+      ),
     );
   }
-}
 
+  Future<void> _irABuscarCliente() async {
+    final clienteSeleccionado = await context.push(
+      '/owner/appointments/cliente/buscar',
+    );
+
+    if (clienteSeleccionado != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cliente seleccionado')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,21 +201,24 @@ Future<void> _irABuscarCliente() async {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nueva Cita'),
-       leading: IconButton(
-      icon: const Icon(Icons.close),
-      onPressed: () => context.pop(),)),
+      appBar: AppBar(
+        title: const Text('Nueva Cita'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             /// 👤 CLIENTE
-           _buildSection(
-  title: 'Cliente',
-  icon: Icons.person,
-  child: _buildClienteSelector(), // 👈 Cambiar esto
-),
+            _buildSection(
+              title: 'Cliente',
+              icon: Icons.person,
+              child: _buildClienteSelector(),
+            ),
 
             const SizedBox(height: 16),
 
@@ -247,25 +269,24 @@ Future<void> _irABuscarCliente() async {
               ),
             ),
 
-         const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: _isSaving ? null : _saveAppointment,
-    style: ElevatedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      backgroundColor: const Color(0xFF8B5CF6),
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-    child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
-  ),
-),
-
-
+            /// 💾 BOTÓN GUARDAR
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveAppointment,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
+              ),
+            ),
           ],
         ),
       ),
@@ -321,38 +342,38 @@ SizedBox(
   }
 
   Widget _buildServicesSelector() {
-  return Column(
-    children: _services.map((s) {
-      //  Convertir Service a ServiceEntity para comparar
-      final serviceEntity = ServiceEntity(
-        id: s.id,
-        name: s.name,
-        durationMinutes: s.durationMinutes,
-      );
-      
-      // Verificar si ya está seleccionado (comparando por id)
-      final isSelected = _selectedServices.any((selected) => selected.id == s.id);
-      
-      return CheckboxListTile(
-        title: Text(s.name),
-        subtitle: Text('${s.durationLabel} • \$${s.price}'),
-        value: isSelected,
-        onChanged: (checked) {
-          setState(() {
-            if (checked == true) {
-              // Agregar como entity
-              _selectedServices.add(serviceEntity);
-            } else {
-              // Remover por id
-              _selectedServices.removeWhere((item) => item.id == s.id);
-            }
-          });
-        },
-      );
-    }).toList(),
-  );
-}
+    return Column(
+      children: _services.map((s) {
+        // Convertir Service a ServiceEntity para comparar
+        final serviceEntity = ServiceEntity(
+          id: s.id,
+          name: s.name,
+          durationMinutes: s.durationMinutes,
+        );
 
+        // Verificar si ya está seleccionado (comparando por id)
+        final isSelected =
+            _selectedServices.any((selected) => selected.id == s.id);
+
+        return CheckboxListTile(
+          title: Text(s.name),
+          subtitle: Text('${s.durationMinutes}m • \$${s.price}'),
+          value: isSelected,
+          onChanged: (checked) {
+            setState(() {
+              if (checked == true) {
+                // Agregar como entity
+                _selectedServices.add(serviceEntity);
+              } else {
+                // Remover por id
+                _selectedServices.removeWhere((item) => item.id == s.id);
+              }
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
 
   Widget _buildSourceSelector() {
     return Wrap(
@@ -374,8 +395,7 @@ SizedBox(
             ],
           ),
           selected: isSelected,
-          onSelected: (_) =>
-              setState(() => _selectedSource = source['id']),
+          onSelected: (_) => setState(() => _selectedSource = source['id']),
           selectedColor: const Color(0xFF8B5CF6),
           labelStyle: TextStyle(
             color: isSelected ? Colors.white : Colors.black87,

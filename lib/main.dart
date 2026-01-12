@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments_memory_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,8 +16,8 @@ void main() async {
     ProviderScope(
       child: classic_provider.MultiProvider(  //  Usar el alias
         providers: [
-          classic_provider.Provider<AppointmentsRepository>(  //  Usar el alias
-            create: (_) => AppointmentsRepository(
+          classic_provider.Provider<AppointmentsRepositoryImpl>(  //  Usar el alias
+            create: (_) => AppointmentsRepositoryImpl(
               datasource: AppointmentsMemoryDatasource(),
             ),
           ),

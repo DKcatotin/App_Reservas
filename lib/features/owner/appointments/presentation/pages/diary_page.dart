@@ -1,14 +1,17 @@
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/delete_appointment.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_appointments_by_day.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_appointment.dart';
+import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
-import '../../data/repositories/appointments_repository.dart';
 import '../widgets/appointment_card.dart';
 import 'appointment_form_page.dart';
-import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 
 class DiaryPage extends StatefulWidget {
-  final AppointmentsRepository repo;
+  final AppointmentsRepositoryImpl repo;
 
   const DiaryPage({
     super.key,
@@ -20,83 +23,149 @@ class DiaryPage extends StatefulWidget {
 }
 
 class _DiaryPageState extends State<DiaryPage> {
-  late final AppointmentsRepository repo;
+  // Use Cases
+  late final GetAppointmentsByDayUseCase _getAppointmentsByDayUseCase;
+  late final UpdateAppointmentUseCase _updateAppointmentUseCase;
+  late final DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
+  // State
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  List<Appointment> _allAppointments = [];
-  List<Appointment> _filteredAppointments = [];
+  List<AppointmentEntity> _allAppointments = []; //  CAMBIO: Entity en vez de Model
+  List<AppointmentEntity> _filteredAppointments = []; //  CAMBIO: Entity en vez de Model
 
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    repo = widget.repo;
+    
+    // ✅ Inicializar Use Cases
+    _getAppointmentsByDayUseCase = GetAppointmentsByDayUseCase(widget.repo);
+    _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repo);
+    _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repo);
+
     _selectedDay = _focusedDay;
     _loadAllAppointments();
   }
 
+  /// Carga todas las citas
   Future<void> _loadAllAppointments() async {
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final all = await repo.getAll();
-      setState(() {
-        _allAppointments = all;
-        _isLoading = false;
-      });
+  try {
+    final all = await widget.repo.getAll();
+    
+    // ✅ CORRECCIÓN: Eliminar duplicados basándose en el ID
+    final Map<String, AppointmentEntity> uniqueMap = {};
+    for (var appointment in all) {
+      uniqueMap[appointment.id] = appointment;
+    }
+    final uniqueAppointments = uniqueMap.values.toList();
+    
+    setState(() {
+      _allAppointments = uniqueAppointments; // ✅ Usar lista sin duplicados
+      _isLoading = false;
+    });
 
-      await _loadAppointmentsForSelectedDay();
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar citas: $e')),
-        );
-      }
+    await _loadAppointmentsForSelectedDay();
+  } catch (e) {
+    setState(() => _isLoading = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar citas: $e')),
+      );
     }
   }
-Future<void> _handleAppointmentDeleted(String id) async {
-  await repo.delete(id);
-
-  setState(() {
-    _allAppointments.removeWhere((a) => a.id == id);
-    _filteredAppointments.removeWhere((a) => a.id == id);
-  });
 }
 
+  /// Carga citas del día seleccionado
   Future<void> _loadAppointmentsForSelectedDay() async {
     final day = _selectedDay ?? DateTime.now();
-    final items = await repo.getByDay(day);
+    
+    // ✅ Usar use case
+    final items = await _getAppointmentsByDayUseCase.call(day);
 
     setState(() {
       _filteredAppointments = items;
     });
   }
 
-  List<Appointment> _getAppointmentsForDay(DateTime day) {
+  /// Obtiene citas de un día específico (para el calendario)
+  List<AppointmentEntity> _getAppointmentsForDay(DateTime day) {
     final items =
         _allAppointments.where((a) => isSameDate(a.startAt, day)).toList();
     items.sort((a, b) => a.startAt.compareTo(b.startAt));
     return items;
   }
 
-Future<void> _handleAppointmentUpdated(Appointment updated) async {
-  // 1) Persistir en la “fuente de verdad” (memory datasource hoy, backend mañana)
-  await repo.update(updated);
+  /// Maneja actualización de una cita
+  Future<void> _handleAppointmentUpdated(AppointmentEntity updated) async {
+    try {
+      // ✅ Usar use case para actualizar
+      await _updateAppointmentUseCase.call(updated);
 
-  // 2) Actualizar UI local (para que se vea inmediato sin recargar todo)
-  setState(() {
-    final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
-    if (allIndex != -1) _allAppointments[allIndex] = updated;
+      // Actualizar UI local
+      setState(() {
+        final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
+        if (allIndex != -1) _allAppointments[allIndex] = updated;
 
-    final filteredIndex =
-        _filteredAppointments.indexWhere((a) => a.id == updated.id);
-    if (filteredIndex != -1) _filteredAppointments[filteredIndex] = updated;
-  });
-}
+        final filteredIndex =
+            _filteredAppointments.indexWhere((a) => a.id == updated.id);
+        if (filteredIndex != -1) _filteredAppointments[filteredIndex] = updated;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Cita actualizada exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al actualizar cita: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Maneja eliminación de una cita
+  Future<void> _handleAppointmentDeleted(String id) async {
+    try {
+      // ✅ Usar use case para eliminar
+      await _deleteAppointmentUseCase.call(id);
+
+      setState(() {
+        _allAppointments.removeWhere((a) => a.id == id);
+        _filteredAppointments.removeWhere((a) => a.id == id);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Cita eliminada exitosamente'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar cita: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +192,7 @@ Future<void> _handleAppointmentUpdated(Appointment updated) async {
                       ),
                     ],
                   ),
-                  child: TableCalendar(
+                  child: TableCalendar<AppointmentEntity>(
                     firstDay: DateTime.utc(2024, 1, 1),
                     lastDay: DateTime.utc(2026, 12, 31),
                     focusedDay: _focusedDay,
@@ -183,13 +252,11 @@ Future<void> _handleAppointmentUpdated(Appointment updated) async {
                             itemBuilder: (_, i) {
                               final appointment =
                                   _filteredAppointments[i];
-
                               return AppointmentCard(
-  a: appointment,
-  onAppointmentUpdated: _handleAppointmentUpdated,
-  onAppointmentDeleted: _handleAppointmentDeleted,
-);
-
+                                a: appointment,
+                                onAppointmentUpdated: _handleAppointmentUpdated,
+                                onAppointmentDeleted: _handleAppointmentDeleted,
+                              );
                             },
                           ),
                         ),
@@ -201,10 +268,9 @@ Future<void> _handleAppointmentUpdated(Appointment updated) async {
           final created = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => AppointmentFormPage(repo: repo),
+              builder: (_) => AppointmentFormPage(repo: widget.repo),
             ),
           );
-
           if (created == true) {
             _loadAllAppointments();
           }

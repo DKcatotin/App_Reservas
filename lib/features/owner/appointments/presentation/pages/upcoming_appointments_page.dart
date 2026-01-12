@@ -1,11 +1,13 @@
-import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upcoming_appointments.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../data/repositories/appointments_repository.dart';
 
 class UpcomingAppointmentsPage extends StatefulWidget {
-  final AppointmentsRepository repo;
+  final AppointmentsRepositoryImpl repo;
 
   const UpcomingAppointmentsPage({
     super.key,
@@ -13,18 +15,23 @@ class UpcomingAppointmentsPage extends StatefulWidget {
   });
 
   @override
-  State<UpcomingAppointmentsPage> createState() => _UpcomingAppointmentsPageState();
+  State<UpcomingAppointmentsPage> createState() =>
+      _UpcomingAppointmentsPageState();
 }
 
 class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
-  List<Appointment> _upcomingAppointments = [];
-  Map<String, List<Appointment>> _groupedByWeek = {};
-  bool _loading = true;
+  late final GetUpcomingAppointmentsUseCase _getUpcomingUseCase;
+
+  List<AppointmentEntity> _upcomingAppointments = [];
+  Map<String, List<AppointmentEntity>> _groupedByWeek = {};
+
+  bool _loading = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _getUpcomingUseCase = GetUpcomingAppointmentsUseCase(widget.repo);
     _loadUpcomingAppointments();
   }
 
@@ -35,7 +42,7 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
         _error = null;
       });
 
-      final data = await widget.repo.getUpcoming();
+      final data = await _getUpcomingUseCase.call();
 
       if (mounted) {
         setState(() {
@@ -54,460 +61,281 @@ class _UpcomingAppointmentsPageState extends State<UpcomingAppointmentsPage> {
     }
   }
 
-  Map<String, List<Appointment>> _groupAppointmentsByWeek(List<Appointment> appointments) {
-    Map<String, List<Appointment>> grouped = {};
+  Map<String, List<AppointmentEntity>> _groupAppointmentsByWeek(
+    List<AppointmentEntity> appointments,
+  ) {
+    final Map<String, List<AppointmentEntity>> grouped = {};
 
-    for (var appointment in appointments) {
-      DateTime appointmentDate = appointment.startAt;
-      DateTime weekStart = _getWeekStart(appointmentDate);
-      DateTime weekEnd = weekStart.add(const Duration(days: 6));
+    for (final appointment in appointments) {
+      final date = appointment.startAt;
+      final weekStart = date.subtract(Duration(days: date.weekday - 1));
+      final weekKey = DateFormat('yyyy-MM-dd').format(weekStart);
 
-      String weekKey = '${DateFormat('dd MMM').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
-
-      if (grouped[weekKey] == null) {
+      if (!grouped.containsKey(weekKey)) {
         grouped[weekKey] = [];
       }
       grouped[weekKey]!.add(appointment);
     }
 
-    grouped.forEach((key, value) {
-      value.sort((a, b) => a.startAt.compareTo(b.startAt));
-    });
-
-    return grouped;
-  }
-
-  DateTime _getWeekStart(DateTime date) {
-    int daysToSubtract = date.weekday - 1;
-    return DateTime(date.year, date.month, date.day).subtract(Duration(days: daysToSubtract));
-  }
-
-  Color _getStatusColor(String statusLabel) {
-    switch (statusLabel.toLowerCase()) {
-      case 'pendiente':
-        return const Color(0xFFFBBF24);
-      case 'confirmada':
-        return const Color(0xFF10B981);
-      case 'terminada':
-        return const Color(0xFF10B981);
-      case 'cancelada':
-        return const Color(0xFFEF4444);
-      default:
-        return Colors.grey;
+    final sortedKeys = grouped.keys.toList()..sort();
+    final sortedMap = <String, List<AppointmentEntity>>{};
+    for (final key in sortedKeys) {
+      sortedMap[key] = grouped[key]!;
     }
+
+    return sortedMap;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          // HEADER ELEGANTE CON GRADIENTE
-          // HEADER ELEGANTE CON GRADIENTE
-SliverAppBar(
-  expandedHeight: 200,
-  pinned: true,
-  backgroundColor: const Color(0xFF7C3AED),
-  leading: Container(
-    margin: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
-      onPressed: () => context.pop(),
-    ),
-  ),
-  flexibleSpace: FlexibleSpaceBar(
-    centerTitle: false,
-    titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
-    title: const Text(
-      'Citas Futuras',
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 20,
-        letterSpacing: -0.5,
+      appBar: AppBar(
+        title: const Text('Citas Futuras'),
+        backgroundColor: const Color(0xFF8B5CF6),
+        foregroundColor: Colors.white,
       ),
-    ),
-    background: Stack(
-      fit: StackFit.expand,
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return _buildErrorView();
+    }
+
+    if (_upcomingAppointments.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadUpcomingAppointments,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _groupedByWeek.length,
+        itemBuilder: (context, index) {
+          final weekKey = _groupedByWeek.keys.elementAt(index);
+          final appointments = _groupedByWeek[weekKey]!;
+
+          return _buildWeekSection(weekKey, appointments);
+        },
+      ),
+    );
+  }
+
+  Widget _buildWeekSection(
+      String weekKey, List<AppointmentEntity> appointments) {
+    final weekStart = DateTime.parse(weekKey);
+    final weekEnd = weekStart.add(const Duration(days: 6));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // GRADIENTE DE FONDO
-        Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            '${DateFormat('d MMM', 'es').format(weekStart)} - ${DateFormat('d MMM yyyy', 'es').format(weekEnd)}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF8B5CF6),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF7C3AED).withOpacity(0.3),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
           ),
         ),
-        
-        // CONTADOR DE CITAS (Posicionado arriba del título)
-        if (!_loading)
-          Positioned(
-            left: 24,
-            bottom: 50, 
-            child: Text(
-              '${_upcomingAppointments.length} ${_upcomingAppointments.length == 1 ? 'cita programada' : 'citas programadas'}',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
-              ),
+        ...appointments
+            .map((appointment) => _buildAppointmentCard(appointment)),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+Widget _buildAppointmentCard(AppointmentEntity appointment) {
+  final time = DateFormat('HH:mm').format(appointment.startAt);
+  final serviceName = appointment.services.isNotEmpty
+      ? appointment.services.first.name
+      : 'Sin servicio';
+  final statusColor = _getStatusColor(appointment.status.code);
+
+  return Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () async {
+        // Pasar callbacks para poder editar/eliminar
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AppointmentDetailPage(
+              appointment: appointment,
+              //  AGREGAR CALLBACKS
+              onAppointmentUpdated: (updated) async {
+                // Recargar la lista cuando se actualice
+                await _loadUpcomingAppointments();
+              },
+              onAppointmentDeleted: (id) async {
+                // Recargar la lista cuando se elimine
+                await _loadUpcomingAppointments();
+              },
             ),
           ),
-      ],
-    ),
-  ),
-),
+        );
 
-
-          // CONTENIDO
-          if (_loading)
-            SliverFillRemaining(
-              child: Center(
+        // Si se modificó, recargar
+        if (result != null) {
+          await _loadUpcomingAppointments();
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+              // FECHA Y HORA
+              Container(
+                width: 70,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7C3AED).withOpacity(0.2),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
-                          strokeWidth: 3,
-                        ),
+                    Text(
+                      DateFormat('dd').format(appointment.startAt),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
+                        height: 1,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 4),
                     Text(
-                      'Cargando citas...',
+                      DateFormat('MMM', 'es')
+                          .format(appointment.startAt)
+                          .toUpperCase(),
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: Colors.grey[600],
-                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const Divider(height: 12),
+                    Text(
+                      time,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7C3AED),
                       ),
                     ),
                   ],
                 ),
               ),
-            )
-          else if (_error != null)
-            SliverFillRemaining(child: _buildErrorView())
-          else if (_upcomingAppointments.isEmpty)
-            SliverFillRemaining(child: _buildEmptyState())
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(24),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final weekKey = _groupedByWeek.keys.toList()[index];
-                    final appointments = _groupedByWeek[weekKey]!;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: _buildWeekSection(weekKey, appointments),
-                    );
-                  },
-                  childCount: _groupedByWeek.length,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+              const SizedBox(width: 16),
 
-  Widget _buildWeekSection(String weekTitle, List<Appointment> appointments) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HEADER DE LA SEMANA
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF7C3AED).withOpacity(0.1),
-                  const Color(0xFF9333EA).withOpacity(0.05),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.calendar_month,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        weekTitle,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                          letterSpacing: -0.3,
-                        ),
+              // INFO
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment.customer.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                        letterSpacing: -0.3,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${appointments.length} ${appointments.length == 1 ? 'cita' : 'citas'}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.spa,
+                          size: 14,
+                          color: Colors.grey[400],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // LISTA DE CITAS
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildAppointmentCard(appointments[index]);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppointmentCard(Appointment appointment) {
-  final time = TimeOfDay.fromDateTime(appointment.startAt).format(context);
-  final serviceName = appointment.services.isNotEmpty 
-      ? appointment.services.first.name 
-      : 'Sin servicio';
-  final statusColor = _getStatusColor(appointment.status.label);
-
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.grey[50],
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.grey[200]!, width: 1),
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          //  CORREGIDO: Navegar al detalle con el appointment como extra
-          final result = await context.push(
-            '/owner/appointments/${appointment.id}',
-            extra: appointment,
-          );
-          
-          //  Si se modificó o eliminó, recargar datos
-          if (result != null) {
-            await _loadUpcomingAppointments();
-          }
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-              children: [
-                // FECHA Y HORA
-                Container(
-                  width: 70,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        DateFormat('dd').format(appointment.startAt),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7C3AED),
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('MMM', 'es').format(appointment.startAt).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const Divider(height: 12),
-                      Text(
-                        time,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7C3AED),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // INFO
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        appointment.customer.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.spa,
-                            size: 14,
-                            color: Colors.grey[400],
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            serviceName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w400,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              serviceName,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w400,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        // STATUS BADGE
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            appointment.status.label,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        // STAFF INFO SI EXISTE
+                        if (appointment.staff != null)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 14,
+                                color: Colors.grey[400],
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          // STATUS BADGE
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              appointment.status.label,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
+                              const SizedBox(width: 4),
+                              Text(
+                                appointment.staff!.name,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                          const Spacer(),
-                          // STAFF INFO SI EXISTE
-                          if (appointment.staff != null)
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person_outline,
-                                  size: 14,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  appointment.staff!.name,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
 
-                // FLECHA
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Color(0xFF7C3AED),
-                    size: 14,
-                  ),
+              // FLECHA
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFF7C3AED),
+                  size: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -525,7 +353,7 @@ SliverAppBar(
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -537,7 +365,7 @@ SliverAppBar(
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7C3AED).withOpacity(0.08),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -583,7 +411,7 @@ SliverAppBar(
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withOpacity(0.1),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -606,7 +434,8 @@ SliverAppBar(
               onPressed: _loadUpcomingAppointments,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7C3AED),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -617,5 +446,20 @@ SliverAppBar(
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String statusCode) {
+    switch (statusCode) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }

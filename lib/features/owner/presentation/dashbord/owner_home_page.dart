@@ -1,11 +1,13 @@
-import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_appointments_by_day.dart';
+import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upcoming_appointments.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/storage/token_storage.dart';
-import '../../appointments/data/repositories/appointments_repository.dart';
+import '../../appointments/data/repositories/appointments_repository_impl.dart';
 
 class OwnerHomePage extends StatefulWidget {
-  final AppointmentsRepository repo;
+  final AppointmentsRepositoryImpl repo;
 
   const OwnerHomePage({
     super.key,
@@ -17,57 +19,73 @@ class OwnerHomePage extends StatefulWidget {
 }
 
 class _OwnerHomePageState extends State<OwnerHomePage> {
-  //  VARIABLES DE ESTADO (SOLO UNA VEZ)
-  List<Appointment> _servicios = [];
-  List<Appointment> _upcoming = [];
-  bool _loading = true;
-  bool _loadingUpcoming = true;
-  bool _isInitialized = false;
-  String? _error;
+  // ✅ Declarar use cases
+  late final GetAppointmentsByDayUseCase _getTodayUseCase;
+  late final GetUpcomingAppointmentsUseCase _getUpcomingUseCase;
+
+  // ✅ CAMBIAR: Appointment → AppointmentEntity
+  List<AppointmentEntity> _servicios = [];
+  List<AppointmentEntity> _upcoming = [];
   
+  bool _isLoading = true;
+   bool _isInitialized = false;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    // Cargar datos DESPUÉS del primer frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAllData();
-    });
-  }
-
-  Future<void> _loadAllData() async {
-    if (!mounted) return;
+    // ✅ Inicializar use cases
+    _getTodayUseCase = GetAppointmentsByDayUseCase(widget.repo);
+    _getUpcomingUseCase = GetUpcomingAppointmentsUseCase(widget.repo);
     
-    setState(() {
-      _loading = true;
-      _loadingUpcoming = true;
-    });
-
-    try {
-      await Future.wait([
-        _loadServicios(),
-        _loadUpcoming(),
-      ]);
-    } catch (e) {
-      debugPrint('Error en _loadAllData: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _loadingUpcoming = false;
-          _isInitialized = true;
-        });
-      }
-    }
+    _loadData();
   }
 
-  Future<void> _loadServicios() async {
+ Future<void> _loadData() async {
+  setState(() => _isLoading = true);
+  
+  await Future.wait([
+    _loadServicios(),
+    _loadUpcoming(),
+  ]);
+  
+  if (mounted) {
+    setState(() {
+      _isLoading = false;
+      _isInitialized = true; // ✅ Marcar como inicializado
+    });
+  }
+}
+  Future<void> _loadUpcoming() async {
   try {
-    final data = await widget.repo.getToday();
+    // ✅ Usar use case
+    final data = await _getUpcomingUseCase.call();
     
     if (mounted) {
       setState(() {
-        //  Eliminar duplicados basándose en el ID de la cita
-        final Map<String, Appointment> uniqueMap = {};
+        // Filtrar para excluir las citas de HOY (ya se hace en el use case)
+        // El use case ya devuelve solo citas futuras (desde mañana)
+        _upcoming = data;
+      });
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _upcoming = [];
+      });
+    }
+  }
+}
+
+Future<void> _loadServicios() async {
+  try {
+    // ✅ Usar use case para obtener citas de hoy
+    final data = await _getTodayUseCase.today();
+    
+    if (mounted) {
+      setState(() {
+        // Eliminar duplicados basándose en el ID de la cita
+        final Map<String, AppointmentEntity> uniqueMap = {};
         for (var appointment in data) {
           uniqueMap[appointment.id] = appointment;
         }
@@ -83,30 +101,9 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     }
   }
 }
-  Future<void> _loadUpcoming() async {
-  try {
-    final data = await widget.repo.getUpcoming();
-    if (mounted) {
-      setState(() {
-        //  Filtrar para excluir las citas de HOY
-        final today = DateTime.now();
-        final todayStart = DateTime(today.year, today.month, today.day);
-        final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
-        
-        // Solo incluir citas que NO sean de hoy
-        _upcoming = data.where((appointment) {
-          return appointment.startAt.isAfter(todayEnd);
-        }).toList();
-      });
-    }
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _upcoming = [];
-      });
-    }
-  }
-}
+
+
+  
 
   Future<void> _logout(BuildContext context) async {
     await TokenStorage().clear();
@@ -140,7 +137,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
   @override
   Widget build(BuildContext context) {
     // PANTALLA DE CARGA
-    if (!_isInitialized || _loading || _loadingUpcoming) {
+    if (!_isInitialized || _isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFFAFAFA),
         body: Center(
@@ -155,7 +152,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF7C3AED).withOpacity(0.2),
+                      color: const Color(0xFF7C3AED).withValues(alpha:0.2),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -196,7 +193,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: RefreshIndicator(
-        onRefresh: _loadAllData,
+        onRefresh: _loadData,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -215,7 +212,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C3AED).withOpacity(0.3),
+            color: const Color(0xFF7C3AED).withValues(alpha:0.3),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -234,7 +231,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha:0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -271,7 +268,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 _getGreeting(),
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha:0.9),
                 ),
               ),
               const SizedBox(height: 8),
@@ -376,7 +373,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             TextButton.icon(
               onPressed: () async {
                 await context.push('/owner/appointments/upcoming');
-                await _loadAllData();
+                await _loadData();
               },
               icon: const Icon(Icons.arrow_forward, size: 18),
               label: const Text('Ver todas'),
@@ -425,7 +422,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             icon: Icons.add_circle_outline,
             onPressed: () async {
               await context.push('/owner/appointments/cliente/buscar');
-              await _loadAllData();
+              await _loadData();
             },
           ),
           const SizedBox(height: 12),
@@ -449,7 +446,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha:0.03),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -464,7 +461,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 _buildNavItem(Icons.home_rounded, 'Inicio', true, () {}),
                 _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {
                   await context.push('/owner/agenda'); 
-                  await _loadAllData();
+                  await _loadData();
                 }),
                 _buildNavItem(Icons.people_rounded, 'Clientas', false, () {}),
                 _buildNavItem(Icons.person_rounded, 'Perfil', false, () {}),
@@ -489,7 +486,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -501,7 +498,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -530,31 +527,35 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     );
   }
 
-  Widget _buildPremiumCitaCard(Appointment cita) {
-    final time = TimeOfDay.fromDateTime(cita.startAt).format(context);
-    final serviceName = cita.services.isNotEmpty ? cita.services.first.name : 'Sin servicio';
-    final statusColor = _getStatusColor(cita.status.label);
+Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointment → AppointmentEntity
+  final time = TimeOfDay.fromDateTime(cita.startAt).format(context);
+  final serviceName = cita.services.isNotEmpty ? cita.services.first.name : 'Sin servicio';
+  final statusColor = _getStatusColor(cita.status.label);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[100]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () async { 
-            await context.push('/owner/agenda'); 
-            await _loadAllData(); 
-          },
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.grey[100]!, width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 15,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          // ✅ CORRECCIÓN: Navegar al detalle con la cita
+          await context.push(
+            '/owner/appointments/${cita.id}',
+            extra: cita, // Ya es AppointmentEntity
+          );
+          await _loadData();
+        },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -572,7 +573,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withOpacity(0.08),
+                    color: const Color(0xFF7C3AED).withValues(alpha:0.08),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
@@ -630,7 +631,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.15),
+                          color: statusColor.withValues(alpha:0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -648,7 +649,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withOpacity(0.08),
+                    color: const Color(0xFF7C3AED).withValues(alpha:0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -680,7 +681,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C3AED).withOpacity(0.3),
+            color: const Color(0xFF7C3AED).withValues(alpha:0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -724,7 +725,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.2), width: 2),
+        border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha:0.2), width: 2),
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -763,7 +764,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha:0.04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -774,7 +775,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF7C3AED).withOpacity(0.08),
+                color: const Color(0xFF7C3AED).withValues(alpha:0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -819,7 +820,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withOpacity(0.1),
+                color: const Color(0xFFEF4444).withValues(alpha:0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -836,7 +837,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _loadAllData,
+              onPressed: _loadData,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7C3AED),
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
