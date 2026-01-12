@@ -36,7 +36,7 @@ class UpdateAppointmentUseCase {
     final updated = appointment.copyWith(
       status: appointment.status.copyWith(
         code: statusCode,
-        label: statusLabel, // ✅ CAMBIO: name → label
+        label: statusLabel, // CAMBIO: name → label
       ),
     );
     await call(updated);

@@ -30,7 +30,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       _cacheTime != null &&
       DateTime.now().difference(_cacheTime!) < _cacheDuration;
 
-  void _invalidateCache() {
+  void invalidateCache() {
     _cache = null;
     _cacheTime = null;
   }
@@ -70,20 +70,20 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   Future<void> create(AppointmentEntity appointment) async {
     final model = _mapToModel(appointment);
     await datasource.create(model);
-    _invalidateCache();
+    invalidateCache();
   }
 
   @override
   Future<void> update(AppointmentEntity appointment) async {
     final model = _mapToModel(appointment);
     await datasource.update(model);
-    _invalidateCache();
+    invalidateCache();
   }
 
   @override
   Future<void> delete(String id) async {
     await datasource.delete(id);
-    _invalidateCache();
+    invalidateCache();
   }
 
   // ==================== MAPPERS ====================

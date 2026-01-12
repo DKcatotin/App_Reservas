@@ -6,9 +6,10 @@ import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_a
 import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:go_router/go_router.dart'; 
 
 import '../widgets/appointment_card.dart';
-import 'appointment_form_page.dart';
+
 
 class DiaryPage extends StatefulWidget {
   final AppointmentsRepositoryImpl repo;
@@ -31,17 +32,15 @@ class _DiaryPageState extends State<DiaryPage> {
   // State
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-
-  List<AppointmentEntity> _allAppointments = []; //  CAMBIO: Entity en vez de Model
-  List<AppointmentEntity> _filteredAppointments = []; //  CAMBIO: Entity en vez de Model
-
+  List<AppointmentEntity> _allAppointments = [];
+  List<AppointmentEntity> _filteredAppointments = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     
-    // ✅ Inicializar Use Cases
+    //  Inicializar Use Cases
     _getAppointmentsByDayUseCase = GetAppointmentsByDayUseCase(widget.repo);
     _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repo);
     _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repo);
@@ -53,11 +52,14 @@ class _DiaryPageState extends State<DiaryPage> {
   /// Carga todas las citas
   Future<void> _loadAllAppointments() async {
   setState(() => _isLoading = true);
-
+  
   try {
+    // ✅ CORRECCIÓN: Invalidar caché antes de cargar
+    widget.repo.invalidateCache(); // Forzar recarga desde datasource
+    
     final all = await widget.repo.getAll();
     
-    // ✅ CORRECCIÓN: Eliminar duplicados basándose en el ID
+    // ✅ Eliminar duplicados basándose en el ID
     final Map<String, AppointmentEntity> uniqueMap = {};
     for (var appointment in all) {
       uniqueMap[appointment.id] = appointment;
@@ -65,10 +67,10 @@ class _DiaryPageState extends State<DiaryPage> {
     final uniqueAppointments = uniqueMap.values.toList();
     
     setState(() {
-      _allAppointments = uniqueAppointments; // ✅ Usar lista sin duplicados
+      _allAppointments = uniqueAppointments;
       _isLoading = false;
     });
-
+    
     await _loadAppointmentsForSelectedDay();
   } catch (e) {
     setState(() => _isLoading = false);
@@ -84,11 +86,17 @@ class _DiaryPageState extends State<DiaryPage> {
   Future<void> _loadAppointmentsForSelectedDay() async {
     final day = _selectedDay ?? DateTime.now();
     
-    // ✅ Usar use case
+    // Usar use case
     final items = await _getAppointmentsByDayUseCase.call(day);
-
+    
+    // Eliminar duplicados también aquí por ID
+    final Map<String, AppointmentEntity> uniqueMap = {};
+    for (var appointment in items) {
+      uniqueMap[appointment.id] = appointment;
+    }
+    
     setState(() {
-      _filteredAppointments = items;
+      _filteredAppointments = uniqueMap.values.toList();
     });
   }
 
@@ -103,9 +111,9 @@ class _DiaryPageState extends State<DiaryPage> {
   /// Maneja actualización de una cita
   Future<void> _handleAppointmentUpdated(AppointmentEntity updated) async {
     try {
-      // ✅ Usar use case para actualizar
+      //  Usar use case para actualizar
       await _updateAppointmentUseCase.call(updated);
-
+      
       // Actualizar UI local
       setState(() {
         final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
@@ -139,7 +147,7 @@ class _DiaryPageState extends State<DiaryPage> {
   /// Maneja eliminación de una cita
   Future<void> _handleAppointmentDeleted(String id) async {
     try {
-      // ✅ Usar use case para eliminar
+      //  Usar use case para eliminar
       await _deleteAppointmentUseCase.call(id);
 
       setState(() {
@@ -254,7 +262,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   _filteredAppointments[i];
                               return AppointmentCard(
                                 a: appointment,
-                                repository: widget.repo, 
+                                repository: widget.repo,
                                 onAppointmentUpdated: _handleAppointmentUpdated,
                                 onAppointmentDeleted: _handleAppointmentDeleted,
                               );
@@ -264,17 +272,13 @@ class _DiaryPageState extends State<DiaryPage> {
                 ),
               ],
             ),
-     floatingActionButton: FloatingActionButton.extended(
-  onPressed: () async {
-    final created = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AppointmentFormPage(repo: widget.repo),
-      ),
-    );
-         await _loadAllAppointments();{
-            _loadAllAppointments();
-          }
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          //  CORRECCIÓN: Navegar a búsqueda de cliente
+          await context.push('/owner/appointments/cliente/buscar');
+          
+          //  CORRECCIÓN: Recargar citas después de volver
+          await _loadAllAppointments();
         },
         backgroundColor: const Color(0xFF8B5CF6),
         icon: const Icon(Icons.add),

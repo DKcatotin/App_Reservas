@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart'; // ← AGREGAR
+import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +6,14 @@ import 'package:intl/intl.dart';
 
 class AppointmentCard extends StatelessWidget {
   final AppointmentEntity a;
-  final AppointmentsRepositoryImpl repository;  // ← AGREGAR ESTO
+  final AppointmentsRepositoryImpl repository;
   final Future<void> Function(AppointmentEntity)? onAppointmentUpdated;
   final Future<void> Function(String)? onAppointmentDeleted;
 
   const AppointmentCard({
     super.key,
     required this.a,
-    required this.repository,  // ← AGREGAR ESTO
+    required this.repository,
     this.onAppointmentUpdated,
     this.onAppointmentDeleted,
   });
@@ -31,15 +31,22 @@ class AppointmentCard extends StatelessWidget {
             MaterialPageRoute(
               builder: (_) => AppointmentDetailPage(
                 appointment: a,
-                repository: repository,  // ← AGREGAR ESTO
+                repository: repository,
                 onAppointmentUpdated: onAppointmentUpdated,
                 onAppointmentDeleted: onAppointmentDeleted,
               ),
             ),
           );
 
-          if (result != null && result is bool && result == true) {
-            // Opcional: recargar o actualizar
+          // ✅ CORRECCIÓN: Manejar la cita actualizada
+          if (result != null) {
+            if (result is AppointmentEntity && onAppointmentUpdated != null) {
+              // Si devolvió una cita actualizada, llamar al callback
+              await onAppointmentUpdated!(result);
+            } else if (result is bool && result == true && onAppointmentDeleted != null) {
+              // Si devolvió true (eliminada), ya se manejó en el detail page
+              // No necesitas hacer nada aquí porque el callback ya fue llamado
+            }
           }
         },
         child: Padding(
@@ -67,7 +74,6 @@ class AppointmentCard extends StatelessWidget {
                   _buildStatusChip(),
                 ],
               ),
-
               const SizedBox(height: 12),
 
               /// CLIENTE
@@ -101,7 +107,6 @@ class AppointmentCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
 
               /// SERVICIOS
