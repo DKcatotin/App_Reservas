@@ -10,7 +10,7 @@ import '../../data/models/appointment.dart';
 //tres imports para staff
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/staff.dart';
-import '../../data/repositories/providers/staff_provider.dart';
+import '../providers/staff_provider.dart';
 
 class AppointmentDetailPage extends ConsumerStatefulWidget {
 

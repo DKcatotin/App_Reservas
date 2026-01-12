@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/staff.dart';
+import '../../data/models/staff.dart';
 
 /// Provider que carga la lista de staff desde assets/data/owner/staff.json
 final staffListProvider = FutureProvider<List<Staff>>((ref) async {

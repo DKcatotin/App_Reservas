@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/cliente_model.dart';
-import '../../data/repositories/providers/cliente_provider.dart';
+import '../../data/models/customer_model.dart';
+import '../providers/customer_provider.dart';
 
 class ClienteBusquedaPage extends ConsumerStatefulWidget {
   const ClienteBusquedaPage({super.key});

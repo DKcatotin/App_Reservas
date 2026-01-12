@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/appointments/data/models/cliente_model.dart';
+import 'package:agenda_app/features/owner/appointments/data/models/customer_model.dart';
 
 class ClienteMockRepository {
   // Lista en memoria que simula una base de datos

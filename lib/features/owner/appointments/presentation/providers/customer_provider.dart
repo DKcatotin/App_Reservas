@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/cliente_model.dart';
-import '../cliente_mock_repository.dart';
+import '../../data/models/customer_model.dart';
+import '../../data/repositories/cliente_mock_repository.dart';
 
 /// Estado del cliente
 class ClienteState {

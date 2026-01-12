@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/providers/cliente_provider.dart';
+import '../providers/customer_provider.dart';
 
 class BuscarClienteWidget extends ConsumerStatefulWidget {
   const BuscarClienteWidget({super.key});

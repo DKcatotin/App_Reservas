@@ -1,7 +1,8 @@
 import 'package:agenda_app/core/di/auth_di.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository.dart';
-import 'package:agenda_app/features/owner/appointments/data/repositories/providers/cliente_provider.dart';
-import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
+import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../catalogues/data/models/service.dart';
-import '../widgets/buscar_cliente_widget.dart';
+
 
 class AppointmentFormPage extends ConsumerStatefulWidget {
   final AppointmentsRepository repo;
@@ -32,7 +33,7 @@ class _AppointmentFormPageState
   late final CataloguesRepository _cataloguesRepo;
 
   List<Service> _services = [];
-  List<Service> _selectedServices = [];
+  final List<ServiceEntity> _selectedServices = [];
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -105,7 +106,7 @@ class _AppointmentFormPageState
       customerName: clienteState.cliente!.nombre,
       customerPhone: clienteState.cliente!.celular,
       startAt: startAt,
-      services: List<Service>.from(_selectedServices),
+      services: List<ServiceEntity>.from(_selectedServices),
       source: _selectedSource,
       notes: _notesController.text,
     );
@@ -320,23 +321,38 @@ SizedBox(
   }
 
   Widget _buildServicesSelector() {
-    return Column(
-      children: _services.map((s) {
-        return CheckboxListTile(
-          title: Text(s.name),
-          subtitle: Text('${s.durationLabel} • \$${s.price}'),
-          value: _selectedServices.contains(s),
-          onChanged: (checked) {
-            setState(() {
-              checked == true
-                  ? _selectedServices.add(s)
-                  : _selectedServices.remove(s);
-            });
-          },
-        );
-      }).toList(),
-    );
-  }
+  return Column(
+    children: _services.map((s) {
+      //  Convertir Service a ServiceEntity para comparar
+      final serviceEntity = ServiceEntity(
+        id: s.id,
+        name: s.name,
+        durationMinutes: s.durationMinutes,
+      );
+      
+      // Verificar si ya está seleccionado (comparando por id)
+      final isSelected = _selectedServices.any((selected) => selected.id == s.id);
+      
+      return CheckboxListTile(
+        title: Text(s.name),
+        subtitle: Text('${s.durationLabel} • \$${s.price}'),
+        value: isSelected,
+        onChanged: (checked) {
+          setState(() {
+            if (checked == true) {
+              // Agregar como entity
+              _selectedServices.add(serviceEntity);
+            } else {
+              // Remover por id
+              _selectedServices.removeWhere((item) => item.id == s.id);
+            }
+          });
+        },
+      );
+    }).toList(),
+  );
+}
+
 
   Widget _buildSourceSelector() {
     return Wrap(

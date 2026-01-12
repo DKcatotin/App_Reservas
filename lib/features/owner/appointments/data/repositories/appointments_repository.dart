@@ -2,13 +2,12 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment_s
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
-import 'package:agenda_app/features/owner/appointments/domain/create_appointement_input.dart';
+import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/domain/utils/id_generator.dart';
-import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 
 import '../models/appointment.dart';
 import '../sources/appointments_datasource.dart';
-import '../../domain/date_utils.dart';
+import '../../domain/utils/date_utils.dart';
 
 class AppointmentsRepository {
   final AppointmentsDatasource datasource;
@@ -31,43 +30,44 @@ class AppointmentsRepository {
   }
 
   // ==================== CREATE FROM INPUT ====================
-  Future<void> createFromInput(CreateAppointmentInput input) async {
-    final notes = input.notes?.trim();
-    final cleanNotes = (notes == null || notes.isEmpty) ? null : notes;
+Future<void> createFromInput(CreateAppointmentInput input) async {
+  final notes = input.notes?.trim();
+  final cleanNotes = (notes == null || notes.isEmpty) ? null : notes;
 
-    final customer = Customer(
-      id: IdGenerator.generate('customer'),
-      name: input.customerName.trim(),
-      phone: input.customerPhone.trim(),
-    );
+  final customer = Customer(
+    id: IdGenerator.generate('customer'),
+    name: input.customerName.trim(),
+    phone: input.customerPhone.trim(),
+  );
 
-    final int totalMinutes =
-        input.services.fold(0, (sum, s) => sum + s.durationMinutes);
+  final int totalMinutes =
+      input.services.fold(0, (sum, s) => sum + s.durationMinutes);
 
-    final appointment = Appointment(
-      id: IdGenerator.generate('appointment'),
-      ownerId: 'owner1',
-      branchId: 'branch1',
-      customerId: customer.id,
-      staffId: null, // staff se asigna luego en edición
-      startAt: input.startAt,
-      endAt: input.startAt.add(Duration(minutes: totalMinutes)),
-      notes: cleanNotes,
-      status: Status(code: 'pending', label: 'Pendiente'),
-      source: Source(type: input.source),
-      customer: customer,
-      staff: null,
-      services: input.services.map((Service s) {
-        return AppointmentService(
-          id: s.id,
-          name: s.name,
-          durationMinutes: s.durationMinutes,
-        );
-      }).toList(),
-    );
+  final appointment = Appointment(
+    id: IdGenerator.generate('appointment'),
+    ownerId: 'owner1',
+    branchId: 'branch1',
+    customerId: customer.id,
+    staffId: null, // staff se asigna luego en edición
+    startAt: input.startAt,
+    endAt: input.startAt.add(Duration(minutes: totalMinutes)),
+    notes: cleanNotes,
+    status: Status(code: 'pending', label: 'Pendiente'),
+    source: Source(type: input.source),
+    customer: customer,
+    staff: null,
+    // ✅ CORRECCIÓN: mapear ServiceEntity a AppointmentService
+    services: input.services.map((serviceEntity) {
+      return AppointmentService(
+        id: serviceEntity.id,
+        name: serviceEntity.name,
+        durationMinutes: serviceEntity.durationMinutes,
+      );
+    }).toList(),
+  );
 
-    await create(appointment);
-  }
+  await create(appointment);
+}
 
   // ==================== READ ====================
   Future<List<Appointment>> getAll({bool forceRefresh = false}) async {

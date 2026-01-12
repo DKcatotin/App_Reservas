@@ -5,7 +5,7 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment.d
 import '../../data/repositories/appointments_repository.dart';
 import '../widgets/appointment_card.dart';
 import 'appointment_form_page.dart';
-import 'package:agenda_app/features/owner/appointments/domain/date_utils.dart';
+import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 
 class DiaryPage extends StatefulWidget {
   final AppointmentsRepository repo;
