@@ -59,16 +59,15 @@ class UpdateAppointmentUseCase {
       statusLabel: 'Cancelada',
     );
   }
-
-  /// Completa una cita (cambia estado a 'completed')
-  Future<void> complete(AppointmentEntity appointment) async {
+// Cambia el estado de la cita a 'pending'
+  Future<void> reset(AppointmentEntity appointment) async {
     await updateStatus(
       appointment: appointment,
-      statusCode: 'completed',
-      statusLabel: 'Completada',
+      statusCode: 'pending',
+      statusLabel: 'Pendiente',
     );
   }
-
+  
   /// Reagenda una cita (cambia fecha/hora)
   Future<void> reschedule({
     required AppointmentEntity appointment,

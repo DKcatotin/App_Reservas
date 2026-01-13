@@ -454,19 +454,17 @@ Future<void> _loadServicios() async {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildNavItem(Icons.home_rounded, 'Inicio', true, () {}),
-                _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {
-                  await context.push('/owner/agenda'); 
-                  await _loadData();
-                }),
-                _buildNavItem(Icons.people_rounded, 'Clientas', false, () {}),
-                _buildNavItem(Icons.person_rounded, 'Perfil', false, () {}),
-              ],
-            ),
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+    _buildNavItem(Icons.home_rounded, 'Inicio', true, () {}),
+    _buildNavItem(Icons.calendar_today_rounded, 'Agenda', false, () async {
+      await context.push('/owner/agenda'); 
+      await _loadData();
+    }),
+  ],
+)
           ),
         ),
       ),

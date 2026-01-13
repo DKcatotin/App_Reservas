@@ -25,7 +25,7 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
     
     final all = [...past, ...today, ...upcoming];
     
-    // ✅ CORRECCIÓN: Eliminar duplicados basándose en el ID
+    //  CORRECCIÓN: Eliminar duplicados basándose en el ID
     final Map<String, Appointment> uniqueMap = {};
     for (var appointment in all) {
       uniqueMap[appointment.id] = appointment;

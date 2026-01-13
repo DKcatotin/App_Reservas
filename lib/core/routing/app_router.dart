@@ -1,8 +1,8 @@
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart'; // ✅ CAMBIAR IMPORT
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_form_page.dart';
-import 'package:agenda_app/features/owner/appointments/presentation/pages/cliente_busqueda_page.dart';
-import 'package:agenda_app/features/owner/appointments/presentation/pages/cliente_form_page.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/customer_search_page.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/customer_form_page.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/pages/upcoming_appointments_page.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/pages/catalogue_test_page.dart';
 import '../../features/auth/data/presentation/pages/login_page.dart';

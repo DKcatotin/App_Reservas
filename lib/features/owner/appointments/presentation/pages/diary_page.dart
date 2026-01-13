@@ -54,12 +54,12 @@ class _DiaryPageState extends State<DiaryPage> {
   setState(() => _isLoading = true);
   
   try {
-    // ✅ CORRECCIÓN: Invalidar caché antes de cargar
+    //  CORRECCIÓN: Invalidar caché antes de cargar
     widget.repo.invalidateCache(); // Forzar recarga desde datasource
     
     final all = await widget.repo.getAll();
     
-    // ✅ Eliminar duplicados basándose en el ID
+    //  Eliminar duplicados basándose en el ID
     final Map<String, AppointmentEntity> uniqueMap = {};
     for (var appointment in all) {
       uniqueMap[appointment.id] = appointment;
@@ -200,7 +200,7 @@ class _DiaryPageState extends State<DiaryPage> {
                       ),
                     ],
                   ),
-                  child: TableCalendar<AppointmentEntity>(
+                  child:TableCalendar<AppointmentEntity>(
                     firstDay: DateTime.utc(2024, 1, 1),
                     lastDay: DateTime.utc(2026, 12, 31),
                     focusedDay: _focusedDay,

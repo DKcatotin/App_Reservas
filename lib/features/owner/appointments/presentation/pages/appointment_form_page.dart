@@ -72,7 +72,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
     }
   }
 
-  /// ✅ MÉTODO PRINCIPAL PARA GUARDAR (USAR SOLO ESTE)
+  /// MÉTODO PRINCIPAL PARA GUARDAR (USAR SOLO ESTE)
   Future<void> _saveAppointment() async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
@@ -111,7 +111,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
         notes: _notesController.text,
       );
 
-      // 5. ✅ Usar el Use Case
+      // 5.  Usar el Use Case
       final createUseCase = CreateAppointmentUseCase(widget.repo);
       await createUseCase.call(input);
 

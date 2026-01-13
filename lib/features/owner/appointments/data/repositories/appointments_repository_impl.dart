@@ -90,84 +90,92 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   /// Convierte un Model (data) a Entity (domain)
   AppointmentEntity _mapToEntity(Appointment model) {
-    return AppointmentEntity(
-      id: model.id,
-      ownerId: model.ownerId,
-      branchId: model.branchId,
-      customerId: model.customerId,
-      staffId: model.staffId,
-      startAt: model.startAt,
-      endAt: model.endAt,
-      notes: model.notes,
-      status: StatusEntity(
-        code: model.status.code,
-        label: model.status.label,
-      ),
-      source: SourceEntity(
-        code: model.source.type,
-        name: _getSourceName(model.source.type),
-      ),
-      customer: CustomerEntity(
-        id: model.customer.id,
-        name: model.customer.name,
-        phone: model.customer.phone,
-      ),
-      staff: model.staff != null
-          ? StaffEntity(
-              id: model.staff!.id,
-              name: model.staff!.name,
-              specialty: model.staff!.specialty,
-              colorTag: model.staff!.colorTag,
-            )
-          : null,
-      services: model.services
-          .map((s) => ServiceEntity(
-                id: s.id,
-                name: s.name,
-                durationMinutes: s.durationMinutes,
-              ))
-          .toList(),
-    );
-  }
+  return AppointmentEntity(
+    id: model.id,
+    ownerId: model.ownerId,
+    branchId: model.branchId,
+    customerId: model.customerId,
+    staffId: model.staffId,
+    startAt: model.startAt,
+    endAt: model.endAt,
+    notes: model.notes,
+    status: StatusEntity(
+      code: model.status.code,
+      label: model.status.label,
+    ),
+    source: SourceEntity(
+      code: model.source.type,
+      name: _getSourceName(model.source.type),
+    ),
+    customer: CustomerEntity(
+      id: model.customer.id,
+      name: model.customer.nombre,
+      phone: model.customer.celular,
+      // si luego agregas cedula al entity, aquí también la pasas
+    ),
+    staff: model.staff != null
+        ? StaffEntity(
+            id: model.staff!.id,
+            name: model.staff!.name,
+            specialty: model.staff!.specialty,
+            colorTag: model.staff!.colorTag,
+          )
+        : null,
+    services: model.services
+        .map(
+          (s) => ServiceEntity(
+            id: s.id,
+            name: s.name,
+            durationMinutes: s.durationMinutes,
+          ),
+        )
+        .toList(),
+  );
+}
+
 
   /// Convierte una Entity (domain) a Model (data)
   Appointment _mapToModel(AppointmentEntity entity) {
-    return Appointment(
-      id: entity.id,
-      ownerId: entity.ownerId,
-      branchId: entity.branchId,
-      customerId: entity.customerId,
-      staffId: entity.staffId,
-      startAt: entity.startAt,
-      endAt: entity.endAt,
-      notes: entity.notes,
-      status: Status(
-        code: entity.status.code,
-        label: entity.status.label,
-      ),
-      source: Source(type: entity.source.code),
-      customer: Customer(
-        id: entity.customer.id,
-        name: entity.customer.name,
-        phone: entity.customer.phone,
-      ),
-      staff: entity.staff != null
-          ? Staff(
-              id: entity.staff!.id,
-              name: entity.staff!.name,
-              specialty: entity.staff!.specialty,
-              colorTag: entity.staff!.colorTag,
-            )
-          : null,
-      services: entity.services
-          .map((s) => AppointmentService(
-                id: s.id,
-                name: s.name,
-                durationMinutes: s.durationMinutes,
-              ))
-          .toList(),
-    );
-  }
+  return Appointment(
+    id: entity.id,
+    ownerId: entity.ownerId,
+    branchId: entity.branchId,
+    customerId: entity.customerId,
+    staffId: entity.staffId,
+    startAt: entity.startAt,
+    endAt: entity.endAt,
+    notes: entity.notes,
+    status: Status(
+      code: entity.status.code,
+      label: entity.status.label,
+    ),
+    source: Source(type: entity.source.code),
+    customer: Customer(
+      id: entity.customer.id,
+      cedula: entity.customer.id,      // por ahora usamos el id como cédula mock
+      nombre: entity.customer.name,
+      celular: entity.customer.phone,
+                          // o entity.customer.email si lo agregas
+    ),
+    staff: entity.staff != null
+        ? Staff(
+            id: entity.staff!.id,
+            name: entity.staff!.name,
+            specialty: entity.staff!.specialty,
+            colorTag: entity.staff!.colorTag,
+          )
+        : null,
+    services: entity.services
+        .map(
+          (s) => AppointmentService(
+            id: s.id,
+            name: s.name,
+            durationMinutes: s.durationMinutes,
+          ),
+        )
+        .toList(),
+  );
+}
 
   /// Helper para obtener el nombre del source
   String _getSourceName(String code) {

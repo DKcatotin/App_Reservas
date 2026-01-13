@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/customer_model.dart';
-import '../../data/repositories/cliente_mock_repository.dart';
+
+import '../../data/models/customer.dart';
+import '../../data/sources/customers_datasource.dart';
 
 /// Estado del cliente
 class ClienteState {
-  final ClienteModel? cliente;
+  final Customer? cliente;
   final bool cargando;
   final String? error;
 
@@ -15,7 +16,7 @@ class ClienteState {
   });
 
   ClienteState copyWith({
-    ClienteModel? cliente,
+    Customer? cliente,
     bool? cargando,
     String? error,
   }) {
@@ -29,18 +30,17 @@ class ClienteState {
 
 /// Notifier para gestionar el estado del cliente
 class ClienteNotifier extends StateNotifier<ClienteState> {
-  final ClienteMockRepository repository;
+  final CustomersDatasource datasource;
 
-  ClienteNotifier(this.repository) : super(ClienteState());
+  ClienteNotifier(this.datasource) : super(ClienteState());
 
   /// Buscar cliente por cédula
   Future<void> buscarPorCedula(String cedula) async {
     state = ClienteState(cargando: true);
 
-    // Simular latencia de red
     await Future.delayed(const Duration(milliseconds: 300));
 
-    final clienteEncontrado = repository.buscarPorCedula(cedula);
+    final clienteEncontrado = await datasource.getByCedula(cedula);
 
     if (clienteEncontrado != null) {
       state = ClienteState(cliente: clienteEncontrado);
@@ -49,38 +49,42 @@ class ClienteNotifier extends StateNotifier<ClienteState> {
     }
   }
 
-  /// Crear nuevo cliente
+  /// Crear nuevo cliente en memoria (opcional, solo cache local)
   Future<void> crearCliente({
-    required String cedula,
-    required String nombre,
-    required String celular,
-  }) async {
-    state = ClienteState(cargando: true);
+  required String cedula,
+  required String nombre,
+  required String celular,
+}) async {
+  state = ClienteState(cargando: true);
 
-    await Future.delayed(const Duration(milliseconds: 300));
+  await Future.delayed(const Duration(milliseconds: 300));
 
-    final nuevoCliente = repository.crearCliente(
-      cedula: cedula,
-      nombre: nombre,
-      celular: celular,
-    );
+  final nuevoCliente = Customer(
+    id: cedula,    // mock: usamos la cédula como id
+    cedula: cedula,
+    nombre: nombre,
+    celular: celular,
+  );
 
-    state = ClienteState(cliente: nuevoCliente);
-  }
+  await datasource.add(nuevoCliente);
+
+  state = ClienteState(cliente: nuevoCliente);
+}
 
   /// Limpiar el estado
- void limpiar() {
-  state = ClienteState();
-}
+  void limpiar() {
+    state = ClienteState();
+  }
 }
 
-/// Provider del repositorio
-final clienteRepositoryProvider = Provider<ClienteMockRepository>((ref) {
-  return ClienteMockRepository();
+/// Provider del datasource
+final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
+  return CustomersDatasource();
 });
 
 /// Provider del estado del cliente
-final clienteProvider = StateNotifierProvider<ClienteNotifier, ClienteState>((ref) {
-  final repository = ref.watch(clienteRepositoryProvider);
-  return ClienteNotifier(repository);
+final clienteProvider =
+    StateNotifierProvider<ClienteNotifier, ClienteState>((ref) {
+  final datasource = ref.watch(customersDatasourceProvider);
+  return ClienteNotifier(datasource);
 });

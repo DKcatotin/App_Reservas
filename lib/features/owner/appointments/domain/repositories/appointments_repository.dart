@@ -6,6 +6,5 @@ abstract class AppointmentsRepository {
   Future<List<AppointmentEntity>> getByDay(DateTime day);
   Future<void> create(AppointmentEntity appointment);
   Future<void> update(AppointmentEntity appointment);
-  
   Future<void> delete(String id);
 }

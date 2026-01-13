@@ -86,7 +86,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     // para staff
     _selectedStaffId = widget.appointment.staff?.id;
 
-    // ✅ Inicializar el Set de IDs seleccionados
+    //  Inicializar el Set de IDs seleccionados
     _selectedServiceIds =
         _selectedServices.map((s) => (s as dynamic).id as String).toSet();
 
@@ -115,7 +115,7 @@ void _recalculateEndTimeFromStart() {
 
   int totalMinutes = 0;
   for (var service in _selectedServices) {
-    // ✅ CORRECCIÓN: Manejar todos los tipos correctamente
+    //  CORRECCIÓN: Manejar todos los tipos correctamente
     if (service is AppointmentService) {
       totalMinutes += service.durationMinutes;
     } else if (service is Service) {
@@ -156,7 +156,7 @@ void _recalculateEndTimeFromStart() {
   // Sumar todas las duraciones
   int totalMinutes = 0;
   for (var service in _selectedServices) {
-    // ✅ CORRECCIÓN: Manejar ambos tipos de servicios
+    //  CORRECCIÓN: Manejar ambos tipos de servicios
     if (service is AppointmentService) {
       totalMinutes += service.durationMinutes;
     } else if (service is Service) {
@@ -767,119 +767,120 @@ _ModernInfoCard(
 
                   /// FECHA Y HORA
                   _WhiteInfoCard(
-                    icon: Icons.calendar_today_rounded,
-                    iconColor: const Color(0xFF7C3AED),
-                    title: 'Fecha y Hora',
+  icon: Icons.calendar_today_rounded,
+  iconColor: const Color(0xFF7C3AED),
+  title: 'Fecha y Hora',
+  child: Column(
+    children: [
+      InkWell(
+        onTap: _isEditing ? () => _selectDate(context) : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _isEditing
+                ? const Color(0xFF7C3AED).withValues(alpha: 0.05)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: _isEditing
+                ? Border.all(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// 📅 FECHA (ARRIBA)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        InkWell(
-                          onTap: _isEditing ? () => _selectDate(context) : null,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: _isEditing
-                                  ? const Color(0xFF7C3AED)
-                                      .withValues(alpha: 0.05)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: _isEditing
-                                  ? Border.all(
-                                      color: const Color(0xFF7C3AED)
-                                          .withValues(alpha: 0.3),
-                                      width: 1,
-                                    )
-                                  : null,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        const Color(0xFF7C3AED)
-                                            .withValues(alpha: 0.1),
-                                        const Color(0xFF9333EA)
-                                            .withValues(alpha: 0.05),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      // ✅ INICIO - EDITABLE
-                                      InkWell(
-                                        onTap: _isEditing
-                                            ? () => _selectTime(context, true)
-                                            : null,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: _TimeBlock(
-                                          label: 'Inicio',
-                                          time: _startTime
-                                              .format(context), // ✅ Correcto
-                                          isEditable: _isEditing,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 40,
-                                        width: 2,
-                                        color: const Color(0xFF7C3AED)
-                                            .withValues(alpha: 0.3),
-                                      ),
-                                      // ✅ FIN - NO EDITABLE (calculado automáticamente)
-                                      _TimeBlock(
-                                        label: 'Fin', // ✅ Corregido
-                                        time: _endTime
-                                            .format(context), // ✅ Corregido
-                                        isEditable:
-                                            false, // ✅ Corregido - Siempre false
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Fecha',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        dateFormatter.format(
-                                            _selectedDate), // Ya está correcto
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: Color(0xFF1F2937),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (_isEditing)
-                                  const Icon(
-                                    Icons.chevron_right,
-                                    color: Color(0xFF7C3AED),
-                                  ),
-                              ],
-                            ),
+                        const Text(
+                          'Fecha',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 4),
+                        Text(
+                          dateFormatter.format(_selectedDate),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  if (_isEditing)
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFF7C3AED),
+                    ),
+                ],
+              ),
 
-                  const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              /// ⏰ HORAS (ABAJO)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF7C3AED).withValues(alpha: 0.1),
+                      const Color(0xFF9333EA).withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    /// INICIO - EDITABLE
+                    InkWell(
+                      onTap: _isEditing
+                          ? () => _selectTime(context, true)
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                      child: _TimeBlock(
+                        label: 'Inicio',
+                        time: _startTime.format(context),
+                        isEditable: _isEditing,
+                      ),
+                    ),
+                    Container(
+                      height: 40,
+                      width: 2,
+                      color: const Color(0xFF7C3AED)
+                          .withValues(alpha: 0.3),
+                    ),
+                    /// FIN - CALCULADO
+                    _TimeBlock(
+                      label: 'Fin',
+                      time: _endTime.format(context),
+                      isEditable: false,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+    ],
+  ),
+),
+
+const SizedBox(height: 16),
 
                   /// EMPLEADO/STAFF ASIGNADO
                   _WhiteInfoCard(

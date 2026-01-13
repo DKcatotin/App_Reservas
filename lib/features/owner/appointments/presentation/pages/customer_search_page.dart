@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/customer_model.dart';
+import '../../data/models/customer.dart';
 import '../providers/customer_provider.dart';
 
 class ClienteBusquedaPage extends ConsumerStatefulWidget {
@@ -134,46 +134,46 @@ Widget build(BuildContext context) {
 }
   
 
-  Widget _buildClienteEncontrado(ClienteModel cliente) {
-    return Card(
-      color: Colors.green[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 48),
-            const SizedBox(height: 12),
-            const Text(
-              '✅ Cliente encontrado',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
+  Widget _buildClienteEncontrado(Customer cliente) {
+  return Card(
+    color: Colors.green[50],
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 48),
+          const SizedBox(height: 12),
+          const Text(
+            '✅ Cliente encontrado',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
             ),
-            const SizedBox(height: 16),
-            _buildInfoRow(Icons.badge, 'Cédula', cliente.cedula),
-            _buildInfoRow(Icons.person, 'Nombre', cliente.nombre),
-            _buildInfoRow(Icons.phone, 'Celular', cliente.celular),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
- onPressed: () {
-    // El provider ya tiene el cliente (porque lo cargaste en _buscarCliente)
-    context.push('/owner/citas'); 
-  },
-  icon: const Icon(Icons.check),
-  label: const Text('Seleccionar este cliente'),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.green,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 12),
-  ),
-),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow(Icons.badge, 'Cédula', cliente.cedula),
+          _buildInfoRow(Icons.person, 'Nombre', cliente.nombre),
+          _buildInfoRow(Icons.phone, 'Celular', cliente.celular),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.push('/owner/citas');
+            },
+            icon: const Icon(Icons.check),
+            label: const Text('Seleccionar este cliente'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 //cliente no encontrado 
   Widget _buildClienteNoEncontrado() {
     return Card(
