@@ -53,6 +53,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   // Controladores para nombre y teléfono
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _idNumberController; // Para la cédula
   //variables de estado
   String? _selectedStaffId;
   List<Staff> _staffList = [];
@@ -78,6 +79,8 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
         TextEditingController(text: widget.appointment.notes ?? '');
     _nameController = TextEditingController(text: widget.appointment.customer.name);
     _phoneController = TextEditingController(text: widget.appointment.customer.phone);
+    _idNumberController = TextEditingController(
+  text: widget.appointment.customer.idNumber ?? ''); // ✅ AGREGAR AQUÍ
 
     _serviceControllers = _selectedServices.map((s) {
       return TextEditingController(text: (s as dynamic).name);
@@ -193,6 +196,7 @@ void _recalculateEndTimeFromStart() {
     _notesController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _idNumberController.dispose();
 
     for (var controller in _serviceControllers) {
       controller.dispose();
@@ -218,11 +222,16 @@ Future<void> _sendWhatsAppReminder() async {
     }
   }
   
-  final message = '''Francis Nails & Beauty Spa 📢 Recordatorio de cita:
+// ✅ AGREGAR: Usar cédula en vez de teléfono
+final idNumber = _idNumberController.text.trim().isEmpty 
+  ? 'No registrada' 
+  : _idNumberController.text.trim();
+
+final message = '''Francis Nails & Beauty Spa 📢 Recordatorio de cita:
 📅 *$formattedDate*
 🕓 *$formattedTime*
 👤 *${_nameController.text}*
-🪪 *${_phoneController.text}*
+🪪 *$idNumber*
 Servicio: $services
 📍 Por favor llegar 10 min antes
 ¡Gracias por su confianza!''';
@@ -460,6 +469,14 @@ Servicio: $services
       }
     }).toList();
 
+    final updatedCustomer = widget.appointment.customer.copyWith(
+  name: _nameController.text.trim(),
+  phone: _phoneController.text.trim(),
+  idNumber: _idNumberController.text.trim().isEmpty 
+    ? null 
+    : _idNumberController.text.trim(),
+);
+
     final updatedAppointment = widget.appointment.copyWith(
       startAt: newStartAt,
       endAt: newEndAt, // ✅ Ahora está definido
@@ -471,6 +488,7 @@ Servicio: $services
         label: _selectedStatus,
       ),
       services: serviceEntities,
+      customer: updatedCustomer,
       staff: selectedStaff != null
           ? StaffEntity(
               id: selectedStaff.id,
@@ -522,6 +540,7 @@ Servicio: $services
     // ✅ AGREGAR: Resetear nombre y teléfono
     _nameController.text = widget.appointment.customer.name;
     _phoneController.text = widget.appointment.customer.phone;
+    _idNumberController.text = widget.appointment.customer.idNumber ?? '';
     
     // Resetear el Set de IDs
     _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
@@ -701,6 +720,68 @@ _ModernInfoCard(
             ),
       
       const SizedBox(height: 12),
+      
+      // ✅ NUEVO: Campo de CÉDULA
+      _isEditing
+          ? TextField(
+              controller: _idNumberController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Número de cédula',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                prefixIcon: const Icon(Icons.badge_outlined, color: Colors.white, size: 18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.white, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.2),
+              ),
+            )
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.badge_outlined, size: 18, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    _idNumberController.text.isEmpty 
+                      ? 'Sin cédula' 
+                      : _idNumberController.text,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontStyle: _idNumberController.text.isEmpty 
+                        ? FontStyle.italic 
+                        : FontStyle.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+      
+      const SizedBox(height: 8),
       
       // TELÉFONO EDITABLE con WhatsApp
       _isEditing
