@@ -19,6 +19,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   // Cache para mejorar performance
   List<Appointment>? _cache;
+  List<AppointmentEntity>? _entityCache; // ✅ NUEVO: Caché de entities
   DateTime? _cacheTime;
   final Duration _cacheDuration = const Duration(minutes: 5);
 
@@ -32,6 +33,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   void invalidateCache() {
     _cache = null;
+    _entityCache = null; // ✅ NUEVO: Limpiar caché de entities
     _cacheTime = null;
   }
 
@@ -39,16 +41,19 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   @override
   Future<List<AppointmentEntity>> getAll() async {
-    // Usar cache si es válido
-    if (_isCacheValid) {
-      return _cache!.map((m) => _mapToEntity(m)).toList();
+    // ✅ OPTIMIZACIÓN: Retornar entities cacheadas directamente
+    if (_isCacheValid && _entityCache != null) {
+      return _entityCache!;
     }
 
     // Cargar desde datasource
     _cache = await datasource.getAll();
     _cacheTime = DateTime.now();
 
-    return _cache!.map((m) => _mapToEntity(m)).toList();
+    // ✅ OPTIMIZACIÓN: Cachear la conversión a entities
+    _entityCache = _cache!.map((m) => _mapToEntity(m)).toList();
+
+    return _entityCache!;
   }
 
   @override
@@ -109,9 +114,11 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
     ),
     customer: CustomerEntity(
       id: model.customer.id,
-      name: model.customer.nombre,
-      phone: model.customer.celular,
-      // si luego agregas cedula al entity, aquí también la pasas
+      taxIdentification: model.customer.taxIdentification,  // ✅ CAMBIO
+      fullName: model.customer.fullName,  // ✅ CAMBIO
+      phone: model.customer.phone,  // ✅ CAMBIO
+      email: model.customer.email,  // ✅ NUEVO
+      allergies: model.customer.allergies,  // ✅ NUEVO
     ),
     staff: model.staff != null
         ? StaffEntity(
@@ -133,7 +140,6 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   );
 }
 
-
   /// Convierte una Entity (domain) a Model (data)
   Appointment _mapToModel(AppointmentEntity entity) {
   return Appointment(
@@ -152,10 +158,11 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
     source: Source(type: entity.source.code),
     customer: Customer(
       id: entity.customer.id,
-      cedula: entity.customer.id,      // por ahora usamos el id como cédula mock
-      nombre: entity.customer.name,
-      celular: entity.customer.phone,
-                          // o entity.customer.email si lo agregas
+      taxIdentification: entity.customer.taxIdentification,  // ✅ CAMBIO
+      fullName: entity.customer.fullName,  // ✅ CAMBIO
+      phone: entity.customer.phone,  // ✅ CAMBIO
+      email: entity.customer.email,  // ✅ NUEVO
+      allergies: entity.customer.allergies,  // ✅ NUEVO
     ),
     staff: entity.staff != null
         ? Staff(

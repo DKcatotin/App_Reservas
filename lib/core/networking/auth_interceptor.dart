@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import '../storage/token_storage.dart';
-
+//Implementa el interceptor de autenticación
 class AuthInterceptor extends Interceptor {
   final TokenStorage tokenStorage;
 

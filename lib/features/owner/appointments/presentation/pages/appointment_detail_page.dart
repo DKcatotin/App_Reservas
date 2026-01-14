@@ -76,7 +76,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     _selectedServices = List.from(widget.appointment.services);
     _notesController =
         TextEditingController(text: widget.appointment.notes ?? '');
-    _nameController = TextEditingController(text: widget.appointment.customer.name);
+    _nameController = TextEditingController(text: widget.appointment.customer.fullName);
     _phoneController = TextEditingController(text: widget.appointment.customer.phone);
 
     _serviceControllers = _selectedServices.map((s) {
@@ -519,9 +519,9 @@ Servicio: $services
     _selectedServices = List.from(widget.appointment.services);
     _notesController.text = widget.appointment.notes ?? '';
     
-    // ✅ AGREGAR: Resetear nombre y teléfono
-    _nameController.text = widget.appointment.customer.name;
-    _phoneController.text = widget.appointment.customer.phone;
+    // ✅ CORRECCIÓN: Manejar valores nullable
+    _nameController.text = widget.appointment.customer.fullName ?? '';
+    _phoneController.text = widget.appointment.customer.phone ?? '';
     
     // Resetear el Set de IDs
     _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
@@ -531,7 +531,6 @@ Servicio: $services
     }
   });
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1326,7 +1325,7 @@ const SizedBox(height: 16),
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: _allServices.map((service) {
-        // ✅ Verificar selección usando el Set de IDs
+        //  Verificar selección usando el Set de IDs
         final isSelected = _selectedServiceIds.contains(service.id);
         final hours = service.duration.inHours;
         final minutes = service.duration.inMinutes.remainder(60);
@@ -1350,9 +1349,9 @@ const SizedBox(height: 16),
             onChanged: (checked) {
               setState(() {
                 if (checked == true) {
-                  // ✅ Agregar al Set de IDs
+                  //  Agregar al Set de IDs
                   _selectedServiceIds.add(service.id);
-                  // ✅ Agregar AppointmentService a la lista
+                  //  Agregar AppointmentService a la lista
                   _selectedServices.add(
                     AppointmentService(
                       id: service.id,
@@ -1361,9 +1360,9 @@ const SizedBox(height: 16),
                     ),
                   );
                 } else {
-                  // ✅ Remover del Set de IDs
+                  //  Remover del Set de IDs
                   _selectedServiceIds.remove(service.id);
-                  // ✅ Remover de la lista
+                  //  Remover de la lista
                   _selectedServices
                       .removeWhere((s) => (s as dynamic).id == service.id);
                 }
@@ -1423,7 +1422,7 @@ const SizedBox(height: 16),
       );
     }
 
-    // ✅ CORRECCIÓN CRÍTICA: Eliminar duplicados y validar valor
+    //  CORRECCIÓN CRÍTICA: Eliminar duplicados y validar valor
     final uniqueStaffList = <String, Staff>{};
     for (var staff in _staffList) {
       uniqueStaffList[staff.id] = staff;

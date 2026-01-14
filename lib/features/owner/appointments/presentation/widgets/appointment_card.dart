@@ -38,7 +38,7 @@ class AppointmentCard extends StatelessWidget {
             ),
           );
 
-          // ✅ CORRECCIÓN: Manejar la cita actualizada
+          //  CORRECCIÓN: Manejar la cita actualizada
           if (result != null) {
             if (result is AppointmentEntity && onAppointmentUpdated != null) {
               // Si devolvió una cita actualizada, llamar al callback
@@ -78,35 +78,35 @@ class AppointmentCard extends StatelessWidget {
 
               /// CLIENTE
               Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 20,
-                    child: Icon(Icons.person),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          a.customer.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          a.customer.phone,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+  children: [
+    const CircleAvatar(
+      radius: 20,
+      child: Icon(Icons.person),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            a.customer.fullName ?? 'Sin nombre',  // ✅ CORRECCIÓN línea 92
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            a.customer.phone ?? 'Sin teléfono',  // ✅ CORRECCIÓN línea 99
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
               const SizedBox(height: 12),
 
               /// SERVICIOS

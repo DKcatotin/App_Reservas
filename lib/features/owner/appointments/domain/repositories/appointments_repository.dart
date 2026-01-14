@@ -1,4 +1,4 @@
-// appointments_repository.dart (en DOMAIN)
+// Contrato entre la app y los datos
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 
 abstract class AppointmentsRepository {

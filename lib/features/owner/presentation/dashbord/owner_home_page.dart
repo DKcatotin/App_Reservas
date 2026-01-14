@@ -19,11 +19,11 @@ class OwnerHomePage extends StatefulWidget {
 }
 
 class _OwnerHomePageState extends State<OwnerHomePage> {
-  // ✅ Declarar use cases
+  //  Declarar use cases
   late final GetAppointmentsByDayUseCase _getTodayUseCase;
   late final GetUpcomingAppointmentsUseCase _getUpcomingUseCase;
 
-  // ✅ CAMBIAR: Appointment → AppointmentEntity
+  //  CAMBIAR: Appointment → AppointmentEntity
   List<AppointmentEntity> _servicios = [];
   List<AppointmentEntity> _upcoming = [];
   
@@ -34,7 +34,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
   @override
   void initState() {
     super.initState();
-    // ✅ Inicializar use cases
+    //  Inicializar use cases
     _getTodayUseCase = GetAppointmentsByDayUseCase(widget.repo);
     _getUpcomingUseCase = GetUpcomingAppointmentsUseCase(widget.repo);
     
@@ -52,13 +52,13 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
   if (mounted) {
     setState(() {
       _isLoading = false;
-      _isInitialized = true; // ✅ Marcar como inicializado
+      _isInitialized = true; //  Marcar como inicializado
     });
   }
 }
   Future<void> _loadUpcoming() async {
   try {
-    // ✅ Usar use case
+    //  Usar use case
     final data = await _getUpcomingUseCase.call();
     
     if (mounted) {
@@ -79,7 +79,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
 Future<void> _loadServicios() async {
   try {
-    // ✅ Usar use case para obtener citas de hoy
+    //  Usar use case para obtener citas de hoy
     final data = await _getTodayUseCase.today();
     
     if (mounted) {
@@ -599,7 +599,7 @@ Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointmen
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        cita.customer.name,
+                        cita.customer.fullName?? 'Sin nombre',
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,

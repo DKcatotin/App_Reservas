@@ -43,13 +43,11 @@ class AppRouter {
             final appointment = state.extra as AppointmentEntity;
             return AppointmentDetailPage(
               appointment: appointment,
-              repository: deps.appointmentsRepository, // ✅ USAR deps, NO widget
-              // OPCIONAL: Agregar callbacks si los necesitas
+              repository: deps.appointmentsRepository, //  USAR deps, NO widget
+              // Agregar callbacks 
               onAppointmentUpdated: (updated) async {
-                // Aquí podrías actualizar el estado global si usas providers
               },
               onAppointmentDeleted: (id) async {
-                // Aquí podrías actualizar el estado global si usas providers
               },
             );
           },
@@ -57,7 +55,7 @@ class AppRouter {
         //  Nueva ruta: Buscar cliente
         GoRoute(
           path: '/owner/appointments/cliente/buscar',
-          builder: (_, __) => const ClienteBusquedaPage(),
+          builder: (_, __) => const CustomerSearchPage(),
         ),
 
         //  Nueva ruta: Crear cliente
@@ -77,7 +75,7 @@ class AppRouter {
           ),
         ),
 
-        // 📔 Agenda (JSON hoy)
+        //  Agenda (JSON hoy)
         GoRoute(
           path: '/owner/agenda',
           builder: (_, __) => DiaryPage(

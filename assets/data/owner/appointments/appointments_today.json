@@ -50,12 +50,12 @@
       "status": {
         "id": 2,
         "code": "confirmed",
-        "label": "Confirmada"
+        "name": "Confirmada"
       },
       "source": {
         "id": 2,
         "type": "whatsapp",
-        "label": "WhatsApp"
+        "name": "WhatsApp"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666662",

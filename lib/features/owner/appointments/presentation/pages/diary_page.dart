@@ -55,19 +55,15 @@ class _DiaryPageState extends State<DiaryPage> {
   
   try {
     //  CORRECCIÓN: Invalidar caché antes de cargar
-    widget.repo.invalidateCache(); // Forzar recarga desde datasource
+    // Forzar recarga desde datasource
     
     final all = await widget.repo.getAll();
     
     //  Eliminar duplicados basándose en el ID
-    final Map<String, AppointmentEntity> uniqueMap = {};
-    for (var appointment in all) {
-      uniqueMap[appointment.id] = appointment;
-    }
-    final uniqueAppointments = uniqueMap.values.toList();
+  
     
     setState(() {
-      _allAppointments = uniqueAppointments;
+      _allAppointments =all;
       _isLoading = false;
     });
     
@@ -90,13 +86,10 @@ class _DiaryPageState extends State<DiaryPage> {
     final items = await _getAppointmentsByDayUseCase.call(day);
     
     // Eliminar duplicados también aquí por ID
-    final Map<String, AppointmentEntity> uniqueMap = {};
-    for (var appointment in items) {
-      uniqueMap[appointment.id] = appointment;
-    }
+  
     
     setState(() {
-      _filteredAppointments = uniqueMap.values.toList();
+      _filteredAppointments = items;
     });
   }
 

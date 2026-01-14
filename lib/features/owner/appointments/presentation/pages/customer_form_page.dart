@@ -35,30 +35,30 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
   }
 
   Future<void> _guardarCliente() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(clienteProvider.notifier).crearCliente(
-          cedula: _cedulaController.text.trim(),
-          nombre: _nombreController.text.trim(),
-          celular: _celularController.text.trim(),
-        );
+  await ref.read(customerProvider.notifier).createCustomer(
+    taxIdentification: _cedulaController.text.trim(),  // 
+    fullName: _nombreController.text.trim(),           //  
+    phone: _celularController.text.trim(),             // 
+  );
 
-    final clienteCreado = ref.read(clienteProvider).cliente;
+  final clienteCreado = ref.read(customerProvider).customer;
 
-    if (mounted && clienteCreado != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Cliente creado exitosamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pop(context, clienteCreado);
-    }
+  if (mounted && clienteCreado != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Cliente creado exitosamente'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    Navigator.pop(context, clienteCreado);
   }
+}
 
   @override
   Widget build(BuildContext context) {
-    final clienteState = ref.watch(clienteProvider);
+    final clienteState = ref.watch(customerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -159,8 +159,8 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
 
             // Botón guardar
             ElevatedButton.icon(
-              onPressed: clienteState.cargando ? null : _guardarCliente,
-              icon: clienteState.cargando
+              onPressed: clienteState.isLoading ? null : _guardarCliente,
+              icon: clienteState.isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,

@@ -1,5 +1,6 @@
 import 'package:agenda_app/core/di/auth_di.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/create_appointment.dart';
@@ -73,67 +74,74 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   }
 
   /// MÉTODO PRINCIPAL PARA GUARDAR (USAR SOLO ESTE)
-  Future<void> _saveAppointment() async {
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
+Future<void> _saveAppointment() async {
+  if (_isSaving) return;
+  setState(() => _isSaving = true);
 
-    try {
-      // 1. Validar cliente
-      final clienteState = ref.read(clienteProvider);
+  try {
+    // 1. Validar cliente
+    final clienteState = ref.read(customerProvider);
 
-      if (clienteState.cliente == null) {
-        _showError('Debe seleccionar o crear un cliente');
-        return;
-      }
-
-      // 2. Validar servicios
-      if (_selectedServices.isEmpty) {
-        _showError('Debe seleccionar al menos un servicio');
-        return;
-      }
-
-      // 3. Construir fecha/hora completa
-      final startAt = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      // 4. Crear el input
-      final input = CreateAppointmentInput(
-        customerName: clienteState.cliente!.nombre,
-        customerPhone: clienteState.cliente!.celular,
-        startAt: startAt,
-        services: List<ServiceEntity>.from(_selectedServices),
-        source: _selectedSource,
-        notes: _notesController.text,
-      );
-
-      // 5.  Usar el Use Case
-      final createUseCase = CreateAppointmentUseCase(widget.repo);
-      await createUseCase.call(input);
-
-      if (!mounted) return;
-
-      // 6. Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Cita creada exitosamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // 7. Cerrar y devolver true
-      context.pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      _showError('Error al crear la cita: $e');
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    if (clienteState.customer == null) {
+      _showError('Debe seleccionar o crear un cliente');
+      return;
     }
+
+    // 2. Validar servicios
+    if (_selectedServices.isEmpty) {
+      _showError('Debe seleccionar al menos un servicio');
+      return;
+    }
+
+    // 3. Construir fecha/hora completa
+    final startAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    // 4. Crear el input con los campos actualizados
+    final input = CreateAppointmentInput(
+      customerId: clienteState.customer!.id,  // ✅ NUEVO
+      customer: CustomerEntity(  // ✅ NUEVO
+        id: clienteState.customer!.id,
+        taxIdentification: clienteState.customer!.taxIdentification,
+        fullName: clienteState.customer!.fullName,
+        phone: clienteState.customer!.phone,
+        email: clienteState.customer!.email,
+        allergies: clienteState.customer!.allergies,
+      ),
+      startAt: startAt,
+      services: List<ServiceEntity>.from(_selectedServices),
+      source: _selectedSource,
+      notes: _notesController.text,
+    );
+
+    // 5. Usar el Use Case
+    final createUseCase = CreateAppointmentUseCase(widget.repo);
+    await createUseCase.call(input);
+
+    if (!mounted) return;
+
+    // 6. Mostrar mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Cita creada exitosamente'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // 7. Cerrar y devolver true
+    context.pop(true);
+  } catch (e) {
+    if (!mounted) return;
+    _showError('Error al crear la cita: $e');
+  } finally {
+    if (mounted) setState(() => _isSaving = false);
   }
+}
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -145,40 +153,41 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   }
 
   Widget _buildClienteSelector() {
-    final clienteState = ref.watch(clienteProvider);
+  final clienteState = ref.watch(customerProvider);
 
-    if (clienteState.cliente == null) {
-      return OutlinedButton.icon(
-        onPressed: _irABuscarCliente,
-        icon: const Icon(Icons.person_search),
-        label: const Text('Buscar o crear cliente'),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.all(16),
-        ),
-      );
-    }
-
-    return Card(
-      color: Colors.green[50],
-      child: ListTile(
-        leading: const CircleAvatar(
-          child: Icon(Icons.person),
-        ),
-        title: Text(clienteState.cliente!.nombre),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('CI: ${clienteState.cliente!.cedula}'),
-            Text('Tel: ${clienteState.cliente!.celular}'),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.swap_horiz),
-          onPressed: _irABuscarCliente,
-        ),
+  if (clienteState.customer == null) {
+    return OutlinedButton.icon(
+      onPressed: _irABuscarCliente,
+      icon: const Icon(Icons.person_search),
+      label: const Text('Buscar o crear cliente'),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.all(16),
       ),
     );
   }
+
+  return Card(
+    color: Colors.green[50],
+    child: ListTile(
+      leading: const CircleAvatar(
+        child: Icon(Icons.person),
+      ),
+      title: Text(clienteState.customer!.fullName ?? 'Sin nombre'),  //  CAMBIO
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CI: ${clienteState.customer!.taxIdentification ?? 'N/A'}'),  //  CAMBIO
+          Text('Tel: ${clienteState.customer!.phone ?? 'N/A'}'),  //  CAMBIO
+        ],
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.swap_horiz),
+        onPressed: _irABuscarCliente,
+      ),
+    ),
+  );
+}
+
 
   Future<void> _irABuscarCliente() async {
     final clienteSeleccionado = await context.push(

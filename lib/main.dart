@@ -6,7 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart' as classic_provider; //  Añadir alias
 import 'app.dart';
 
-
+//inicializa conecta las piezas
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   

@@ -23,14 +23,14 @@ class CustomersDatasource {
     return _cache!;
   }
 
-  Future<Customer?> getByCedula(String cedula) async {
-    final customers = await getAll();
-    try {
-      return customers.firstWhere((c) => c.cedula == cedula);
-    } catch (_) {
-      return null;
-    }
+  Future<Customer?> getByTaxIdentification(String taxIdentification) async {
+  final customers = await getAll();
+  try {
+    return customers.firstWhere((c) => c.taxIdentification == taxIdentification);
+  } catch (_) {
+    return null;
   }
+}
 
   Future<void> add(Customer customer) async {
     final customers = await getAll();

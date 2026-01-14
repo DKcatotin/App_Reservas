@@ -3,88 +3,90 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/customer.dart';
 import '../../data/sources/customers_datasource.dart';
 
-/// Estado del cliente
-class ClienteState {
-  final Customer? cliente;
-  final bool cargando;
+/// Customer state
+class CustomerState {  //  CAMBIO
+  final Customer? customer;  //  CAMBIO
+  final bool isLoading;  //  CAMBIO
   final String? error;
 
-  ClienteState({
-    this.cliente,
-    this.cargando = false,
+  CustomerState({
+    this.customer,
+    this.isLoading = false,
     this.error,
   });
 
-  ClienteState copyWith({
-    Customer? cliente,
-    bool? cargando,
+  CustomerState copyWith({
+    Customer? customer,
+    bool? isLoading,  //  CAMBIO
     String? error,
   }) {
-    return ClienteState(
-      cliente: cliente ?? this.cliente,
-      cargando: cargando ?? this.cargando,
+    return CustomerState(
+      customer: customer ?? this.customer,
+      isLoading: isLoading ?? this.isLoading,  //  CAMBIO
       error: error ?? this.error,
     );
   }
 }
 
-/// Notifier para gestionar el estado del cliente
-class ClienteNotifier extends StateNotifier<ClienteState> {
+/// Notifier to manage customer state
+class CustomerNotifier extends StateNotifier<CustomerState> {  //  CAMBIO
   final CustomersDatasource datasource;
 
-  ClienteNotifier(this.datasource) : super(ClienteState());
+  CustomerNotifier(this.datasource) : super(CustomerState());
 
-  /// Buscar cliente por cédula
-  Future<void> buscarPorCedula(String cedula) async {
-    state = ClienteState(cargando: true);
+  /// Search customer by tax identification
+  Future<void> searchByTaxIdentification(String taxIdentification) async {  //  CAMBIO
+    state = CustomerState(isLoading: true);
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    final clienteEncontrado = await datasource.getByCedula(cedula);
+    final customerFound = await datasource.getByTaxIdentification(taxIdentification);  //  CAMBIO
 
-    if (clienteEncontrado != null) {
-      state = ClienteState(cliente: clienteEncontrado);
+    if (customerFound != null) {
+      state = CustomerState(customer: customerFound);
     } else {
-      state = ClienteState(error: 'Cliente no encontrado');
+      state = CustomerState(error: 'Cliente no encontrado');
     }
   }
 
-  /// Crear nuevo cliente en memoria (opcional, solo cache local)
-  Future<void> crearCliente({
-  required String cedula,
-  required String nombre,
-  required String celular,
-}) async {
-  state = ClienteState(cargando: true);
+  /// Create new customer in memory (optional, local cache only)
+  Future<void> createCustomer({  //  CAMBIO
+    required String taxIdentification,
+    required String fullName,
+    required String phone,
+    String? email,
+  }) async {
+    state = CustomerState(isLoading: true);
 
-  await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 300));
 
-  final nuevoCliente = Customer(
-    id: cedula,    // mock: usamos la cédula como id
-    cedula: cedula,
-    nombre: nombre,
-    celular: celular,
-  );
+    final newCustomer = Customer(  //  CAMBIO
+      id: taxIdentification,
+      taxIdentification: taxIdentification,
+      fullName: fullName,
+      phone: phone,
+      email: email,
+    );
 
-  await datasource.add(nuevoCliente);
+    await datasource.add(newCustomer);
 
-  state = ClienteState(cliente: nuevoCliente);
-}
+    state = CustomerState(customer: newCustomer);
+  }
 
-  /// Limpiar el estado
-  void limpiar() {
-    state = ClienteState();
+  /// Clear state
+  void clear() {  //  CAMBIO
+    state = CustomerState();
   }
 }
 
-/// Provider del datasource
+/// Datasource provider
 final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
   return CustomersDatasource();
 });
 
-/// Provider del estado del cliente
-final clienteProvider =
-    StateNotifierProvider<ClienteNotifier, ClienteState>((ref) {
+/// Customer state provider
+final customerProvider =  // CAMBIO
+    StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {  //  CAMBIO
   final datasource = ref.watch(customersDatasourceProvider);
-  return ClienteNotifier(datasource);
+  return CustomerNotifier(datasource);
 });

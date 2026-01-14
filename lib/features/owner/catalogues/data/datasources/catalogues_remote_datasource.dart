@@ -40,7 +40,7 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
       'Conecta endpoint GET /api/staff y descomenta implementación.',
     );
   }
-   /// 🔐 Ruta privada usada antes en `/test1`
+   ///  Ruta privada usada antes en `/test1`
   @override
   Future<List<CatalogueItem>> getAppointmentStatuses() async {
     final res = await dio.get('/test1');

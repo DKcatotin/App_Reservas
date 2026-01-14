@@ -17,25 +17,28 @@ class AppointmentsJsonDatasource implements AppointmentsDatasource {
         .toList();
   }
 
-  @override
-  Future<List<Appointment>> getAll() async {
-    final today = await _load('assets/data/owner/appointments/appointments_today.json');
-    final past = await _load('assets/data/owner/appointments/appointments_past.json');
-    final upcoming = await _load('assets/data/owner/appointments/appointments_upcoming.json');
-    
-    final all = [...past, ...today, ...upcoming];
-    
-    //  CORRECCIÓN: Eliminar duplicados basándose en el ID
-    final Map<String, Appointment> uniqueMap = {};
-    for (var appointment in all) {
-      uniqueMap[appointment.id] = appointment;
-    }
-    
-    final uniqueAppointments = uniqueMap.values.toList();
-    uniqueAppointments.sort((a, b) => a.startAt.compareTo(b.startAt));
-    
-    return uniqueAppointments;
+ @override
+Future<List<Appointment>> getAll() async {
+  // Cargar en paralelo en lugar de secuencial
+  final results = await Future.wait([
+    _load('assets/data/owner/appointments/appointments_today.json'),
+    _load('assets/data/owner/appointments/appointments_past.json'),
+    _load('assets/data/owner/appointments/appointments_upcoming.json'),
+  ]);
+  
+  final all = [...results[0], ...results[1], ...results[2]];
+  
+  // Eliminar duplicados
+  final uniqueMap = <String, Appointment>{};
+  for (var appointment in all) {
+    uniqueMap[appointment.id] = appointment;
   }
+  
+  final uniqueAppointments = uniqueMap.values.toList();
+  uniqueAppointments.sort((a, b) => a.startAt.compareTo(b.startAt));
+  
+  return uniqueAppointments;
+}
 
   @override
   Future<void> create(Appointment appointment) {

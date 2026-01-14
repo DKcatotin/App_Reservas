@@ -166,7 +166,7 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () async {
-        // ✅ PASAR EL REPOSITORIO Y RECARGAR AL VOLVER
+        //  PASAR EL REPOSITORIO Y RECARGAR AL VOLVER
         final result = await Navigator.push<AppointmentEntity>(
           context,
           MaterialPageRoute(
@@ -233,18 +233,18 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
 
               // INFO
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appointment.customer.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        appointment.customer.fullName ?? 'Sin nombre',  // ✅ CORRECCIÓN
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1F2937),
+          letterSpacing: -0.3,
+        ),
+      ),
                     const SizedBox(height: 6),
                     Row(
                       children: [

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import '../config/env.dart';
 import '../storage/token_storage.dart';
 import 'auth_interceptor.dart';
-
+//Centraliza la configuracion HTTP
 class DioClient {
   DioClient._();
 
