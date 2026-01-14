@@ -50,28 +50,37 @@ class CustomerNotifier extends StateNotifier<CustomerState> {  //  CAMBIO
   }
 
   /// Create new customer in memory (optional, local cache only)
-  Future<void> createCustomer({  //  CAMBIO
-    required String taxIdentification,
-    required String fullName,
-    required String phone,
-    String? email,
-  }) async {
-    state = CustomerState(isLoading: true);
+/// Create new customer in memory (optional, local cache only)
+Future<void> createCustomer({
+  required String taxIdentification,
+  required String fullName,
+  required String phone,
+  String? userId,              // ✅ AGREGAR como opcional
+  String? email,
+  String? taxName,
+  String? allergies,
+  String? referredBy,
+}) async {
+  state = CustomerState(isLoading: true);
 
-    await Future.delayed(const Duration(milliseconds: 300));
+  await Future.delayed(const Duration(milliseconds: 300));
 
-    final newCustomer = Customer(  //  CAMBIO
-      id: taxIdentification,
-      taxIdentification: taxIdentification,
-      fullName: fullName,
-      phone: phone,
-      email: email,
-    );
+  final newCustomer = Customer(
+    id: taxIdentification,                    // Mock: usamos la cédula como id
+    userId: userId ?? 'temp-user-id',         // ✅ AGREGAR - Temporal para mock
+    taxIdentification: taxIdentification,
+    taxName: taxName,
+    fullName: fullName,
+    phone: phone,
+    email: email,
+    allergies: allergies,
+    referredBy: referredBy,
+  );
 
-    await datasource.add(newCustomer);
+  await datasource.add(newCustomer);
 
-    state = CustomerState(customer: newCustomer);
-  }
+  state = CustomerState(customer: newCustomer);
+}
 
   /// Clear state
   void clear() {  //  CAMBIO

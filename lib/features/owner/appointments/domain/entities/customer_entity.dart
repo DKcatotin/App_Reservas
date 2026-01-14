@@ -1,35 +1,39 @@
 class CustomerEntity {
   final String id;
-  final String? taxIdentification;  // Para buscar por cédula
-  final String? fullName;
-  final String? phone;
-  final String? email;
+  final String userId;              //  NUEVO - FK obligatoria
+  final String? referredBy;
+  final String? taxIdentification;
+  final String? taxName;
   final String? allergies;
+  
+  // Campos de users (obtenidos por JOIN)
+  final String? fullName;
+  final String? email;
+  final String? phone;
 
-  const CustomerEntity({
+  CustomerEntity({
     required this.id,
+    required this.userId,           //  NUEVO
+    this.referredBy,
     this.taxIdentification,
-    this.fullName,
-    this.phone,
-    this.email,
+  /// Creates a copy of this [CustomerEntity] but with the given fields
+  /// replaced with the new values.
+  ///
+  /// [id], [taxIdentification], [fullName], [phone], [email] and [allergies]
+  /// are optional and default to the current value if not specified.
+    this.taxName,
     this.allergies,
+    this.fullName,
+    this.email,
+    this.phone,
   });
 
-  CustomerEntity copyWith({
-    String? id,
-    String? taxIdentification,
-    String? fullName,
-    String? phone,
-    String? email,
-    String? allergies,
-  }) {
-    return CustomerEntity(
-      id: id ?? this.id,
-      taxIdentification: taxIdentification ?? this.taxIdentification,
-      fullName: fullName ?? this.fullName,
-      phone: phone ?? this.phone,
-      email: email ?? this.email,
-      allergies: allergies ?? this.allergies,
-    );
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CustomerEntity && other.id == id;
   }
+
+  @override
+  int get hashCode => id.hashCode;
 }

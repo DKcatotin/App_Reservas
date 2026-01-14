@@ -2,64 +2,113 @@
   "data": [
     {
       "id": "66666666-6666-6666-6666-666666666661",
-      "cedula": "1712345671",
-      "nombre": "María Zambrano",
-      "celular": "0995382332"
+      "user_id": "77777777-7777-7777-7777-777777777771",
+      "tax_identification": "1712345671",
+      "tax_name": "María Zambrano López",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "María Zambrano",
+      "email": "maria.zambrano@example.com",
+      "phone": "0995382332"
     },
     {
       "id": "66666666-6666-6666-6666-666666666662",
-      "cedula": "1712345672",
-      "nombre": "Daniela Pérez",
-      "celular": "0912365432"
+      "user_id": "77777777-7777-7777-7777-777777777772",
+      "tax_identification": "1712345672",
+      "tax_name": "Daniela Pérez García",
+      "allergies": "Alergia al látex",
+      "referred_by": null,
+      "full_name": "Daniela Pérez",
+      "email": "daniela.perez@example.com",
+      "phone": "0912365432"
     },
     {
       "id": "66666666-6666-6666-6666-666666666663",
-      "cedula": "1712345673",
-      "nombre": "Ana Torres",
-      "celular": "0987654321"
+      "user_id": "77777777-7777-7777-7777-777777777773",
+      "tax_identification": "1712345673",
+      "tax_name": "Ana María Torres Ruiz",
+      "allergies": null,
+      "referred_by": "66666666-6666-6666-6666-666666666661",
+      "full_name": "Ana Torres",
+      "email": "ana.torres@example.com",
+      "phone": "0987654321"
     },
     {
       "id": "66666666-6666-6666-6666-666666666664",
-      "cedula": "1712345674",
-      "nombre": "Sofía Ramírez",
-      "celular": "0923456789"
+      "user_id": "77777777-7777-7777-7777-777777777774",
+      "tax_identification": "1712345674",
+      "tax_name": "Sofía Ramírez Vega",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "Sofía Ramírez",
+      "email": "sofia.ramirez@example.com",
+      "phone": "0923456789"
     },
     {
       "id": "66666666-6666-6666-6666-666666666665",
-      "cedula": "1712345675",
-      "nombre": "Valentina Castro",
-      "celular": "0934567890"
+      "user_id": "77777777-7777-7777-7777-777777777775",
+      "tax_identification": "1712345675",
+      "tax_name": "Valentina Castro Moreno",
+      "allergies": "Sensibilidad a productos químicos",
+      "referred_by": null,
+      "full_name": "Valentina Castro",
+      "email": "valentina.castro@example.com",
+      "phone": "0934567890"
     },
     {
       "id": "66666666-6666-6666-6666-666666666666",
-      "cedula": "1712345676",
-      "nombre": "Isabella Morales",
-      "celular": "0998765432"
+      "user_id": "77777777-7777-7777-7777-777777777776",
+      "tax_identification": "1712345676",
+      "tax_name": "Isabella Morales Sánchez",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "Isabella Morales",
+      "email": "isabella.morales@example.com",
+      "phone": "0998765432"
     },
     {
       "id": "66666666-6666-6666-6666-666666666667",
-      "cedula": "1712345677",
-      "nombre": "Camila Vega",
-      "celular": "0956789012"
+      "user_id": "77777777-7777-7777-7777-777777777777",
+      "tax_identification": "1712345677",
+      "tax_name": "Camila Vega Paredes",
+      "allergies": null,
+      "referred_by": "66666666-6666-6666-6666-666666666662",
+      "full_name": "Camila Vega",
+      "email": "camila.vega@example.com",
+      "phone": "0956789012"
     },
     {
       "id": "66666666-6666-6666-6666-666666666668",
-      "cedula": "1712345678",
-      "nombre": "Martina Ruiz",
-      "celular": "0967890123"
+      "user_id": "77777777-7777-7777-7777-777777777778",
+      "tax_identification": "1712345678",
+      "tax_name": "Martina Ruiz Delgado",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "Martina Ruiz",
+      "email": "martina.ruiz@example.com",
+      "phone": "0967890123"
     },
     {
       "id": "66666666-6666-6666-6666-666666666669",
-      "cedula": "1712345679",
-      "nombre": "Lucía Mendoza",
-      "celular": "0978901234"
+      "user_id": "77777777-7777-7777-7777-777777777779",
+      "tax_identification": "1712345679",
+      "tax_name": "Lucía Mendoza Silva",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "Lucía Mendoza",
+      "email": "lucia.mendoza@example.com",
+      "phone": "0978901234"
     },
     {
       "id": "66666666-6666-6666-6666-666666666670",
-      "cedula": "1712345680",
-      "nombre": "Emilia Vargas",
-      "celular": "0989012345"
-
+      "user_id": "77777777-7777-7777-7777-777777777780",
+      "tax_identification": "1712345680",
+      "tax_name": "Emilia Vargas Rojas",
+      "allergies": null,
+      "referred_by": null,
+      "full_name": "Emilia Vargas",
+      "email": "emilia.vargas@example.com",
+      "phone": "0989012345"
     }
   ]
 }

@@ -5,36 +5,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666661",
-      "staff_id": "00000000-0000-0000-0000-000000000000",
+      "staff_profile_id": "00000000-0000-0000-0000-000000000000",
+      "status_id": 1,
+      "source_id": 4,
       "start_at": "2025-12-29T10:00:00-05:00",
       "end_at": "2025-12-29T11:30:00-05:00",
       "notes": "Cliente pide color nude.",
       "status": {
         "id": 1,
         "code": "pending",
-        "label": "Pendiente"
+        "name": "Pendiente"
       },
       "source": {
         "id": 4,
-        "type": "llamada",
-        "label": "Llamada"
+        "code": "call",
+        "name": "Llamada"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666661",
-        "name": "María Zambrano",
+        "user_id": "77777777-7777-7777-7777-777777777771",
+        "tax_identification": "1712345671",
+        "tax_name": "María Zambrano López",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "María Zambrano",
+        "email": "maria.zambrano@example.com",
         "phone": "0995382332"
       },
       "staff": {
         "id": "00000000-0000-0000-0000-000000000000",
-        "name": "Propietario",
+        "user_id": "88888888-8888-8888-8888-888888888880",
+        "display_name": "Propietario",
+        "specialty": "General",
         "color_tag": "#9333EA"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888881",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Uñas acrílicas",
-          "duration_minutes": 90,
-          "price": 25.0
+          "description": "Aplicación de uñas acrílicas con diseño personalizado",
+          "duration_min": 90,
+          "base_price": 25.0,
+          "enabled": true
         }
       ]
     },
@@ -43,7 +57,9 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666662",
-      "staff_id": "33333333-3333-3333-3333-333333333331",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333331",
+      "status_id": 2,
+      "source_id": 2,
       "start_at": "2026-01-12T12:30:00-05:00",
       "end_at": "2026-01-12T13:30:00-05:00",
       "notes": null,
@@ -54,25 +70,37 @@
       },
       "source": {
         "id": 2,
-        "type": "whatsapp",
+        "code": "whatsapp",
         "name": "WhatsApp"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666662",
-        "name": "Daniela Pérez",
+        "user_id": "77777777-7777-7777-7777-777777777772",
+        "tax_identification": "1712345672",
+        "tax_name": "Daniela Pérez García",
+        "allergies": "Alergia al látex",
+        "referred_by": null,
+        "full_name": "Daniela Pérez",
+        "email": "daniela.perez@example.com",
         "phone": "0912365432"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333331",
-        "name": "Karla",
+        "user_id": "88888888-8888-8888-8888-888888888881",
+        "display_name": "Karla",
+        "specialty": "Manicure y Pedicure",
         "color_tag": "#FF6B6B"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888882",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Manicure",
-          "duration_minutes": 60,
-          "price": 15.0
+          "description": "Manicure básico con esmaltado",
+          "duration_min": 60,
+          "base_price": 15.0,
+          "enabled": true
         }
       ]
     },
@@ -81,44 +109,57 @@
       "owner_id": "99999999-9999-9999-9999-999999999923",
       "branch_id": "11111111-1111-1111-1111-11111111232331",
       "customer_id": "6666336-63-6666-6666-666666666661",
-      "staff_id": "00000000-0000-0000-0000-000000000000",
+      "staff_profile_id": "00000000-0000-0000-0000-000000000000",
+      "status_id": 1,
+      "source_id": 4,
       "start_at": "2025-12-29T09:00:00-05:00",
       "end_at": "2025-12-29T10:30:00-05:00",
       "notes": "Cliente pide color nude.",
       "status": {
         "id": 1,
         "code": "pending",
-        "label": "Pendiente"
+        "name": "Pendiente"
       },
       "source": {
         "id": 4,
-        "type": "llamada",
-        "label": "Llamada"
+        "code": "call",
+        "name": "Llamada"
       },
       "customer": {
-        "id": "66666666-6666-6666-6666-666666666661",
-        "name": "Juan Benavides",
+        "id": "6666336-63-6666-6666-666666666661",
+        "user_id": "77777777-7777-7777-7777-777777777775",
+        "tax_identification": "1712345675",
+        "tax_name": "Juan Benavides Morales",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Juan Benavides",
+        "email": "juan.benavides@example.com",
         "phone": "0995382332"
       },
       "staff": {
         "id": "00000000-0000-0000-0000-000000000000",
-        "name": "Propietario",
+        "user_id": "88888888-8888-8888-8888-888888888880",
+        "display_name": "Propietario",
+        "specialty": "General",
         "color_tag": "#9333EA"
       },
       "services": [
         {
-          "id": "88888888-8888-8888-8888-888888888881",
-          "name": "Cejas",
-          "duration_minutes": 90,
-          "price": 25.0
+          "id": "88888888-8888-8888-8888-888888888883",
+          "branch_id": "11111111-1111-1111-1111-11111111232331",
+          "category_id": "22222222-2222-2222-2222-222222222222",
+          "name": "Depilación de cejas",
+          "description": "Depilación y diseño de cejas",
+          "duration_min": 90,
+          "base_price": 25.0,
+          "enabled": true
         }
       ]
     }
   ],
   "meta": {
     "date": "2025-12-29",
-    "count": 2,
+    "count": 3,
     "timezone": "America/Guayaquil"
   }
-  
 }

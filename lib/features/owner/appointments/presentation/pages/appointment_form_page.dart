@@ -80,13 +80,12 @@ Future<void> _saveAppointment() async {
 
   try {
     // 1. Validar cliente
-    final clienteState = ref.read(customerProvider);
+    final customerState = ref.read(customerProvider);
 
-    if (clienteState.customer == null) {
-      _showError('Debe seleccionar o crear un cliente');
-      return;
-    }
-
+    if (customerState.customer == null) {
+  _showError('Debe seleccionar o crear un cliente');
+  return;
+}
     // 2. Validar servicios
     if (_selectedServices.isEmpty) {
       _showError('Debe seleccionar al menos un servicio');
@@ -104,20 +103,24 @@ Future<void> _saveAppointment() async {
 
     // 4. Crear el input con los campos actualizados
     final input = CreateAppointmentInput(
-      customerId: clienteState.customer!.id,  // ✅ NUEVO
-      customer: CustomerEntity(  // ✅ NUEVO
-        id: clienteState.customer!.id,
-        taxIdentification: clienteState.customer!.taxIdentification,
-        fullName: clienteState.customer!.fullName,
-        phone: clienteState.customer!.phone,
-        email: clienteState.customer!.email,
-        allergies: clienteState.customer!.allergies,
-      ),
-      startAt: startAt,
-      services: List<ServiceEntity>.from(_selectedServices),
-      source: _selectedSource,
-      notes: _notesController.text,
-    );
+  customerId: customerState.customer!.id,  // ✅ Usa customerState
+  customer: CustomerEntity(
+    id: customerState.customer!.id,
+    userId: customerState.customer!.userId,              // ✅ AGREGAR
+    referredBy: customerState.customer!.referredBy,      // ✅ AGREGAR (opcional)
+    taxIdentification: customerState.customer!.taxIdentification,
+    taxName: customerState.customer!.taxName,            // ✅ AGREGAR (opcional)
+    fullName: customerState.customer!.fullName,
+    phone: customerState.customer!.phone,
+    email: customerState.customer!.email,
+    allergies: customerState.customer!.allergies,
+  ),
+  startAt: startAt,
+  services: List<ServiceEntity>.from(_selectedServices),
+  source: _selectedSource,
+  notes: _notesController.text,
+);
+
 
     // 5. Usar el Use Case
     final createUseCase = CreateAppointmentUseCase(widget.repo);

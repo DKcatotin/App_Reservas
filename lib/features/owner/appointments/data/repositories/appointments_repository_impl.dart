@@ -19,7 +19,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   // Cache para mejorar performance
   List<Appointment>? _cache;
-  List<AppointmentEntity>? _entityCache; // ✅ NUEVO: Caché de entities
+  List<AppointmentEntity>? _entityCache;
   DateTime? _cacheTime;
   final Duration _cacheDuration = const Duration(minutes: 5);
 
@@ -33,7 +33,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   void invalidateCache() {
     _cache = null;
-    _entityCache = null; // ✅ NUEVO: Limpiar caché de entities
+    _entityCache = null;
     _cacheTime = null;
   }
 
@@ -41,16 +41,12 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   @override
   Future<List<AppointmentEntity>> getAll() async {
-    // ✅ OPTIMIZACIÓN: Retornar entities cacheadas directamente
     if (_isCacheValid && _entityCache != null) {
       return _entityCache!;
     }
 
-    // Cargar desde datasource
     _cache = await datasource.getAll();
     _cacheTime = DateTime.now();
-
-    // ✅ OPTIMIZACIÓN: Cachear la conversión a entities
     _entityCache = _cache!.map((m) => _mapToEntity(m)).toList();
 
     return _entityCache!;
@@ -60,12 +56,10 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   Future<List<AppointmentEntity>> getByDay(DateTime day) async {
     final all = await getAll();
 
-    // Filtrar por día
     final result = all.where((a) {
       return isSameDate(a.startAt, day);
     }).toList();
 
-    // Ordenar por hora de inicio
     result.sort((a, b) => a.startAt.compareTo(b.startAt));
 
     return result;
@@ -95,94 +89,100 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   /// Convierte un Model (data) a Entity (domain)
   AppointmentEntity _mapToEntity(Appointment model) {
-  return AppointmentEntity(
-    id: model.id,
-    ownerId: model.ownerId,
-    branchId: model.branchId,
-    customerId: model.customerId,
-    staffId: model.staffId,
-    startAt: model.startAt,
-    endAt: model.endAt,
-    notes: model.notes,
-    status: StatusEntity(
-      code: model.status.code,
-      label: model.status.label,
-    ),
-    source: SourceEntity(
-      code: model.source.type,
-      name: _getSourceName(model.source.type),
-    ),
-    customer: CustomerEntity(
-      id: model.customer.id,
-      taxIdentification: model.customer.taxIdentification,  // ✅ CAMBIO
-      fullName: model.customer.fullName,  // ✅ CAMBIO
-      phone: model.customer.phone,  // ✅ CAMBIO
-      email: model.customer.email,  // ✅ NUEVO
-      allergies: model.customer.allergies,  // ✅ NUEVO
-    ),
-    staff: model.staff != null
-        ? StaffEntity(
-            id: model.staff!.id,
-            name: model.staff!.name,
-            specialty: model.staff!.specialty,
-            colorTag: model.staff!.colorTag,
+    return AppointmentEntity(
+      id: model.id,
+      ownerId: model.ownerId,
+      branchId: model.branchId,
+      customerId: model.customerId,
+      staffId: model.staffId,
+      startAt: model.startAt,
+      endAt: model.endAt,
+      notes: model.notes,
+      status: StatusEntity(
+        code: model.status.code,
+        label: model.status.label,
+      ),
+      source: SourceEntity(
+        code: model.source.type,
+        name: _getSourceName(model.source.type),
+      ),
+      customer: CustomerEntity(
+        id: model.customer.id,
+        userId: model.customer.userId ?? '',        //  AGREGADO
+        referredBy: model.customer.referredBy,      //  AGREGADO
+        taxIdentification: model.customer.taxIdentification,
+        taxName: model.customer.taxName,            //  AGREGADO
+        fullName: model.customer.fullName,
+        phone: model.customer.phone,
+        email: model.customer.email,
+        allergies: model.customer.allergies,
+      ),
+      staff: model.staff != null
+          ? StaffEntity(
+              id: model.staff!.id,
+              name: model.staff!.name,
+              specialty: model.staff!.specialty,
+              colorTag: model.staff!.colorTag,
+            )
+          : null,
+      services: model.services
+          .map(
+            (s) => ServiceEntity(
+              id: s.id,
+              name: s.name,
+              durationMinutes: s.durationMinutes,
+            ),
           )
-        : null,
-    services: model.services
-        .map(
-          (s) => ServiceEntity(
-            id: s.id,
-            name: s.name,
-            durationMinutes: s.durationMinutes,
-          ),
-        )
-        .toList(),
-  );
-}
+          .toList(),
+    );
+  }
 
   /// Convierte una Entity (domain) a Model (data)
   Appointment _mapToModel(AppointmentEntity entity) {
-  return Appointment(
-    id: entity.id,
-    ownerId: entity.ownerId,
-    branchId: entity.branchId,
-    customerId: entity.customerId,
-    staffId: entity.staffId,
-    startAt: entity.startAt,
-    endAt: entity.endAt,
-    notes: entity.notes,
-    status: Status(
-      code: entity.status.code,
-      label: entity.status.label,
-    ),
-    source: Source(type: entity.source.code),
-    customer: Customer(
-      id: entity.customer.id,
-      taxIdentification: entity.customer.taxIdentification,  // ✅ CAMBIO
-      fullName: entity.customer.fullName,  // ✅ CAMBIO
-      phone: entity.customer.phone,  // ✅ CAMBIO
-      email: entity.customer.email,  // ✅ NUEVO
-      allergies: entity.customer.allergies,  // ✅ NUEVO
-    ),
-    staff: entity.staff != null
-        ? Staff(
-            id: entity.staff!.id,
-            name: entity.staff!.name,
-            specialty: entity.staff!.specialty,
-            colorTag: entity.staff!.colorTag,
+    return Appointment(
+      id: entity.id,
+      ownerId: entity.ownerId,
+      branchId: entity.branchId,
+      customerId: entity.customerId,
+      staffId: entity.staffId,
+      startAt: entity.startAt,
+      endAt: entity.endAt,
+      notes: entity.notes,
+      status: Status(
+        code: entity.status.code,
+        label: entity.status.label,
+      ),
+      source: Source(type: entity.source.code),
+      customer: Customer(
+        id: entity.customer.id,
+        userId: entity.customer.userId,              //  AGREGADO
+        referredBy: entity.customer.referredBy,      //  AGREGADO
+        taxIdentification: entity.customer.taxIdentification,
+        taxName: entity.customer.taxName,            //  AGREGADO
+        fullName: entity.customer.fullName,
+        phone: entity.customer.phone,
+        email: entity.customer.email,
+        allergies: entity.customer.allergies,
+      ),
+      staff: entity.staff != null
+          ? Staff(
+              id: entity.staff!.id,
+              name: entity.staff!.name,
+              specialty: entity.staff!.specialty,
+              colorTag: entity.staff!.colorTag,
+            )
+          : null,
+      services: entity.services
+          .map(
+            (s) => AppointmentService(
+              id: s.id,
+              name: s.name,
+              durationMinutes: s.durationMinutes,
+            ),
           )
-        : null,
-    services: entity.services
-        .map(
-          (s) => AppointmentService(
-            id: s.id,
-            name: s.name,
-            durationMinutes: s.durationMinutes,
-          ),
-        )
-        .toList(),
-  );
-}
+          .toList(),
+    );
+  }
 
   /// Helper para obtener el nombre del source
   String _getSourceName(String code) {

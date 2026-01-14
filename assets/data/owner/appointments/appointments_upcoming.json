@@ -5,36 +5,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666666",
-      "staff_id": "33333333-3333-3333-3333-333333333331",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333331",
+      "status_id": 2,
+      "source_id": 3,
       "start_at": "2025-12-29T09:00:00-05:00",
       "end_at": "2025-12-29T10:30:00-05:00",
       "notes": "Cliente prefiere colores claros",
       "status": {
         "id": 2,
         "code": "confirmed",
-        "label": "Confirmada"
+        "name": "Confirmada"
       },
       "source": {
         "id": 3,
-        "type": "web",
-        "label": "Web"
+        "code": "web",
+        "name": "Web"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666666",
-        "name": "Isabella Morales",
+        "user_id": "77777777-7777-7777-7777-777777777776",
+        "tax_identification": "1712345676",
+        "tax_name": "Isabella Morales Sánchez",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Isabella Morales",
+        "email": "isabella.morales@example.com",
         "phone": "0998765432"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333331",
-        "name": "Karla",
+        "user_id": "88888888-8888-8888-8888-888888888881",
+        "display_name": "Karla",
+        "specialty": "Manicure y Pedicure",
         "color_tag": "#FF6B6B"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888881",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Uñas acrílicas",
-          "duration_minutes": 90,
-          "price": 25.0
+          "description": "Aplicación de uñas acrílicas con diseño personalizado",
+          "duration_min": 90,
+          "base_price": 25.0,
+          "enabled": true
         }
       ]
     },
@@ -43,36 +57,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666667",
-      "staff_id": "33333333-3333-3333-3333-333333333332",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333332",
+      "status_id": 1,
+      "source_id": 2,
       "start_at": "2025-12-29T14:00:00-05:00",
       "end_at": "2025-12-29T15:00:00-05:00",
       "notes": null,
       "status": {
         "id": 1,
         "code": "pending",
-        "label": "Pendiente"
+        "name": "Pendiente"
       },
       "source": {
         "id": 2,
-        "type": "whatsapp",
-        "label": "WhatsApp"
+        "code": "whatsapp",
+        "name": "WhatsApp"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666667",
-        "name": "Camila Vega",
+        "user_id": "77777777-7777-7777-7777-777777777777",
+        "tax_identification": "1712345677",
+        "tax_name": "Camila Vega Paredes",
+        "allergies": null,
+        "referred_by": "66666666-6666-6666-6666-666666666662",
+        "full_name": "Camila Vega",
+        "email": "camila.vega@example.com",
         "phone": "0956789012"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333332",
-        "name": "Andrea",
+        "user_id": "88888888-8888-8888-8888-888888888882",
+        "display_name": "Andrea",
+        "specialty": "Depilación y cejas",
         "color_tag": "#4ECDC4"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888884",
-          "name": "Cejas",
-          "duration_minutes": 60,
-          "price": 12.0
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222222",
+          "name": "Depilación de cejas",
+          "description": "Depilación y diseño de cejas",
+          "duration_min": 60,
+          "base_price": 12.0,
+          "enabled": true
         }
       ]
     },
@@ -81,36 +109,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666668",
-      "staff_id": "33333333-3333-3333-3333-333333333331",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333331",
+      "status_id": 2,
+      "source_id": 4,
       "start_at": "2025-12-30T10:00:00-05:00",
       "end_at": "2025-12-30T11:00:00-05:00",
       "notes": "Primera visita",
       "status": {
         "id": 2,
         "code": "confirmed",
-        "label": "Confirmada"
+        "name": "Confirmada"
       },
       "source": {
         "id": 4,
-        "type": "llamada",
-        "label": "Llamada"
+        "code": "call",
+        "name": "Llamada"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666668",
-        "name": "Martina Ruiz",
+        "user_id": "77777777-7777-7777-7777-777777777778",
+        "tax_identification": "1712345678",
+        "tax_name": "Martina Ruiz Delgado",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Martina Ruiz",
+        "email": "martina.ruiz@example.com",
         "phone": "0967890123"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333331",
-        "name": "Karla",
+        "user_id": "88888888-8888-8888-8888-888888888881",
+        "display_name": "Karla",
+        "specialty": "Manicure y Pedicure",
         "color_tag": "#FF6B6B"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888882",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Manicure",
-          "duration_minutes": 60,
-          "price": 15.0
+          "description": "Manicure básico con esmaltado",
+          "duration_min": 60,
+          "base_price": 15.0,
+          "enabled": true
         }
       ]
     },
@@ -119,36 +161,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666669",
-      "staff_id": "33333333-3333-3333-3333-333333333332",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333332",
+      "status_id": 2,
+      "source_id": 3,
       "start_at": "2025-12-30T15:30:00-05:00",
       "end_at": "2025-12-30T16:30:00-05:00",
       "notes": null,
       "status": {
         "id": 2,
         "code": "confirmed",
-        "label": "Confirmada"
+        "name": "Confirmada"
       },
       "source": {
         "id": 3,
-        "type": "web",
-        "label": "Web"
+        "code": "web",
+        "name": "Web"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666669",
-        "name": "Lucía Mendoza",
+        "user_id": "77777777-7777-7777-7777-777777777779",
+        "tax_identification": "1712345679",
+        "tax_name": "Lucía Mendoza Silva",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Lucía Mendoza",
+        "email": "lucia.mendoza@example.com",
         "phone": "0978901234"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333332",
-        "name": "Andrea",
+        "user_id": "88888888-8888-8888-8888-888888888882",
+        "display_name": "Andrea",
+        "specialty": "Depilación y cejas",
         "color_tag": "#4ECDC4"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888883",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Pedicure",
-          "duration_minutes": 60,
-          "price": 18.0
+          "description": "Pedicure básico con esmaltado",
+          "duration_min": 60,
+          "base_price": 18.0,
+          "enabled": true
         }
       ]
     },
@@ -157,36 +213,50 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666670",
-      "staff_id": "33333333-3333-3333-3333-333333333331",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333331",
+      "status_id": 1,
+      "source_id": 2,
       "start_at": "2025-12-31T11:00:00-05:00",
       "end_at": "2025-12-31T12:30:00-05:00",
       "notes": "Combo fin de año",
       "status": {
         "id": 1,
         "code": "pending",
-        "label": "Pendiente"
+        "name": "Pendiente"
       },
       "source": {
         "id": 2,
-        "type": "whatsapp",
-        "label": "WhatsApp"
+        "code": "whatsapp",
+        "name": "WhatsApp"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666670",
-        "name": "Emilia Vargas",
+        "user_id": "77777777-7777-7777-7777-777777777780",
+        "tax_identification": "1712345680",
+        "tax_name": "Emilia Vargas Rojas",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Emilia Vargas",
+        "email": "emilia.vargas@example.com",
         "phone": "0989012345"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333331",
-        "name": "Karla",
+        "user_id": "88888888-8888-8888-8888-888888888881",
+        "display_name": "Karla",
+        "specialty": "Manicure y Pedicure",
         "color_tag": "#FF6B6B"
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888881",
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
           "name": "Uñas acrílicas",
-          "duration_minutes": 90,
-          "price": 25.0
+          "description": "Aplicación de uñas acrílicas con diseño personalizado",
+          "duration_min": 90,
+          "base_price": 25.0,
+          "enabled": true
         }
       ]
     },
@@ -195,46 +265,54 @@
       "owner_id": "99999999-9999-9999-9999-999999999999",
       "branch_id": "11111111-1111-1111-1111-111111111111",
       "customer_id": "66666666-6666-6666-6666-666666666671",
-      "staff_id": "33333333-3333-3333-3333-333333333332",
+      "staff_profile_id": "33333333-3333-3333-3333-333333333332",
+      "status_id": 2,
+      "source_id": 1,
       "start_at": "2026-01-02T09:30:00-05:00",
       "end_at": "2026-01-02T10:30:00-05:00",
       "notes": "Cliente regular, mismo estilo",
       "status": {
         "id": 2,
         "code": "confirmed",
-        "label": "Confirmada"
+        "name": "Confirmada"
       },
       "source": {
         "id": 1,
-        "type": "presencial",
-        "label": "Presencial"
+        "code": "in_person",
+        "name": "Presencial"
       },
       "customer": {
         "id": "66666666-6666-6666-6666-666666666671",
-        "name": "Paula Herrera",
+        "user_id": "77777777-7777-7777-7777-777777777781",
+        "tax_identification": "1712345681",
+        "tax_name": "Paula Herrera Gómez",
+        "allergies": null,
+        "referred_by": null,
+        "full_name": "Paula Herrera",
+        "email": "paula.herrera@example.com",
         "phone": "0990123456"
       },
       "staff": {
         "id": "33333333-3333-3333-3333-333333333332",
-        "name": "Andrea",
-        "color_tag": "#4ECDC4"
+        "user_id": "88888888-8888-8888-8888-888888888882",
+        "display_name": "Andrea",
+        "specialty": "Uñas y Manicura",
+        "color_tag": "#FF6B9D",
+        "commission_type": "percentage",
+        "commission_value": 0.1
       },
       "services": [
         {
           "id": "88888888-8888-8888-8888-888888888882",
-          "name": "Manicure",
-          "duration_minutes": 60,
-          "price": 15.0
+          "branch_id": "11111111-1111-1111-1111-111111111111",
+          "category_id": "22222222-2222-2222-2222-222222222221",
+          "name": "Uñas y Manicura",
+          "description": "Aplicación de uñas y manicura",
+          "duration_min": 60,
+          "base_price": 20.0,
+          "enabled": true
         }
       ]
     }
-  ],
-  "meta": {
-    "date_range": {
-      "start": "2025-12-29",
-      "end": "2026-01-02"
-    },
-    "count": 6,
-    "timezone": "America/Guayaquil"
-  }
+  ]
 }
