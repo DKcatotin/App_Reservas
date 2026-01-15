@@ -155,7 +155,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                context.push('/owner/appointments');  //  CAMBIO
+                context.push('/owner/citas');  //  CAMBIO
               },
               icon: const Icon(Icons.check),
               label: const Text('Seleccionar este cliente'),

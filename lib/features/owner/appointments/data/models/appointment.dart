@@ -46,7 +46,7 @@ class Appointment {
       ownerId: json['owner_id'],
       branchId: json['branch_id'],
       customerId: json['customer_id'],
-      staffId: json['staff_id'],
+      staffId: json['staff_profile_id'],
       startAt: DateTime.parse(json['start_at']),
       endAt: DateTime.parse(json['end_at']),
       notes: json['notes'],
