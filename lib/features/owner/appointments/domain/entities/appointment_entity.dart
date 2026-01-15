@@ -6,7 +6,7 @@ import 'package:agenda_app/features/owner/appointments/domain/entities/status_en
 
 class AppointmentEntity {
   final String id;
-  // ❌ ELIMINAR: final String ownerId;
+
   final String branchId;
   final String customerId;
   final String? staffId;
@@ -21,7 +21,6 @@ class AppointmentEntity {
 
   const AppointmentEntity({
     required this.id,
-    // ❌ ELIMINAR: required this.ownerId,
     required this.branchId,
     required this.customerId,
     this.staffId,
@@ -46,7 +45,7 @@ class AppointmentEntity {
 
   AppointmentEntity copyWith({
     String? id,
-    // ❌ ELIMINAR: String? ownerId,
+
     String? branchId,
     String? customerId,
     String? staffId,
@@ -61,7 +60,6 @@ class AppointmentEntity {
   }) {
     return AppointmentEntity(
       id: id ?? this.id,
-      // ❌ ELIMINAR: ownerId: ownerId ?? this.ownerId,
       branchId: branchId ?? this.branchId,
       customerId: customerId ?? this.customerId,
       staffId: staffId ?? this.staffId,

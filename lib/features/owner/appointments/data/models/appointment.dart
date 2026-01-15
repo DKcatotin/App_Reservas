@@ -11,7 +11,6 @@ const _unset = _Unset();
 
 class Appointment {
   final String id;
-  // ❌ ELIMINAR: final String ownerId;
   final String branchId;
   final String customerId;
   final String? staffId;
@@ -26,7 +25,6 @@ class Appointment {
 
   const Appointment({
     required this.id,
-    // ❌ ELIMINAR: required this.ownerId,
     required this.branchId,
     required this.customerId,
     required this.staffId,
@@ -43,7 +41,6 @@ class Appointment {
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['id'],
-      // ❌ ELIMINAR: ownerId: json['owner_id'],
       branchId: json['branch_id'],
       customerId: json['customer_id'],
       staffId: json['staff_profile_id'],
@@ -62,7 +59,6 @@ class Appointment {
 
   Appointment copyWith({
     String? id,
-    // ❌ ELIMINAR: String? ownerId,
     String? branchId,
     String? customerId,
     String? staffId,
@@ -77,7 +73,6 @@ class Appointment {
   }) {
     return Appointment(
       id: id ?? this.id,
-      // ❌ ELIMINAR: ownerId: ownerId ?? this.ownerId,
       branchId: branchId ?? this.branchId,
       customerId: customerId ?? this.customerId,
       staffId: staffId ?? this.staffId,
