@@ -1370,8 +1370,7 @@ Future<void> saveChanges() async {
               Text(durationLabel),
               const SizedBox(width: 12),
               const Icon(Icons.attach_money, size: 14, color: Colors.grey),
-              Text(
-                '\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'),
+              Text('\$${service.basePrice.toStringAsFixed(2)}')
             ],
           ),
           activeColor: const Color(0xFF7C3AED),

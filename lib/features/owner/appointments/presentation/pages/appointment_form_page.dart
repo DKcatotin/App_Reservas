@@ -4,7 +4,6 @@ import 'package:agenda_app/features/owner/appointments/domain/entities/customer_
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/create_appointment.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
-import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
 
   late final CataloguesRepository _cataloguesRepo;
 
-  List<Service> _services = [];
+  List<ServiceEntity> _services = []; // ✅ CORREGIDO
   final List<ServiceEntity> _selectedServices = [];
 
   DateTime _selectedDate = DateTime.now();
@@ -68,83 +67,76 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
         _services = services;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error cargando servicios: $e'); // ✅ Cambiar print por debugPrint
       setState(() => _isLoading = false);
     }
   }
 
-  /// MÉTODO PRINCIPAL PARA GUARDAR (USAR SOLO ESTE)
-Future<void> _saveAppointment() async {
-  if (_isSaving) return;
-  setState(() => _isSaving = true);
+  Future<void> _saveAppointment() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
-  try {
-    // 1. Validar cliente
-    final customerState = ref.read(customerProvider);
+    try {
+      final customerState = ref.read(customerProvider);
 
-    if (customerState.customer == null) {
-  _showError('Debe seleccionar o crear un cliente');
-  return;
-}
-    // 2. Validar servicios
-    if (_selectedServices.isEmpty) {
-      _showError('Debe seleccionar al menos un servicio');
-      return;
+      if (customerState.customer == null) {
+        _showError('Debe seleccionar o crear un cliente');
+        return;
+      }
+
+      if (_selectedServices.isEmpty) {
+        _showError('Debe seleccionar al menos un servicio');
+        return;
+      }
+
+      final startAt = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      final input = CreateAppointmentInput(
+        customerId: customerState.customer!.id,
+        customer: CustomerEntity(
+          id: customerState.customer!.id,
+          userId: customerState.customer!.userId,
+          referredBy: customerState.customer!.referredBy,
+          taxIdentification: customerState.customer!.taxIdentification,
+          taxName: customerState.customer!.taxName,
+          fullName: customerState.customer!.fullName,
+          phone: customerState.customer!.phone,
+          email: customerState.customer!.email,
+          allergies: customerState.customer!.allergies,
+        ),
+        startAt: startAt,
+        services: List<ServiceEntity>.from(_selectedServices),
+        source: _selectedSource,
+        notes: _notesController.text,
+      );
+
+      final createUseCase = CreateAppointmentUseCase(widget.repo);
+      await createUseCase.call(input);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Cita creada exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      context.pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Error al crear la cita: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    // 3. Construir fecha/hora completa
-    final startAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
-
-    // 4. Crear el input con los campos actualizados
-    final input = CreateAppointmentInput(
-  customerId: customerState.customer!.id,  // ✅ Usa customerState
-  customer: CustomerEntity(
-    id: customerState.customer!.id,
-    userId: customerState.customer!.userId,              // ✅ AGREGAR
-    referredBy: customerState.customer!.referredBy,      // ✅ AGREGAR (opcional)
-    taxIdentification: customerState.customer!.taxIdentification,
-    taxName: customerState.customer!.taxName,            // ✅ AGREGAR (opcional)
-    fullName: customerState.customer!.fullName,
-    phone: customerState.customer!.phone,
-    email: customerState.customer!.email,
-    allergies: customerState.customer!.allergies,
-  ),
-  startAt: startAt,
-  services: List<ServiceEntity>.from(_selectedServices),
-  source: _selectedSource,
-  notes: _notesController.text,
-);
-
-
-    // 5. Usar el Use Case
-    final createUseCase = CreateAppointmentUseCase(widget.repo);
-    await createUseCase.call(input);
-
-    if (!mounted) return;
-
-    // 6. Mostrar mensaje de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ Cita creada exitosamente'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // 7. Cerrar y devolver true
-    context.pop(true);
-  } catch (e) {
-    if (!mounted) return;
-    _showError('Error al crear la cita: $e');
-  } finally {
-    if (mounted) setState(() => _isSaving = false);
   }
-}
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -156,41 +148,40 @@ Future<void> _saveAppointment() async {
   }
 
   Widget _buildClienteSelector() {
-  final clienteState = ref.watch(customerProvider);
+    final clienteState = ref.watch(customerProvider);
 
-  if (clienteState.customer == null) {
-    return OutlinedButton.icon(
-      onPressed: _irABuscarCliente,
-      icon: const Icon(Icons.person_search),
-      label: const Text('Buscar o crear cliente'),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(16),
+    if (clienteState.customer == null) {
+      return OutlinedButton.icon(
+        onPressed: _irABuscarCliente,
+        icon: const Icon(Icons.person_search),
+        label: const Text('Buscar o crear cliente'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.all(16),
+        ),
+      );
+    }
+
+    return Card(
+      color: Colors.green[50],
+      child: ListTile(
+        leading: const CircleAvatar(
+          child: Icon(Icons.person),
+        ),
+        title: Text(clienteState.customer!.fullName ?? 'Sin nombre'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('CI: ${clienteState.customer!.taxIdentification ?? 'N/A'}'),
+            Text('Tel: ${clienteState.customer!.phone ?? 'N/A'}'),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.swap_horiz),
+          onPressed: _irABuscarCliente,
+        ),
       ),
     );
   }
-
-  return Card(
-    color: Colors.green[50],
-    child: ListTile(
-      leading: const CircleAvatar(
-        child: Icon(Icons.person),
-      ),
-      title: Text(clienteState.customer!.fullName ?? 'Sin nombre'),  //  CAMBIO
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('CI: ${clienteState.customer!.taxIdentification ?? 'N/A'}'),  //  CAMBIO
-          Text('Tel: ${clienteState.customer!.phone ?? 'N/A'}'),  //  CAMBIO
-        ],
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.swap_horiz),
-        onPressed: _irABuscarCliente,
-      ),
-    ),
-  );
-}
-
 
   Future<void> _irABuscarCliente() async {
     final clienteSeleccionado = await context.push(
@@ -225,16 +216,12 @@ Future<void> _saveAppointment() async {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            /// 👤 CLIENTE
             _buildSection(
               title: 'Cliente',
               icon: Icons.person,
               child: _buildClienteSelector(),
             ),
-
             const SizedBox(height: 16),
-
-            /// 📅 FECHA Y HORA
             _buildSection(
               title: 'Fecha y hora',
               icon: Icons.event,
@@ -246,28 +233,19 @@ Future<void> _saveAppointment() async {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            /// 🧖 SERVICIOS
             _buildSection(
               title: 'Servicios',
               icon: Icons.spa,
               child: _buildServicesSelector(),
             ),
-
             const SizedBox(height: 16),
-
-            /// 🔗 FUENTE
             _buildSection(
               title: 'Fuente de la cita',
               icon: Icons.source,
               child: _buildSourceSelector(),
             ),
-
             const SizedBox(height: 16),
-
-            /// 📝 NOTAS
             _buildSection(
               title: 'Notas (opcional)',
               icon: Icons.note,
@@ -280,10 +258,7 @@ Future<void> _saveAppointment() async {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            /// 💾 BOTÓN GUARDAR
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -354,34 +329,26 @@ Future<void> _saveAppointment() async {
   }
 
   Widget _buildServicesSelector() {
-    return Column(
-      children: _services.map((s) {
-        // Convertir Service a ServiceEntity para comparar
-        final serviceEntity = ServiceEntity(
-          id: s.id,
-          branchId: s.branchId,
-          basePrice: s.basePrice,
-          name: s.name,
-          durationMin: s.durationMin,
-          enabled: s.enabled,
-        );
+    if (_services.isEmpty) {
+      return const Text('No hay servicios disponibles');
+    }
 
-        // Verificar si ya está seleccionado (comparando por id)
-        final isSelected =
-            _selectedServices.any((selected) => selected.id == s.id);
+    return Column(
+      children: _services.map((service) {
+        final isSelected = _selectedServices.any((selected) => selected.id == service.id);
 
         return CheckboxListTile(
-          title: Text(s.name),
-          subtitle: Text('${s.durationMin}m • \$${s.basePrice}'),
+          title: Text(service.name),
+          subtitle: Text(
+            '${service.durationLabel} • \$${service.basePrice.toStringAsFixed(2)}',
+          ),
           value: isSelected,
           onChanged: (checked) {
             setState(() {
               if (checked == true) {
-                // Agregar como entity
-                _selectedServices.add(serviceEntity);
+                _selectedServices.add(service);
               } else {
-                // Remover por id
-                _selectedServices.removeWhere((item) => item.id == s.id);
+                _selectedServices.removeWhere((item) => item.id == service.id);
               }
             });
           },
@@ -420,4 +387,4 @@ Future<void> _saveAppointment() async {
       }).toList(),
     );
   }
-}
+} // ✅ Llave de cierre de la clase _AppointmentFormPageState
