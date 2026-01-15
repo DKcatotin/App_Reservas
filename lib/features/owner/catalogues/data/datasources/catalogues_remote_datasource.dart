@@ -1,5 +1,5 @@
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
-import 'package:agenda_app/features/owner/catalogues/data/models/staff_full.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:dio/dio.dart';
 import 'catalogues_datasource.dart';
 import '../models/service.dart';
@@ -28,7 +28,7 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
   }
 
   @override
-  Future<List<StaffFull>> getStaff() async {
+  Future<List<Staff>> getStaff() async {
     // TODO(backend): Reemplazar con llamada real
     // final response = await _dio.get('/api/staff');
     // return (response.data as List)

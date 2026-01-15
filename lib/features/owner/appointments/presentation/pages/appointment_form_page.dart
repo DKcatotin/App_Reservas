@@ -360,7 +360,7 @@ Future<void> _saveAppointment() async {
         final serviceEntity = ServiceEntity(
           id: s.id,
           name: s.name,
-          durationMinutes: s.durationMinutes,
+          durationMin: s.durationMin,
         );
 
         // Verificar si ya está seleccionado (comparando por id)
@@ -369,7 +369,7 @@ Future<void> _saveAppointment() async {
 
         return CheckboxListTile(
           title: Text(s.name),
-          subtitle: Text('${s.durationMinutes}m • \$${s.price}'),
+          subtitle: Text('${s.durationMin}m • \$${s.basePrice}'),
           value: isSelected,
           onChanged: (checked) {
             setState(() {

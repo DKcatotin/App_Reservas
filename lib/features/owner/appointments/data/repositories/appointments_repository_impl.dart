@@ -2,8 +2,6 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment.d
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/staff.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/status.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
@@ -13,6 +11,8 @@ import 'package:agenda_app/features/owner/appointments/domain/entities/staff_ent
 import 'package:agenda_app/features/owner/appointments/domain/entities/status_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/repositories/appointments_repository.dart';
 import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final AppointmentsDatasource datasource;
@@ -100,18 +100,18 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       notes: model.notes,
       status: StatusEntity(
         code: model.status.code,
-        label: model.status.label,
+        label: model.status.name,  // ✅ Cambio: label -> name
       ),
       source: SourceEntity(
-        code: model.source.type,
-        name: _getSourceName(model.source.type),
+        code: model.source.code,    // ✅ Cambio: type -> code
+        name: model.source.name,    // ✅ Cambio: usar directamente name
       ),
       customer: CustomerEntity(
         id: model.customer.id,
-        userId: model.customer.userId ?? '',        //  AGREGADO
-        referredBy: model.customer.referredBy,      //  AGREGADO
+        userId: model.customer.userId,
+        referredBy: model.customer.referredBy,
         taxIdentification: model.customer.taxIdentification,
-        taxName: model.customer.taxName,            //  AGREGADO
+        taxName: model.customer.taxName,
         fullName: model.customer.fullName,
         phone: model.customer.phone,
         email: model.customer.email,
@@ -120,7 +120,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: model.staff != null
           ? StaffEntity(
               id: model.staff!.id,
-              name: model.staff!.name,
+              name: model.staff!.displayName,  // ✅ Cambio: name -> displayName
               specialty: model.staff!.specialty,
               colorTag: model.staff!.colorTag,
             )
@@ -130,7 +130,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
             (s) => ServiceEntity(
               id: s.id,
               name: s.name,
-              durationMinutes: s.durationMinutes,
+              durationMin: s.durationMin,  // ✅ Cambio: durationMinutes -> durationMin
             ),
           )
           .toList(),
@@ -149,16 +149,21 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       endAt: entity.endAt,
       notes: entity.notes,
       status: Status(
+        id: 0,                      // ✅ Agregado: id requerido
         code: entity.status.code,
-        label: entity.status.label,
+        name: entity.status.label,  // ✅ Cambio: label -> name
       ),
-      source: Source(type: entity.source.code),
+      source: Source(
+        id: 0,                      // ✅ Agregado: id requerido
+        code: entity.source.code,   // ✅ Agregado: code requerido
+        name: entity.source.name,   // ✅ Cambio: type -> name
+      ),
       customer: Customer(
         id: entity.customer.id,
-        userId: entity.customer.userId,              //  AGREGADO
-        referredBy: entity.customer.referredBy,      //  AGREGADO
+        userId: entity.customer.userId,
+        referredBy: entity.customer.referredBy,
         taxIdentification: entity.customer.taxIdentification,
-        taxName: entity.customer.taxName,            //  AGREGADO
+        taxName: entity.customer.taxName,
         fullName: entity.customer.fullName,
         phone: entity.customer.phone,
         email: entity.customer.email,
@@ -167,7 +172,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: entity.staff != null
           ? Staff(
               id: entity.staff!.id,
-              name: entity.staff!.name,
+              displayName: entity.staff!.name,  // ✅ Cambio: name -> displayName
               specialty: entity.staff!.specialty,
               colorTag: entity.staff!.colorTag,
             )
@@ -177,14 +182,14 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
             (s) => AppointmentService(
               id: s.id,
               name: s.name,
-              durationMinutes: s.durationMinutes,
+              durationMin: s.durationMin,  // ✅ Cambio: durationMinutes -> durationMin
             ),
           )
           .toList(),
     );
   }
 
-  /// Helper para obtener el nombre del source
+  /// Helper para obtener el nombre del source (ya no es necesario si usas directamente source.name)
   String _getSourceName(String code) {
     switch (code) {
       case 'web':

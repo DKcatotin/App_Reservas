@@ -31,15 +31,9 @@ factory Customer.fromJson(Map<String, dynamic> json) {
     taxIdentification: json['tax_identification'] as String?,
     taxName: json['tax_name'] as String?,
     allergies: json['allergies'] as String?,
-    fullName: json['user']?['full_name'] as String? ?? 
-              json['full_name'] as String? ?? 
-              '',
-    email: json['user']?['email'] as String? ?? 
-           json['email'] as String? ?? 
-           '',
-    phone: json['user']?['phone'] as String? ?? 
-           json['phone'] as String? ?? 
-           '',
+    fullName: json['user']?['full_name'] as String? ?? json['full_name'] as String?,
+    email: json['user']?['email'] as String? ?? json['email'] as String?,
+    phone: json['user']?['phone'] as String? ?? json['phone'] as String?,
   );
 }
 

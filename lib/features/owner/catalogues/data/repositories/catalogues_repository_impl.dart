@@ -1,7 +1,7 @@
 import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
-import 'package:agenda_app/features/owner/catalogues/data/models/staff_full.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 
 class CataloguesRepositoryImpl implements CataloguesRepository {
@@ -17,7 +17,7 @@ class CataloguesRepositoryImpl implements CataloguesRepository {
   }
 
   @override
-  Future<List<StaffFull>> getStaff() {
+  Future<List<Staff>> getStaff() {
     return datasource.getStaff();
   }
 

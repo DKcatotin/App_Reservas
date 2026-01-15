@@ -124,7 +124,7 @@ class AppointmentCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      '${s.name} (${s.durationMinutes}m)',
+                      '${s.name} (${s.durationMin}m)',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF8B5CF6),

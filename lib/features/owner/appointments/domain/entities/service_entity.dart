@@ -1,16 +1,16 @@
 class ServiceEntity {
   final String id;
   final String name;
-  final int durationMinutes;
+  final int durationMin;
 
   const ServiceEntity({
     required this.id,
     required this.name,
-    required this.durationMinutes,
+    required this.durationMin,
   });
 
   /// Devuelve la duración como un objeto Duration
-  Duration get duration => Duration(minutes: durationMinutes);
+  Duration get duration => Duration(minutes: durationMin);
 
   /// Formatea la duración como texto (ej: "1h 30m" o "45m")
   String get durationLabel {
@@ -30,7 +30,7 @@ class ServiceEntity {
     return ServiceEntity(
       id: id ?? this.id,
       name: name ?? this.name,
-      durationMinutes: durationMinutes ?? this.durationMinutes,
+      durationMin: durationMinutes ?? this.durationMin,
     );
   }
 }

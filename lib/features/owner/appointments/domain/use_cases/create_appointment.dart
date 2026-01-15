@@ -21,7 +21,7 @@ class CreateAppointmentUseCase {
 
   // 3. Calcular duración total
   final int totalMinutes =
-      input.services.fold(0, (sum, s) => sum + s.durationMinutes);
+      input.services.fold(0, (sum, s) => sum + s.durationMin);
 
   // 4. Crear entidad Appointment (SIN crear customer)
   final appointment = AppointmentEntity(

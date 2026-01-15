@@ -1,6 +1,7 @@
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
+
 import 'customer.dart';
-import 'staff.dart';
-import 'status.dart';
 import 'source.dart';
 import 'appointment_service.dart';
  class _Unset {
@@ -52,7 +53,7 @@ class Appointment {
       status: Status.fromJson(json['status']),
       source: Source.fromJson(json['source']),
       customer: Customer.fromJson(json['customer']),
-      staff: Staff.fromJson(json['staff']),
+      staff: json['staff'] != null ? Staff.fromJson(json['staff']) : null,
       services: (json['services'] as List)
           .map((e) => AppointmentService.fromJson(e))
           .toList(),

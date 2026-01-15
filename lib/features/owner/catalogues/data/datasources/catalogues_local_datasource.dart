@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
-import 'package:agenda_app/features/owner/catalogues/data/models/staff_full.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:dio/dio.dart';
 import 'catalogues_datasource.dart';
@@ -34,10 +34,10 @@ class CataloguesLocalDatasource implements CataloguesDatasource {
   }
 
   @override
-  Future<List<StaffFull>> getStaff() {
+  Future<List<Staff>> getStaff() {
     return _load(
       'assets/data/owner/catalogues/staff_mock.json',
-      (json) => StaffFull.fromJson(json),
+      (json) => Staff.fromJson(json),
     );
   }
  @override

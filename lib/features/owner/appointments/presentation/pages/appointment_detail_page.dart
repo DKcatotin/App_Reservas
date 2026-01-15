@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_appointment.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
@@ -18,7 +19,6 @@ import '../../domain/entities/status_entity.dart';
 
 //tres imports para staff
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/staff.dart';
 import '../providers/staff_provider.dart';
 
 class AppointmentDetailPage extends ConsumerStatefulWidget {
@@ -113,23 +113,29 @@ void _recalculateEndTimeFromStart() {
     return;
   }
 
-  int totalMinutes = 0;
-  for (var service in _selectedServices) {
-    //  CORRECCIÓN: Manejar todos los tipos correctamente
-    if (service is AppointmentService) {
-      totalMinutes += service.durationMinutes;
-    } else if (service is Service) {
-      totalMinutes += service.durationMinutes;
-    } else {
-      // Para tipos dynamic, verificar qué campo existe
-      final dynamic s = service;
-      if (s.durationMinutes != null) {
-        totalMinutes += s.durationMinutes as int;
+ int totalMinutes = 0;
+for (var service in _selectedServices) {
+  if (service is AppointmentService) {
+    totalMinutes += service.durationMin;  // ✅ Ya es int
+  } else if (service is Service) {
+    totalMinutes += service.durationMin;  // ✅ Ya es int
+  } else {
+    // Para tipos dynamic
+    final dynamic s = service;
+    try {
+      if (s.durationMin != null) {
+        totalMinutes += (s.durationMin as num).toInt();
+      } else if (s.durationMin != null) {
+        totalMinutes += (s.durationMin as num).toInt();
       } else if (s.duration != null) {
         totalMinutes += (s.duration as Duration).inMinutes;
       }
+    } catch (e) {
+      print('Error al obtener duración del servicio: $e');
     }
   }
+}
+
 
   final startDateTime = DateTime(
     _selectedDate.year,
@@ -146,8 +152,6 @@ void _recalculateEndTimeFromStart() {
   });
 }
 
-
-
  void _recalculateEndTime() {
   if (_selectedServices.isEmpty) {
     return;
@@ -158,14 +162,14 @@ void _recalculateEndTimeFromStart() {
   for (var service in _selectedServices) {
     //  CORRECCIÓN: Manejar ambos tipos de servicios
     if (service is AppointmentService) {
-      totalMinutes += service.durationMinutes;
+      totalMinutes += service.durationMin;
     } else if (service is Service) {
-      totalMinutes += service.durationMinutes;
+      totalMinutes += service.durationMin;
     } else {
-      // Si es dynamic, intentar obtener durationMinutes o duration
+      // Si es dynamic, intentar obtener durationMin o duration
       final dynamic s = service;
-      if (s.durationMinutes != null) {
-        totalMinutes += s.durationMinutes as int;
+      if (s.durationMin != null) {
+        totalMinutes += s.durationMin as int;
       } else if (s.duration != null) {
         totalMinutes += (s.duration as Duration).inMinutes;
       }
@@ -442,20 +446,20 @@ Servicio: $services
         return ServiceEntity(
           id: service.id,
           name: service.name,
-          durationMinutes: service.durationMinutes,
+          durationMin: service.durationMin,
         );
       } else if (service is Service) {
         return ServiceEntity(
           id: service.id,
           name: service.name,
-          durationMinutes: service.durationMinutes,
+          durationMin: service.durationMin,
         );
       } else {
         final s = service as dynamic;
         return ServiceEntity(
           id: s.id,
           name: s.name,
-          durationMinutes: s.duration.inMinutes as int,
+          durationMin: s.duration.inMinutes as int,
         );
       }
     }).toList();
@@ -474,7 +478,7 @@ Servicio: $services
       staff: selectedStaff != null
           ? StaffEntity(
               id: selectedStaff.id,
-              name: selectedStaff.name,
+              name: selectedStaff.displayName,
               specialty: selectedStaff.specialty,
               colorTag: selectedStaff.colorTag,
             )
@@ -1211,17 +1215,17 @@ const SizedBox(height: 16),
 
         //  Buscar el precio desde allServices
         final serviceId = (s as dynamic).id;
-        final serviceWithPrice = _allServices.firstWhere(
-          (service) => service.id == serviceId,
-          orElse: () => Service(
-            id: serviceId,
-            name: (s as dynamic).name,
-            durationMinutes: d.inMinutes,
-            price: 0.0,
-            category: '',
-          ),
-        );
-        final price = serviceWithPrice.price;
+
+final serviceWithPrice = _allServices.firstWhere(
+  (service) => service.id == serviceId,
+  orElse: () => Service(
+    id: serviceId,
+    name: (s as dynamic).name,
+    durationMin: d.inMinutes,
+    basePrice: 0.0,  // ✅ Cambiar price a basePrice
+  ),
+);
+final price = serviceWithPrice.basePrice ?? 0.0;  // ✅ Cambiar y manejar null
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1356,7 +1360,7 @@ const SizedBox(height: 16),
                     AppointmentService(
                       id: service.id,
                       name: service.name,
-                      durationMinutes: service.durationMinutes,
+                      durationMin: service.durationMin,
                     ),
                   );
                 } else {
@@ -1381,13 +1385,13 @@ const SizedBox(height: 16),
             ),
             subtitle: Row(
               children: [
-                const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(durationLabel),
-                const SizedBox(width: 12),
-                const Icon(Icons.attach_money, size: 14, color: Colors.grey),
-                Text('\$${service.price.toStringAsFixed(2)}'),
-              ],
+  const Icon(Icons.access_time, size: 14, color: Colors.grey),
+  const SizedBox(width: 4),
+  Text(durationLabel),
+  const SizedBox(width: 12),
+  const Icon(Icons.attach_money, size: 14, color: Colors.grey),
+  Text('\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'),  // Manejar null
+],
             ),
             activeColor: const Color(0xFF7C3AED),
           ),
@@ -1469,7 +1473,7 @@ const SizedBox(height: 16),
         ),
         ...cleanStaffList.map((staff) => DropdownMenuItem<String>(
               value: staff.id,
-              child: Text(staff.name),
+              child: Text(staff.displayName),
             )),
       ],
       onChanged: (value) {
