@@ -36,6 +36,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
     setState(() => _searched = true);  //  CAMBIO
   }
 
+/*
   void _goToCreateCustomer() {  //  CAMBIO
     final taxId = _taxIdController.text.trim();  // CAMBIO
     context.push(
@@ -45,7 +46,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
       context.push('/owner/appointments');  //  CAMBIO
     });
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     final customerState = ref.watch(customerProvider);  //  CAMBIO
@@ -194,16 +195,6 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
               style: TextStyle(color: Colors.grey[700]),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _goToCreateCustomer,  //  CAMBIO
-              icon: const Icon(Icons.add),
-              label: const Text('Crear nuevo cliente'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
           ],
         ),
       ),

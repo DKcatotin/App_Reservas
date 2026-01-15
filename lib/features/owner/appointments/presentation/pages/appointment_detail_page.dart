@@ -46,9 +46,8 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   late String _selectedStatus;
-  late List<dynamic> _selectedServices;
+  late List<Service> _selectedServices;
   late TextEditingController _notesController;
-  late List<TextEditingController> _serviceControllers;
   // Controladores para nombre y teléfono
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
@@ -71,7 +70,18 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
     _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
     _selectedStatus = widget.appointment.status.label;
-    _selectedServices = List.from(widget.appointment.services);
+    _selectedServices = widget.appointment.services.map((serviceEntity) {
+    return Service(
+      id: serviceEntity.id,
+      branchId: serviceEntity.branchId,
+      categoryId: serviceEntity.categoryId,
+      name: serviceEntity.name,
+      description: serviceEntity.description,
+      durationMin: serviceEntity.durationMin,
+      basePrice: serviceEntity.basePrice,
+      enabled: serviceEntity.enabled,
+    );
+  }).toList();
     _notesController =
         TextEditingController(text: widget.appointment.notes ?? '');
     _nameController =
@@ -79,19 +89,14 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     _phoneController =
         TextEditingController(text: widget.appointment.customer.phone);
 
-    _serviceControllers = _selectedServices.map((s) {
-      return TextEditingController(text: (s as dynamic).name);
-    }).toList();
-
     // para staff
     _selectedStaffId = widget.appointment.staff?.id;
 
     //  Inicializar el Set de IDs seleccionados
-    _selectedServiceIds =
-        _selectedServices.map((s) => (s as dynamic).id as String).toSet();
-
-    loadAllServices();
-  }
+  _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
+  
+  loadAllServices();
+}
 
   @override
   void didChangeDependencies() {
@@ -116,9 +121,9 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     int totalMinutes = 0;
     for (var service in _selectedServices) {
       if (service is AppointmentService) {
-        totalMinutes += service.durationMin; // ✅ Ya es int
+        totalMinutes += service.durationMin; //  Ya es int
       } else if (service is Service) {
-        totalMinutes += service.durationMin; // ✅ Ya es int
+        totalMinutes += service.durationMin; //  Ya es int
       } else {
         // Para tipos dynamic
         final dynamic s = service;
@@ -195,10 +200,6 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     _notesController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
-
-    for (var controller in _serviceControllers) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -412,147 +413,126 @@ Servicio: $services
     }
   }
 
-  Future<void> saveChanges() async {
-    // ✅ CREAR newStartAt
-    final newStartAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
+Future<void> saveChanges() async {
+  // ✅ CREAR newStartAt
+  final newStartAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
 
-    // ✅ CREAR newEndAt (¡ESTO FALTABA!)
-    final newEndAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _endTime.hour,
-      _endTime.minute,
-    );
+  // ✅ CREAR newEndAt
+  final newEndAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _endTime.hour,
+    _endTime.minute,
+  );
 
-    // Staff seleccionado
-    Staff? selectedStaff;
-    if (_selectedStaffId != null) {
-      try {
-        selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
-      } catch (e) {
-        selectedStaff = null;
-      }
-    }
-
-    // Convertir servicios a ServiceEntity
-    List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
-      if (service is AppointmentService) {
-        return ServiceEntity(
-          id: service.serviceId, //  Usar serviceId en lugar de id
-          branchId: service.branchId,
-          categoryId: service.categoryId,
-          name: service.serviceName ?? '', //  Usar serviceName
-          description: service.description,
-          durationMin: service.durationMin,
-          basePrice: service.basePrice,
-          enabled: service.enabled,
-        );
-      } else if (service is Service) {
-        return ServiceEntity(
-          id: service.id,
-          branchId: service.branchId,
-          categoryId: service.categoryId,
-          name: service.name,
-          description: service.description,
-          durationMin: service.durationMin,
-          basePrice: service.basePrice,
-          enabled: service.enabled,
-        );
-      } else {
-        // Fallback para tipos dinámicos
-        final s = service as dynamic;
-        return ServiceEntity(
-          id: s.id ?? '',
-          branchId: s.branchId,
-          categoryId: s.categoryId,
-          name: s.name ?? s.serviceName ?? '',
-          description: s.description,
-          durationMin: s.durationMin ?? (s.duration?.inMinutes ?? 0),
-          basePrice: s.basePrice,
-          enabled: s.enabled,
-        );
-      }
-    }).toList();
-
-    final updatedAppointment = widget.appointment.copyWith(
-      startAt: newStartAt,
-      endAt: newEndAt, // ✅ Ahora está definido
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-      status: StatusEntity(
-        code: _selectedStatus.toLowerCase(),
-        label: _selectedStatus,
-      ),
-      services: serviceEntities,
-      staff: selectedStaff != null
-          ? StaffEntity(
-              id: selectedStaff.id,
-              name: selectedStaff.displayName,
-              specialty: selectedStaff.specialty,
-              colorTag: selectedStaff.colorTag,
-            )
-          : null,
-    );
-
-    // ✅ GUARDAR EN EL REPOSITORIO usando call() NO execute()
+  // Staff seleccionado
+  Staff? selectedStaff;
+  if (_selectedStaffId != null) {
     try {
-      await _updateAppointmentUseCase
-          .call(updatedAppointment); // ← call() no execute()
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Cita actualizada exitosamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Devolver la cita actualizada
-        Navigator.pop(context, updatedAppointment);
-      }
+      selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error al guardar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      selectedStaff = null;
     }
   }
 
-  void _cancelEdit() {
-    setState(() {
-      _isEditing = false;
-      _selectedDate = widget.appointment.startAt;
-      _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-      _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-      _selectedStatus = widget.appointment.status.label;
-      _selectedServices = List.from(widget.appointment.services);
-      _notesController.text = widget.appointment.notes ?? '';
+  // ✅ Convertir servicios a ServiceEntity (SIMPLIFICADO)
+  List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
+    return ServiceEntity(
+      id: service.id,
+      branchId: service.branchId,
+      categoryId: service.categoryId,
+      name: service.name,
+      description: service.description,
+      durationMin: service.durationMin,
+      basePrice: service.basePrice,
+      enabled: service.enabled,
+    );
+  }).toList();
 
-      // ✅ CORRECCIÓN: Manejar valores nullable
-      _nameController.text = widget.appointment.customer.fullName ?? '';
-      _phoneController.text = widget.appointment.customer.phone ?? '';
+  final updatedAppointment = widget.appointment.copyWith(
+    startAt: newStartAt,
+    endAt: newEndAt,
+    notes: _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim(),
+    status: StatusEntity(
+      code: _selectedStatus.toLowerCase(),
+      label: _selectedStatus,
+    ),
+    services: serviceEntities,
+    staff: selectedStaff != null
+        ? StaffEntity(
+            id: selectedStaff.id,
+            name: selectedStaff.displayName,
+            specialty: selectedStaff.specialty,
+            colorTag: selectedStaff.colorTag,
+          )
+        : null,
+  );
 
-      // Resetear el Set de IDs
-      _selectedServiceIds =
-          _selectedServices.map((s) => (s as dynamic).id as String).toSet();
-
-      for (int i = 0; i < _serviceControllers.length; i++) {
-        _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
-      }
-    });
+  // ✅ GUARDAR EN EL REPOSITORIO
+  try {
+    await _updateAppointmentUseCase.call(updatedAppointment);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Cita actualizada exitosamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Devolver la cita actualizada
+      Navigator.pop(context, updatedAppointment);
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error al guardar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
+
+ void _cancelEdit() {
+  setState(() {
+    _isEditing = false;
+    _selectedDate = widget.appointment.startAt;
+    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+    _selectedStatus = widget.appointment.status.label;
+    
+    // ✅ CORRECCIÓN: Reconvertir desde ServiceEntity
+    _selectedServices = widget.appointment.services.map((serviceEntity) {
+      return Service(
+        id: serviceEntity.id,
+        branchId: serviceEntity.branchId,
+        categoryId: serviceEntity.categoryId,
+        name: serviceEntity.name,
+        description: serviceEntity.description,
+        durationMin: serviceEntity.durationMin,
+        basePrice: serviceEntity.basePrice,
+        enabled: serviceEntity.enabled,
+      );
+    }).toList();
+    
+    _notesController.text = widget.appointment.notes ?? '';
+    _nameController.text = widget.appointment.customer.fullName ?? '';
+    _phoneController.text = widget.appointment.customer.phone ?? '';
+    
+    // Resetear el Set de IDs
+    _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1348,91 +1328,92 @@ Servicio: $services
   }
 
   Widget _buildServicesEditor() {
-    if (_isLoadingServices) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (_allServices.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Text('No hay servicios disponibles'),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: _allServices.map((service) {
-        //  Verificar selección usando el Set de IDs
-        final isSelected = _selectedServiceIds.contains(service.id);
-        final hours = service.duration.inHours;
-        final minutes = service.duration.inMinutes.remainder(60);
-        final durationLabel =
-            hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF7C3AED).withValues(alpha: 0.1)
-                : Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF7C3AED) : Colors.grey[300]!,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: CheckboxListTile(
-            value: isSelected,
-            onChanged: (checked) {
-              setState(() {
-                if (isSelected) {
-                  _selectedServiceIds.add(service.id);
-                  // Simplemente agregar el Service del catálogo
-                  _selectedServices.add(service);
-                } else {
-                  _selectedServiceIds.remove(service.id);
-                  _selectedServices.removeWhere((s) => s.id == service.id);
-                }
-// Recalcular duración de la cita
-                _recalculateEndTime();
-              });
-            },
-            title: Text(
-              service.name,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? const Color(0xFF7C3AED)
-                    : const Color(0xFF1F2937),
-              ),
-            ),
-            subtitle: Row(
-              children: [
-                const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(durationLabel),
-                const SizedBox(width: 12),
-                const Icon(Icons.attach_money, size: 14, color: Colors.grey),
-                Text(
-                    '\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'), // Manejar null
-              ],
-            ),
-            activeColor: const Color(0xFF7C3AED),
-          ),
-        );
-      }).toList(),
+  if (_isLoadingServices) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 
+  if (_allServices.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text('No hay servicios disponibles'),
+    );
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: _allServices.map((service) {
+      // Verificar selección usando el Set de IDs
+      final isSelected = _selectedServiceIds.contains(service.id);
+      final hours = service.duration.inHours;
+      final minutes = service.duration.inMinutes.remainder(60);
+      final durationLabel =
+          hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF7C3AED).withValues(alpha: 0.1)
+              : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF7C3AED) : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: CheckboxListTile(
+          value: isSelected,
+          onChanged: (checked) {
+            setState(() {
+              // ✅ CORRECCIÓN: Usar 'checked' NO 'isSelected'
+              if (checked == true) {
+                // Usuario MARCÓ el checkbox
+                _selectedServiceIds.add(service.id);
+                _selectedServices.add(service);
+              } else {
+                // Usuario DESMARCÓ el checkbox
+                _selectedServiceIds.remove(service.id);
+                _selectedServices.removeWhere((s) => s.id == service.id);
+              }
+              // Recalcular duración de la cita
+              _recalculateEndTime();
+            });
+          },
+          title: Text(
+            service.name,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected
+                  ? const Color(0xFF7C3AED)
+                  : const Color(0xFF1F2937),
+            ),
+          ),
+          subtitle: Row(
+            children: [
+              const Icon(Icons.access_time, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Text(durationLabel),
+              const SizedBox(width: 12),
+              const Icon(Icons.attach_money, size: 14, color: Colors.grey),
+              Text(
+                '\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'),
+            ],
+          ),
+          activeColor: const Color(0xFF7C3AED),
+        ),
+      );
+    }).toList(),
+  );
+}
   Widget _buildStaffSelector() {
     if (_staffList.isEmpty) {
       return Container(

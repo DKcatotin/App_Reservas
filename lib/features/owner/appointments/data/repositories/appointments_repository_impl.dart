@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
