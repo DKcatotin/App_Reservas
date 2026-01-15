@@ -147,7 +147,7 @@ class AppointmentCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Atendido por: ${a.staff!.name}',
+                      'Atendido por: ${a.staff!.displayName}',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey[600],
@@ -210,7 +210,7 @@ class AppointmentCard extends StatelessWidget {
         ),
       ),
       child: Text(
-        a.status.label,
+        a.status.name,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,

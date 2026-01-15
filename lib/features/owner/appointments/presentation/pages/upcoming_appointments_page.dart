@@ -279,7 +279,7 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            appointment.status.label,
+                            appointment.status.name,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -299,7 +299,7 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                appointment.staff!.name,
+                                appointment.staff!.displayName,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey[600],

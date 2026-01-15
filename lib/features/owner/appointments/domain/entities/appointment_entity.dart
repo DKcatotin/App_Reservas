@@ -1,15 +1,14 @@
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/source_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/staff_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/status_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/staff_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/status_entity.dart';
 
 class AppointmentEntity {
   final String id;
-
   final String branchId;
   final String customerId;
-  final String? staffId;
+  final String? staffProfileId;
   final DateTime startAt;
   final DateTime endAt;
   final String? notes;
@@ -23,7 +22,7 @@ class AppointmentEntity {
     required this.id,
     required this.branchId,
     required this.customerId,
-    this.staffId,
+    this.staffProfileId,
     required this.startAt,
     required this.endAt,
     this.notes,
@@ -62,7 +61,7 @@ class AppointmentEntity {
       id: id ?? this.id,
       branchId: branchId ?? this.branchId,
       customerId: customerId ?? this.customerId,
-      staffId: staffId ?? this.staffId,
+      staffProfileId: staffId ?? this.staffProfileId,
       startAt: startAt ?? this.startAt,
       endAt: endAt ?? this.endAt,
       notes: notes ?? this.notes,

@@ -1,4 +1,4 @@
 class Env {
-  // Android emulator:
-  static const String baseUrl = 'http://192.168.18.14:3000/api/v1';
+  // Android emulator :
+  static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
 }

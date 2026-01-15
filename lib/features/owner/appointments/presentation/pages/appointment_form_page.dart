@@ -1,11 +1,11 @@
 import 'package:agenda_app/core/di/auth_di.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/create_appointment.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -359,8 +359,11 @@ Future<void> _saveAppointment() async {
         // Convertir Service a ServiceEntity para comparar
         final serviceEntity = ServiceEntity(
           id: s.id,
+          branchId: s.branchId,
+          basePrice: s.basePrice,
           name: s.name,
           durationMin: s.durationMin,
+          enabled: s.enabled,
         );
 
         // Verificar si ya está seleccionado (comparando por id)

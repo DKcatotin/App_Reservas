@@ -17,9 +17,7 @@ class CataloguesLocalDatasource implements CataloguesDatasource {
     final raw = await rootBundle.loadString(path);
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final list = decoded['data'] as List?;
-
     if (list == null) return [];
-
     return list
         .map((e) => fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
@@ -43,9 +41,7 @@ class CataloguesLocalDatasource implements CataloguesDatasource {
  @override
   Future<List<CatalogueItem>> getAppointmentStatuses() async {
     final res = await dio.get('/test1');
-
     final data = res.data['data'] as List<dynamic>;
-
     return data
         .map((e) => CatalogueItem.fromJson(e as Map<String, dynamic>))
         .toList();

@@ -63,7 +63,7 @@ class GetAppointmentsByDayUseCase {
     String staffId,
   ) {
     return appointments
-        .where((a) => a.staffId == staffId)
+        .where((a) => a.staffProfileId == staffId)
         .toList();
   }
 }

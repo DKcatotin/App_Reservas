@@ -3,6 +3,9 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment_s
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_appointment.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/staff_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/status_entity.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
@@ -13,9 +16,6 @@ import '../../domain/entities/appointment_entity.dart';
 
 import '../../domain/use_cases/delete_appointment.dart';
 
-import '../../domain/entities/service_entity.dart';
-import '../../domain/entities/staff_entity.dart';
-import '../../domain/entities/status_entity.dart';
 
 //tres imports para staff
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +46,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   late String _selectedStatus;
-  late List<Service> _selectedServices;
+  List<ServiceEntity> _selectedServices = [];
   late TextEditingController _notesController;
   // Controladores para nombre y teléfono
   late TextEditingController _nameController;
@@ -56,47 +56,38 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   List<Staff> _staffList = [];
   // En tu clase _AppointmentDetailPageState
   Set<String> _selectedServiceIds = {};
-  List<Service> _allServices = []; // Todos los servicios disponibles
+  // ✅ CORRECTO:
+  List<ServiceEntity> _allServices = [];
+
+  // Todos los servicios disponibles
   bool _isLoadingServices = true;
   late UpdateAppointmentUseCase _updateAppointmentUseCase;
   late DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedDate = widget.appointment.startAt;
-    _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repository);
-    _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repository);
-    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.label;
-    _selectedServices = widget.appointment.services.map((serviceEntity) {
-    return Service(
-      id: serviceEntity.id,
-      branchId: serviceEntity.branchId,
-      categoryId: serviceEntity.categoryId,
-      name: serviceEntity.name,
-      description: serviceEntity.description,
-      durationMin: serviceEntity.durationMin,
-      basePrice: serviceEntity.basePrice,
-      enabled: serviceEntity.enabled,
-    );
-  }).toList();
-    _notesController =
-        TextEditingController(text: widget.appointment.notes ?? '');
-    _nameController =
-        TextEditingController(text: widget.appointment.customer.fullName);
-    _phoneController =
-        TextEditingController(text: widget.appointment.customer.phone);
+ @override
+void initState() {
+  super.initState();
+  _selectedDate = widget.appointment.startAt;
+  _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repository);
+  _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repository);
+  _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+  _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+  _selectedStatus = widget.appointment.status.name;
+  _selectedServices = widget.appointment.services;
+  _notesController = TextEditingController(text: widget.appointment.notes ?? '');
+  _nameController = TextEditingController(text: widget.appointment.customer.fullName);
+  _phoneController = TextEditingController(text: widget.appointment.customer.phone);
 
-    // para staff
-    _selectedStaffId = widget.appointment.staff?.id;
+  // para staff
+  _selectedStaffId = widget.appointment.staff?.id;
 
-    //  Inicializar el Set de IDs seleccionados
+  // Inicializar el Set de IDs seleccionados
   _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
   
-  loadAllServices();
+  // ✅ CORRECCIÓN: Llamar al método correcto
+  _loadServices(); // Era: loadAllServices()
 }
+
 
   @override
   void didChangeDependencies() {
@@ -277,28 +268,31 @@ Servicio: $services
     }
   }
 
-  Future<void> loadAllServices() async {
-    try {
-      final jsonString = await rootBundle
-          .loadString('assets/data/owner/catalogues/services_mock.json');
-
-      // ✅ Primero decodifica como Map
-      final Map<String, dynamic> jsonData = json.decode(jsonString);
-
-      // ✅ Luego extrae el array "data"
-      final List<dynamic> jsonList = jsonData['data'];
-
-      setState(() {
-        _allServices = jsonList.map((json) => Service.fromJson(json)).toList();
-        _isLoadingServices = false;
-      });
-    } catch (e) {
-      print('Error cargando servicios: $e');
-      setState(() {
-        _isLoadingServices = false;
-      });
-    }
+  Future<void> _loadServices() async {
+  setState(() {
+    _isLoadingServices = true;
+  });
+  try {
+    // 1. Cargar JSON
+    final String jsonString = await rootBundle.loadString(
+      'assets/data/owner/catalogues/services_mock.json',
+    );
+    // 2. Parsear a List
+    final List<dynamic> jsonList = json.decode(jsonString);
+    // 3. Convertir a ServiceEntity (NO a Service)
+    setState(() {
+      _allServices = jsonList
+          .map((json) => Service.fromJson(json).toEntity()) // ✅ Model → Entity
+          .toList();
+      _isLoadingServices = false;
+    });
+  } catch (e) {
+    print('Error cargando servicios: $e');
+    setState(() {
+      _isLoadingServices = false;
+    });
   }
+}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -457,25 +451,34 @@ Future<void> saveChanges() async {
   }).toList();
 
   final updatedAppointment = widget.appointment.copyWith(
-    startAt: newStartAt,
-    endAt: newEndAt,
-    notes: _notesController.text.trim().isEmpty
-        ? null
-        : _notesController.text.trim(),
-    status: StatusEntity(
-      code: _selectedStatus.toLowerCase(),
-      label: _selectedStatus,
-    ),
-    services: serviceEntities,
-    staff: selectedStaff != null
-        ? StaffEntity(
-            id: selectedStaff.id,
-            name: selectedStaff.displayName,
-            specialty: selectedStaff.specialty,
-            colorTag: selectedStaff.colorTag,
-          )
-        : null,
-  );
+  startAt: newStartAt,
+  endAt: newEndAt,
+  notes: _notesController.text.trim().isEmpty
+      ? null
+      : _notesController.text.trim(),
+  status: StatusEntity(
+    id: 0,
+    code: _selectedStatus.toLowerCase(),
+    name: _selectedStatus,
+  ),
+  services: serviceEntities,
+  staff: selectedStaff != null
+      ? (selectedStaff.id == widget.appointment.staff?.id
+          ? widget.appointment.staff // ✅ Reutilizar el staff original completo
+          : StaffEntity(
+              id: selectedStaff.id,
+              userId: selectedStaff.userId, // ✅ AGREGADO
+              displayName: selectedStaff.displayName,
+              specialty: selectedStaff.specialty,
+              colorTag: selectedStaff.colorTag,
+              positionId: selectedStaff.positionId, // ✅ AGREGADO
+              photoUrl: selectedStaff.photoUrl, // ✅ AGREGADO
+              commissionType: selectedStaff.commissionType, // ✅ AGREGADO
+              commissionValue: selectedStaff.commissionValue, // ✅ AGREGADO
+            ))
+      : null,
+);
+
 
   // ✅ GUARDAR EN EL REPOSITORIO
   try {
@@ -509,23 +512,9 @@ Future<void> saveChanges() async {
     _selectedDate = widget.appointment.startAt;
     _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
     _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.label;
-    
-    // ✅ CORRECCIÓN: Reconvertir desde ServiceEntity
-    _selectedServices = widget.appointment.services.map((serviceEntity) {
-      return Service(
-        id: serviceEntity.id,
-        branchId: serviceEntity.branchId,
-        categoryId: serviceEntity.categoryId,
-        name: serviceEntity.name,
-        description: serviceEntity.description,
-        durationMin: serviceEntity.durationMin,
-        basePrice: serviceEntity.basePrice,
-        enabled: serviceEntity.enabled,
-      );
-    }).toList();
-    
+    _selectedStatus = widget.appointment.status.name;
     _notesController.text = widget.appointment.notes ?? '';
+    _selectedServices = widget.appointment.services; 
     _nameController.text = widget.appointment.customer.fullName ?? '';
     _phoneController.text = widget.appointment.customer.phone ?? '';
     
@@ -949,7 +938,7 @@ Future<void> saveChanges() async {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        widget.appointment.staff!.name,
+                                        widget.appointment.staff!.displayName,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -1226,107 +1215,83 @@ Future<void> saveChanges() async {
     );
   }
 
-  Widget _buildServicesDisplay() {
-    return Column(
-      children: _selectedServices.map((s) {
-        final d = (s as dynamic).duration;
-        final hours = d.inHours;
-        final minutes = d.inMinutes.remainder(60);
-        final label = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+ Widget _buildServicesDisplay() {
+  return Column(
+    children: _selectedServices.map((service) { // ✅ Ya es ServiceEntity, no necesitas cast
+      // ✅ Usar directamente los getters de ServiceEntity
+      final durationLabel = service.durationLabel; // O calcular manualmente
+      
+      // Alternativa si prefieres calcular manualmente:
+      // final hours = service.duration.inHours;
+      // final minutes = service.duration.inMinutes.remainder(60);
+      // final durationLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
-        //  Buscar el precio desde allServices
-        final serviceId = (s as dynamic).id;
+      // Buscar el precio desde _allServices (por si acaso _selectedServices no tiene precio actualizado)
+      final serviceWithPrice = _allServices.firstWhere(
+        (s) => s.id == service.id,
+        orElse: () => ServiceEntity( // ✅ CORREGIDO: Devolver ServiceEntity, no Service
+          id: service.id,
+          branchId: service.branchId,
+          categoryId: service.categoryId,
+          name: service.name,
+          description: service.description,
+          durationMin: service.durationMin,
+          basePrice: service.basePrice,
+          enabled: service.enabled,
+        ),
+      );
+      
+      final price = serviceWithPrice.basePrice; // ✅ CORREGIDO: Ya no es nullable
 
-        final serviceWithPrice = _allServices.firstWhere(
-          (service) => service.id == serviceId,
-          orElse: () => Service(
-            id: serviceId,
-            name: (s as dynamic).name,
-            durationMin: d.inMinutes,
-            basePrice: 0.0, // ✅ Cambiar price a basePrice
-          ),
-        );
-        final price =
-            serviceWithPrice.basePrice ?? 0.0; // ✅ Cambiar y manejar null
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF7C3AED).withValues(alpha: 0.1),
-                const Color(0xFF9333EA).withValues(alpha: 0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF7C3AED),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      (s as dynamic).name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF1F2937),
-                      ),
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '\$${price.toStringAsFixed(2)}', // Muestra el precio formateado
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF7C3AED),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        durationLabel,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
+            ),
+            Text(
+              '\$${price.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList(),
+  );
+}
   Widget _buildServicesEditor() {
   if (_isLoadingServices) {
     return const Center(
@@ -1348,15 +1313,16 @@ Future<void> saveChanges() async {
     );
   }
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: _allServices.map((service) {
-      // Verificar selección usando el Set de IDs
-      final isSelected = _selectedServiceIds.contains(service.id);
-      final hours = service.duration.inHours;
-      final minutes = service.duration.inMinutes.remainder(60);
-      final durationLabel =
-          hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+ return Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: _allServices.map((service) {
+    // Verificar selección usando el Set de IDs
+    final isSelected = _selectedServiceIds.contains(service.id);
+    
+    // ✅ USAR el getter 'duration' que ya existe en ServiceEntity
+    final hours = service.duration.inHours;
+    final minutes = service.duration.inMinutes.remainder(60);
+    final durationLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 
       return Container(
         margin: const EdgeInsets.only(bottom: 8),

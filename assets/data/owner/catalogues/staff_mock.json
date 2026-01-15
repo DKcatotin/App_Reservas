@@ -1,26 +1,46 @@
 [
   {
     "id": "staff-001",
-    "name": "María García",
+    "user_id": "user-001",
+    "position_id": "pos-001",
+    "photo_url": "https://example.com/maria.jpg",
+    "display_name": "María García",
     "specialty": "Uñas y Manicura",
-    "color_tag": "#FF6B9D"
+    "color_tag": "#FF6B9D",
+    "commission_type": "percent",
+    "commission_value": 15.0
   },
   {
     "id": "staff-002",
-    "name": "Ana López",
+    "user_id": "user-002",
+    "position_id": "pos-001",
+    "photo_url": "https://example.com/ana.jpg",
+    "display_name": "Ana López",
     "specialty": "Cejas y Pestañas",
-    "color_tag": "#C44569"
+    "color_tag": "#C44569",
+    "commission_type": "fixed",
+    "commission_value": 10.0
   },
   {
     "id": "staff-003",
-    "name": "Carla Mendoza",
+    "user_id": "user-003",
+    "position_id": null,
+    "photo_url": null,
+    "display_name": "Carla Mendoza",
     "specialty": "Pedicura",
-    "color_tag": "#786FA6"
+    "color_tag": "#786FA6",
+    "commission_type": "none",
+    "commission_value": null
   },
   {
     "id": "staff-004",
-    "name": "Sofía Ramírez",
+    "user_id": "user-004",
+    "position_id": "pos-002",
+    "photo_url": null,
+    "display_name": "Sofía Ramírez",
     "specialty": "Uñas Acrílicas",
-    "color_tag": "#F8B500"
+    "color_tag": "#F8B500",
+    "commission_type": "percent",
+    "commission_value": 20.0
   }
 ]

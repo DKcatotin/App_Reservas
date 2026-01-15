@@ -1,5 +1,5 @@
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 
 class CreateAppointmentInput {
   final String customerId;

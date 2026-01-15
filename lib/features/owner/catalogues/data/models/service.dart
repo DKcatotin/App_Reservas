@@ -1,41 +1,41 @@
+import '../../domain/entities/service_entity.dart';
+
 class Service {
   final String id;
-  final String? branchId;
+  final String branchId;
   final String? categoryId;
   final String name;
   final String? description;
-  final int durationMin;        // ✅ Cambiar de durationMinutes
-  final double? basePrice;
-  final bool? enabled;
+  final int durationMin;
+  final double basePrice;
+  final bool enabled;
 
   Service({
     required this.id,
-    this.branchId,
+    required this.branchId,
     this.categoryId,
     required this.name,
     this.description,
-    required this.durationMin,  // ✅ Cambiar
-    this.basePrice,
-    this.enabled,
+    required this.durationMin,
+    required this.basePrice,
+    required this.enabled,
   });
 
+  // JSON → Model
   factory Service.fromJson(Map<String, dynamic> json) {
     return Service(
-      id: json['id'] as String? ?? '',
-      branchId: json['branch_id'] as String?,
+      id: json['id'] as String,
+      branchId: json['branch_id'] as String,
       categoryId: json['category_id'] as String?,
-      name: json['name'] as String? ?? '',
+      name: json['name'] as String,
       description: json['description'] as String?,
-      durationMin: (json['duration_min'] as num?)?.toInt() ?? 0,  // ✅
-      basePrice: json['base_price'] != null
-          ? (json['base_price'] as num).toDouble()
-          : null,
-      enabled: json['enabled'] as bool?,
+      durationMin: json['duration_min'] as int,
+      basePrice: (json['base_price'] as num).toDouble(),
+      enabled: json['enabled'] as bool? ?? true,
     );
   }
 
-  Duration get duration => Duration(minutes: durationMin);
-
+  // Model → JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -43,9 +43,37 @@ class Service {
       'category_id': categoryId,
       'name': name,
       'description': description,
-      'duration_min': durationMin,  // ✅
+      'duration_min': durationMin,
       'base_price': basePrice,
       'enabled': enabled,
     };
+  }
+
+  // Model → Entity (para pasar a domain layer)
+  ServiceEntity toEntity() {
+    return ServiceEntity(
+      id: id,
+      branchId: branchId,
+      categoryId: categoryId,
+      name: name,
+      description: description,
+      durationMin: durationMin,
+      basePrice: basePrice,
+      enabled: enabled,
+    );
+  }
+
+  // Entity → Model (para guardar)
+  factory Service.fromEntity(ServiceEntity entity) {
+    return Service(
+      id: entity.id,
+      branchId: entity.branchId,
+      categoryId: entity.categoryId,
+      name: entity.name,
+      description: entity.description,
+      durationMin: entity.durationMin,
+      basePrice: entity.basePrice,
+      enabled: entity.enabled,
+    );
   }
 }

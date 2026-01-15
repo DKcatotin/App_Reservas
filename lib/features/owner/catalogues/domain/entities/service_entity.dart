@@ -1,22 +1,22 @@
 class ServiceEntity {
   final String id;
-  final String? branchId;
+  final String branchId;
   final String? categoryId;
   final String name;
   final String? description;
   final int durationMin;
-  final double? basePrice;
-  final bool? enabled;
+  final double basePrice;
+  final bool enabled;
 
   const ServiceEntity({
     required this.id,
-    this.branchId,
+    required this.branchId,
     this.categoryId,
     required this.name,
     this.description,
     required this.durationMin,
-    this.basePrice,
-    this.enabled,
+    required this.basePrice,
+    required this.enabled, // ✅ Está bien como required
   });
 
   Duration get duration => Duration(minutes: durationMin);

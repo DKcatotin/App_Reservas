@@ -5,14 +5,14 @@ import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/source_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/staff_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/entities/status_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/repositories/appointments_repository.dart';
 import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/staff_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/status_entity.dart';
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final AppointmentsDatasource datasource;
@@ -93,15 +93,17 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       id: model.id,
       branchId: model.branchId,
       customerId: model.customerId,
-      staffId: model.staffId,
+      staffProfileId: model.staffId, // → staffId
       startAt: model.startAt,
       endAt: model.endAt,
       notes: model.notes,
       status: StatusEntity(
+        id: model.status.id,
         code: model.status.code,
-        label: model.status.name,
+        name: model.status.name,
       ),
       source: SourceEntity(
+        id: model.source.id,
         code: model.source.code,
         name: model.source.name,
       ),
@@ -119,22 +121,27 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: model.staff != null
           ? StaffEntity(
               id: model.staff!.id,
-              name: model.staff!.displayName,
+              userId: model.staff!.userId, // ✅ AGREGADO: userId es requerido
+              displayName: model.staff!.displayName,
               specialty: model.staff!.specialty,
               colorTag: model.staff!.colorTag,
+              positionId: model.staff!.positionId, // ✅ AGREGADO
+              photoUrl: model.staff!.photoUrl, // ✅ AGREGADO
+              commissionType: model.staff!.commissionType, // ✅ AGREGADO
+              commissionValue: model.staff!.commissionValue, // ✅ AGREGADO
             )
           : null,
       services: model.services
           .map(
             (s) => ServiceEntity(
-              id: s.serviceId, // ✅ Usar serviceId de la tabla appointmentservices
-              branchId: s.branchId,
+              id: s.serviceId,
+              branchId: s.branchId ?? '', // ✅ CORREGIDO: manejar nullable
               categoryId: s.categoryId,
-              name: s.serviceName ?? '', // ✅ Usar serviceName del JOIN
+              name: s.serviceName ?? '',
               description: s.description,
               durationMin: s.durationMin,
-              basePrice: s.basePrice,
-              enabled: s.enabled,
+              basePrice: s.basePrice ?? 0.0, // ✅ CORREGIDO: manejar nullable
+              enabled: s.enabled ?? true, // ✅ CORREGIDO: manejar nullable
             ),
           )
           .toList(),
@@ -147,17 +154,17 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       id: entity.id,
       branchId: entity.branchId,
       customerId: entity.customerId,
-      staffId: entity.staffId,
+      staffId: entity.staffProfileId, // → staffId
       startAt: entity.startAt,
       endAt: entity.endAt,
       notes: entity.notes,
       status: Status(
-        id: 0, // ID se asigna automáticamente desde el backend
+        id: entity.status.id, // id de la entity
         code: entity.status.code,
-        name: entity.status.label,
+        name: entity.status.name, //  label → name
       ),
       source: Source(
-        id: 0, // ID se asigna automáticamente desde el backend
+        id: entity.source.id, // ✅ CORREGIDO: usar el id de la entity
         code: entity.source.code,
         name: entity.source.name,
       ),
@@ -175,9 +182,14 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: entity.staff != null
           ? Staff(
               id: entity.staff!.id,
-              displayName: entity.staff!.name,
+              userId: entity.staff!.userId, // ✅ AGREGADO: userId es requerido
+              displayName: entity.staff!.displayName, // ✅ CORREGIDO: name → displayName
               specialty: entity.staff!.specialty,
               colorTag: entity.staff!.colorTag,
+              positionId: entity.staff!.positionId, // ✅ AGREGADO
+              photoUrl: entity.staff!.photoUrl, // ✅ AGREGADO
+              commissionType: entity.staff!.commissionType, // ✅ AGREGADO
+              commissionValue: entity.staff!.commissionValue, // ✅ AGREGADO
             )
           : null,
       services: entity.services
@@ -187,7 +199,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
               appointmentId: entity.id,
               serviceId: s.id,
               durationMin: s.durationMin,
-              price: s.basePrice ?? 0.0,
+              price: s.basePrice, // ✅ CORREGIDO: quitar ?? 0.0 porque basePrice ya no es nullable
               // Campos del JOIN (se llenan al recibir del backend)
               serviceName: s.name,
               branchId: s.branchId,
@@ -200,5 +212,4 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
           .toList(),
     );
   }
-
 }

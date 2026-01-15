@@ -1,40 +1,48 @@
 class StatusEntity {
+  final int id;
   final String code;
-  final String label;
+  final String name;
 
   const StatusEntity({
+    required this.id,
     required this.code,
-    required this.label,
+    required this.name,
   });
 
   // Constantes para los estados comunes
   static const StatusEntity pending = StatusEntity(
+    id: 0,
     code: 'pending',
-    label: 'Pendiente',
+    name: 'Pendiente',
   );
 
   static const StatusEntity confirmed = StatusEntity(
+    id: 1,
     code: 'confirmed',
-    label: 'Confirmada',
+    name: 'Confirmada',
   );
 
   static const StatusEntity cancelled = StatusEntity(
+    id: 2,
     code: 'cancelled',
-    label: 'Cancelada',
+    name: 'Cancelada',
   );
 
   static const StatusEntity completed = StatusEntity(
+    id: 3,
     code: 'completed',
-    label: 'Completada',
+    name: 'Completada',
   );
 
   StatusEntity copyWith({
+    int? id,  //  AGREGADO - faltaba el id
     String? code,
-    String? label,
+    String? name, //  CORREGIDO - debe ser 'name' no 'label'
   }) {
     return StatusEntity(
+      id: id ?? this.id,
       code: code ?? this.code,
-      label: label ?? this.label,
+      name: name ?? this.name, // CORREGIDO
     );
   }
 }

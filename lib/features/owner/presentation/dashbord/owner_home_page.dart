@@ -528,7 +528,7 @@ Future<void> _loadServicios() async {
 Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointment → AppointmentEntity
   final time = TimeOfDay.fromDateTime(cita.startAt).format(context);
   final serviceName = cita.services.isNotEmpty ? cita.services.first.name : 'Sin servicio';
-  final statusColor = _getStatusColor(cita.status.label);
+  final statusColor = _getStatusColor(cita.status.name);
 
   return Container(
     decoration: BoxDecoration(
@@ -633,7 +633,7 @@ Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointmen
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          cita.status.label,
+                          cita.status.name,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
