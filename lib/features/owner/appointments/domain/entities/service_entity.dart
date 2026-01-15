@@ -1,18 +1,26 @@
 class ServiceEntity {
   final String id;
+  final String? branchId;
+  final String? categoryId;
   final String name;
+  final String? description;
   final int durationMin;
+  final double? basePrice;
+  final bool? enabled;
 
   const ServiceEntity({
     required this.id,
+    this.branchId,
+    this.categoryId,
     required this.name,
+    this.description,
     required this.durationMin,
+    this.basePrice,
+    this.enabled,
   });
 
-  /// Devuelve la duración como un objeto Duration
   Duration get duration => Duration(minutes: durationMin);
 
-  /// Formatea la duración como texto (ej: "1h 30m" o "45m")
   String get durationLabel {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -24,13 +32,23 @@ class ServiceEntity {
 
   ServiceEntity copyWith({
     String? id,
+    String? branchId,
+    String? categoryId,
     String? name,
-    int? durationMinutes,
+    String? description,
+    int? durationMin,
+    double? basePrice,
+    bool? enabled,
   }) {
     return ServiceEntity(
       id: id ?? this.id,
+      branchId: branchId ?? this.branchId,
+      categoryId: categoryId ?? this.categoryId,
       name: name ?? this.name,
-      durationMin: durationMinutes ?? this.durationMin,
+      description: description ?? this.description,
+      durationMin: durationMin ?? this.durationMin,
+      basePrice: basePrice ?? this.basePrice,
+      enabled: enabled ?? this.enabled,
     );
   }
 }

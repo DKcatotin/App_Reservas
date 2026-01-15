@@ -26,7 +26,6 @@ class CreateAppointmentUseCase {
   // 4. Crear entidad Appointment (SIN crear customer)
   final appointment = AppointmentEntity(
     id: IdGenerator.generate('appointment'),
-    ownerId: 'owner1', // TODO: Obtener del contexto/sesión
     branchId: 'branch1', // TODO: Obtener del contexto/sesión
     customerId: input.customerId, //  CAMBIO: Ya viene del formulario
     staffId: null,

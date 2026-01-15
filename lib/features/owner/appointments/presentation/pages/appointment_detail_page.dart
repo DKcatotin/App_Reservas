@@ -26,14 +26,13 @@ class AppointmentDetailPage extends ConsumerStatefulWidget {
   final AppointmentsRepositoryImpl repository; // ← AGREGAR
   final Future<void> Function(AppointmentEntity)? onAppointmentUpdated;
   final Future<void> Function(String)? onAppointmentDeleted;
-  
+
   const AppointmentDetailPage({
     super.key,
     required this.appointment,
     this.onAppointmentUpdated,
     this.onAppointmentDeleted,
     required this.repository,
-
   });
 
   @override
@@ -62,7 +61,6 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   bool _isLoadingServices = true;
   late UpdateAppointmentUseCase _updateAppointmentUseCase;
   late DeleteAppointmentUseCase _deleteAppointmentUseCase;
- 
 
   @override
   void initState() {
@@ -76,8 +74,10 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     _selectedServices = List.from(widget.appointment.services);
     _notesController =
         TextEditingController(text: widget.appointment.notes ?? '');
-    _nameController = TextEditingController(text: widget.appointment.customer.fullName);
-    _phoneController = TextEditingController(text: widget.appointment.customer.phone);
+    _nameController =
+        TextEditingController(text: widget.appointment.customer.fullName);
+    _phoneController =
+        TextEditingController(text: widget.appointment.customer.phone);
 
     _serviceControllers = _selectedServices.map((s) {
       return TextEditingController(text: (s as dynamic).name);
@@ -107,90 +107,88 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     });
   }
 
-void _recalculateEndTimeFromStart() {
-  if (_selectedServices.isEmpty) {
-    _endTime = _startTime;
-    return;
-  }
-
- int totalMinutes = 0;
-for (var service in _selectedServices) {
-  if (service is AppointmentService) {
-    totalMinutes += service.durationMin;  // ✅ Ya es int
-  } else if (service is Service) {
-    totalMinutes += service.durationMin;  // ✅ Ya es int
-  } else {
-    // Para tipos dynamic
-    final dynamic s = service;
-    try {
-      if (s.durationMin != null) {
-        totalMinutes += (s.durationMin as num).toInt();
-      } else if (s.durationMin != null) {
-        totalMinutes += (s.durationMin as num).toInt();
-      } else if (s.duration != null) {
-        totalMinutes += (s.duration as Duration).inMinutes;
-      }
-    } catch (e) {
-      print('Error al obtener duración del servicio: $e');
+  void _recalculateEndTimeFromStart() {
+    if (_selectedServices.isEmpty) {
+      _endTime = _startTime;
+      return;
     }
-  }
-}
 
-
-  final startDateTime = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _startTime.hour,
-    _startTime.minute,
-  );
-  
-  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
-  
-  setState(() {
-    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
-  });
-}
-
- void _recalculateEndTime() {
-  if (_selectedServices.isEmpty) {
-    return;
-  }
-
-  // Sumar todas las duraciones
-  int totalMinutes = 0;
-  for (var service in _selectedServices) {
-    //  CORRECCIÓN: Manejar ambos tipos de servicios
-    if (service is AppointmentService) {
-      totalMinutes += service.durationMin;
-    } else if (service is Service) {
-      totalMinutes += service.durationMin;
-    } else {
-      // Si es dynamic, intentar obtener durationMin o duration
-      final dynamic s = service;
-      if (s.durationMin != null) {
-        totalMinutes += s.durationMin as int;
-      } else if (s.duration != null) {
-        totalMinutes += (s.duration as Duration).inMinutes;
+    int totalMinutes = 0;
+    for (var service in _selectedServices) {
+      if (service is AppointmentService) {
+        totalMinutes += service.durationMin; // ✅ Ya es int
+      } else if (service is Service) {
+        totalMinutes += service.durationMin; // ✅ Ya es int
+      } else {
+        // Para tipos dynamic
+        final dynamic s = service;
+        try {
+          if (s.durationMin != null) {
+            totalMinutes += (s.durationMin as num).toInt();
+          } else if (s.durationMin != null) {
+            totalMinutes += (s.durationMin as num).toInt();
+          } else if (s.duration != null) {
+            totalMinutes += (s.duration as Duration).inMinutes;
+          }
+        } catch (e) {
+          print('Error al obtener duración del servicio: $e');
+        }
       }
     }
+
+    final startDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+
+    final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+    setState(() {
+      _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+    });
   }
 
-  // Calcular nuevo end time
-  final startDateTime = DateTime(
-    _selectedDate.year,
-    _selectedDate.month,
-    _selectedDate.day,
-    _startTime.hour,
-    _startTime.minute,
-  );
-  final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+  void _recalculateEndTime() {
+    if (_selectedServices.isEmpty) {
+      return;
+    }
 
-  setState(() {
-    _endTime = TimeOfDay.fromDateTime(newEndDateTime);
-  });
-}
+    // Sumar todas las duraciones
+    int totalMinutes = 0;
+    for (var service in _selectedServices) {
+      //  CORRECCIÓN: Manejar ambos tipos de servicios
+      if (service is AppointmentService) {
+        totalMinutes += service.durationMin;
+      } else if (service is Service) {
+        totalMinutes += service.durationMin;
+      } else {
+        // Si es dynamic, intentar obtener durationMin o duration
+        final dynamic s = service;
+        if (s.durationMin != null) {
+          totalMinutes += s.durationMin as int;
+        } else if (s.duration != null) {
+          totalMinutes += (s.duration as Duration).inMinutes;
+        }
+      }
+    }
 
+    // Calcular nuevo end time
+    final startDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+    final newEndDateTime = startDateTime.add(Duration(minutes: totalMinutes));
+
+    setState(() {
+      _endTime = TimeOfDay.fromDateTime(newEndDateTime);
+    });
+  }
 
   @override
   void dispose() {
@@ -203,26 +201,27 @@ for (var service in _selectedServices) {
     }
     super.dispose();
   }
-Future<void> _sendWhatsAppReminder() async {
-  final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
-  final formattedDate = dateFormatter.format(widget.appointment.startAt);
-  
-  final timeFormatter = DateFormat('HH:mm');
-  final formattedTime = timeFormatter.format(widget.appointment.startAt);
-  
-  final services = widget.appointment.services.map((s) => s.name).join(', ');
-  
-  String phone = _phoneController.text.replaceAll(RegExp(r'[^\d+]'), '');
-  
-  if (!phone.startsWith('+')) {
-    if (phone.startsWith('0')) {
-      phone = '+593${phone.substring(1)}';
-    } else {
-      phone = '+593$phone';
+
+  Future<void> _sendWhatsAppReminder() async {
+    final dateFormatter = DateFormat('EEEE dd MMM yyyy', 'es');
+    final formattedDate = dateFormatter.format(widget.appointment.startAt);
+
+    final timeFormatter = DateFormat('HH:mm');
+    final formattedTime = timeFormatter.format(widget.appointment.startAt);
+
+    final services = widget.appointment.services.map((s) => s.name).join(', ');
+
+    String phone = _phoneController.text.replaceAll(RegExp(r'[^\d+]'), '');
+
+    if (!phone.startsWith('+')) {
+      if (phone.startsWith('0')) {
+        phone = '+593${phone.substring(1)}';
+      } else {
+        phone = '+593$phone';
+      }
     }
-  }
-  
-  final message = '''Francis Nails & Beauty Spa 📢 Recordatorio de cita:
+
+    final message = '''Francis Nails & Beauty Spa 📢 Recordatorio de cita:
 📅 *$formattedDate*
 🕓 *$formattedTime*
 👤 *${_nameController.text}*
@@ -230,50 +229,52 @@ Future<void> _sendWhatsAppReminder() async {
 Servicio: $services
 📍 Por favor llegar 10 min antes
 ¡Gracias por su confianza!''';
-  
-  final encodedMessage = Uri.encodeComponent(message);
-  final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encodedMessage');
-  
-  try {
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } else {
+
+    final encodedMessage = Uri.encodeComponent(message);
+    final whatsappUrl = Uri.parse('https://wa.me/$phone?text=$encodedMessage');
+
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('No se pudo abrir WhatsApp'),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 12),
-                Text('No se pudo abrir WhatsApp'),
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error al abrir WhatsApp: $e')),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text('Error al abrir WhatsApp: $e')),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-    }
   }
-}
 
   Future<void> loadAllServices() async {
     try {
@@ -444,22 +445,38 @@ Servicio: $services
     List<ServiceEntity> serviceEntities = _selectedServices.map((service) {
       if (service is AppointmentService) {
         return ServiceEntity(
-          id: service.id,
-          name: service.name,
+          id: service.serviceId, //  Usar serviceId en lugar de id
+          branchId: service.branchId,
+          categoryId: service.categoryId,
+          name: service.serviceName ?? '', //  Usar serviceName
+          description: service.description,
           durationMin: service.durationMin,
+          basePrice: service.basePrice,
+          enabled: service.enabled,
         );
       } else if (service is Service) {
         return ServiceEntity(
           id: service.id,
+          branchId: service.branchId,
+          categoryId: service.categoryId,
           name: service.name,
+          description: service.description,
           durationMin: service.durationMin,
+          basePrice: service.basePrice,
+          enabled: service.enabled,
         );
       } else {
+        // Fallback para tipos dinámicos
         final s = service as dynamic;
         return ServiceEntity(
-          id: s.id,
-          name: s.name,
-          durationMin: s.duration.inMinutes as int,
+          id: s.id ?? '',
+          branchId: s.branchId,
+          categoryId: s.categoryId,
+          name: s.name ?? s.serviceName ?? '',
+          description: s.description,
+          durationMin: s.durationMin ?? (s.duration?.inMinutes ?? 0),
+          basePrice: s.basePrice,
+          enabled: s.enabled,
         );
       }
     }).toList();
@@ -514,27 +531,28 @@ Servicio: $services
   }
 
   void _cancelEdit() {
-  setState(() {
-    _isEditing = false;
-    _selectedDate = widget.appointment.startAt;
-    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.label;
-    _selectedServices = List.from(widget.appointment.services);
-    _notesController.text = widget.appointment.notes ?? '';
-    
-    // ✅ CORRECCIÓN: Manejar valores nullable
-    _nameController.text = widget.appointment.customer.fullName ?? '';
-    _phoneController.text = widget.appointment.customer.phone ?? '';
-    
-    // Resetear el Set de IDs
-    _selectedServiceIds = _selectedServices.map((s) => (s as dynamic).id as String).toSet();
-    
-    for (int i = 0; i < _serviceControllers.length; i++) {
-      _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
-    }
-  });
-}
+    setState(() {
+      _isEditing = false;
+      _selectedDate = widget.appointment.startAt;
+      _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+      _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+      _selectedStatus = widget.appointment.status.label;
+      _selectedServices = List.from(widget.appointment.services);
+      _notesController.text = widget.appointment.notes ?? '';
+
+      // ✅ CORRECCIÓN: Manejar valores nullable
+      _nameController.text = widget.appointment.customer.fullName ?? '';
+      _phoneController.text = widget.appointment.customer.phone ?? '';
+
+      // Resetear el Set de IDs
+      _selectedServiceIds =
+          _selectedServices.map((s) => (s as dynamic).id as String).toSet();
+
+      for (int i = 0; i < _serviceControllers.length; i++) {
+        _serviceControllers[i].text = (_selectedServices[i] as dynamic).name;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -658,232 +676,255 @@ Servicio: $services
                 children: [
                   /// CLIENTE
                   /// CLIENTE - EDITABLE (NOMBRE Y TELÉFONO)
-_ModernInfoCard(
-  gradient: const LinearGradient(
-    colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
-  ),
-  icon: Icons.person_rounded,
-  title: 'Cliente',
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // NOMBRE EDITABLE
-      _isEditing
-          ? TextField(
-              controller: _nameController,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Nombre del cliente',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            )
-          : Text(
-              _nameController.text,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-      
-      const SizedBox(height: 12),
-      
-      // TELÉFONO EDITABLE con WhatsApp
-      _isEditing
-          ? TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Número de teléfono',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                prefixIcon: const Icon(Icons.phone_rounded, color: Colors.white, size: 18),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: Colors.white, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.2),
-              ),
-            )
-          : GestureDetector(
-              onTap: _sendWhatsAppReminder,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.phone_rounded, size: 18, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(
-                      _phoneController.text,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  _ModernInfoCard(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
-                  ],
-                ),
-              ),
-            ),
-    ],
-  ),
-),
-
-                  /// FECHA Y HORA
-                  _WhiteInfoCard(
-  icon: Icons.calendar_today_rounded,
-  iconColor: const Color(0xFF7C3AED),
-  title: 'Fecha y Hora',
-  child: Column(
-    children: [
-      InkWell(
-        onTap: _isEditing ? () => _selectDate(context) : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: _isEditing
-                ? const Color(0xFF7C3AED).withValues(alpha: 0.05)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: _isEditing
-                ? Border.all(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
-                    width: 1,
-                  )
-                : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// 📅 FECHA (ARRIBA)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
+                    icon: Icons.person_rounded,
+                    title: 'Cliente',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Fecha',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          dateFormatter.format(_selectedDate),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Color(0xFF1F2937),
-                          ),
-                        ),
+                        // NOMBRE EDITABLE
+                        _isEditing
+                            ? TextField(
+                                controller: _nameController,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Nombre del cliente',
+                                  hintStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.3)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.3)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Colors.white, width: 2),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
+                                ),
+                              )
+                            : Text(
+                                _nameController.text,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+
+                        const SizedBox(height: 12),
+
+                        // TELÉFONO EDITABLE con WhatsApp
+                        _isEditing
+                            ? TextField(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Número de teléfono',
+                                  hintStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5)),
+                                  prefixIcon: const Icon(Icons.phone_rounded,
+                                      color: Colors.white, size: 18),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.3)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.3)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    borderSide: const BorderSide(
+                                        color: Colors.white, width: 2),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.2),
+                                ),
+                              )
+                            : GestureDetector(
+                                onTap: _sendWhatsAppReminder,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.3),
+                                        width: 1),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.phone_rounded,
+                                          size: 18, color: Colors.white),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _phoneController.text,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.arrow_forward_ios,
+                                          size: 12, color: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              ),
                       ],
                     ),
                   ),
-                  if (_isEditing)
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFF7C3AED),
+
+                  /// FECHA Y HORA
+                  _WhiteInfoCard(
+                    icon: Icons.calendar_today_rounded,
+                    iconColor: const Color(0xFF7C3AED),
+                    title: 'Fecha y Hora',
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: _isEditing ? () => _selectDate(context) : null,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _isEditing
+                                  ? const Color(0xFF7C3AED)
+                                      .withValues(alpha: 0.05)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: _isEditing
+                                  ? Border.all(
+                                      color: const Color(0xFF7C3AED)
+                                          .withValues(alpha: 0.3),
+                                      width: 1,
+                                    )
+                                  : null,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// 📅 FECHA (ARRIBA)
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Fecha',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            dateFormatter.format(_selectedDate),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                              color: Color(0xFF1F2937),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (_isEditing)
+                                      const Icon(
+                                        Icons.chevron_right,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                /// ⏰ HORAS (ABAJO)
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF7C3AED)
+                                            .withValues(alpha: 0.1),
+                                        const Color(0xFF9333EA)
+                                            .withValues(alpha: 0.05),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      /// INICIO - EDITABLE
+                                      InkWell(
+                                        onTap: _isEditing
+                                            ? () => _selectTime(context, true)
+                                            : null,
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: _TimeBlock(
+                                          label: 'Inicio',
+                                          time: _startTime.format(context),
+                                          isEditable: _isEditing,
+                                        ),
+                                      ),
+                                      Container(
+                                        height: 40,
+                                        width: 2,
+                                        color: const Color(0xFF7C3AED)
+                                            .withValues(alpha: 0.3),
+                                      ),
+
+                                      /// FIN - CALCULADO
+                                      _TimeBlock(
+                                        label: 'Fin',
+                                        time: _endTime.format(context),
+                                        isEditable: false,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              /// ⏰ HORAS (ABAJO)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF7C3AED).withValues(alpha: 0.1),
-                      const Color(0xFF9333EA).withValues(alpha: 0.05),
-                    ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    /// INICIO - EDITABLE
-                    InkWell(
-                      onTap: _isEditing
-                          ? () => _selectTime(context, true)
-                          : null,
-                      borderRadius: BorderRadius.circular(8),
-                      child: _TimeBlock(
-                        label: 'Inicio',
-                        time: _startTime.format(context),
-                        isEditable: _isEditing,
-                      ),
-                    ),
-                    Container(
-                      height: 40,
-                      width: 2,
-                      color: const Color(0xFF7C3AED)
-                          .withValues(alpha: 0.3),
-                    ),
-                    /// FIN - CALCULADO
-                    _TimeBlock(
-                      label: 'Fin',
-                      time: _endTime.format(context),
-                      isEditable: false,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-    ],
-  ),
-),
 
-const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   /// EMPLEADO/STAFF ASIGNADO
                   _WhiteInfoCard(
@@ -1216,16 +1257,17 @@ const SizedBox(height: 16),
         //  Buscar el precio desde allServices
         final serviceId = (s as dynamic).id;
 
-final serviceWithPrice = _allServices.firstWhere(
-  (service) => service.id == serviceId,
-  orElse: () => Service(
-    id: serviceId,
-    name: (s as dynamic).name,
-    durationMin: d.inMinutes,
-    basePrice: 0.0,  // ✅ Cambiar price a basePrice
-  ),
-);
-final price = serviceWithPrice.basePrice ?? 0.0;  // ✅ Cambiar y manejar null
+        final serviceWithPrice = _allServices.firstWhere(
+          (service) => service.id == serviceId,
+          orElse: () => Service(
+            id: serviceId,
+            name: (s as dynamic).name,
+            durationMin: d.inMinutes,
+            basePrice: 0.0, // ✅ Cambiar price a basePrice
+          ),
+        );
+        final price =
+            serviceWithPrice.basePrice ?? 0.0; // ✅ Cambiar y manejar null
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1352,25 +1394,15 @@ final price = serviceWithPrice.basePrice ?? 0.0;  // ✅ Cambiar y manejar null
             value: isSelected,
             onChanged: (checked) {
               setState(() {
-                if (checked == true) {
-                  //  Agregar al Set de IDs
+                if (isSelected) {
                   _selectedServiceIds.add(service.id);
-                  //  Agregar AppointmentService a la lista
-                  _selectedServices.add(
-                    AppointmentService(
-                      id: service.id,
-                      name: service.name,
-                      durationMin: service.durationMin,
-                    ),
-                  );
+                  // Simplemente agregar el Service del catálogo
+                  _selectedServices.add(service);
                 } else {
-                  //  Remover del Set de IDs
                   _selectedServiceIds.remove(service.id);
-                  //  Remover de la lista
-                  _selectedServices
-                      .removeWhere((s) => (s as dynamic).id == service.id);
+                  _selectedServices.removeWhere((s) => s.id == service.id);
                 }
-                // Recalcular duración de la cita
+// Recalcular duración de la cita
                 _recalculateEndTime();
               });
             },
@@ -1385,13 +1417,14 @@ final price = serviceWithPrice.basePrice ?? 0.0;  // ✅ Cambiar y manejar null
             ),
             subtitle: Row(
               children: [
-  const Icon(Icons.access_time, size: 14, color: Colors.grey),
-  const SizedBox(width: 4),
-  Text(durationLabel),
-  const SizedBox(width: 12),
-  const Icon(Icons.attach_money, size: 14, color: Colors.grey),
-  Text('\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'),  // Manejar null
-],
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(durationLabel),
+                const SizedBox(width: 12),
+                const Icon(Icons.attach_money, size: 14, color: Colors.grey),
+                Text(
+                    '\$${(service.basePrice ?? 0.0).toStringAsFixed(2)}'), // Manejar null
+              ],
             ),
             activeColor: const Color(0xFF7C3AED),
           ),

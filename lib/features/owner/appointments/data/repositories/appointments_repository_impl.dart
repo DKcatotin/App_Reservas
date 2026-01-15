@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
@@ -91,7 +93,6 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   AppointmentEntity _mapToEntity(Appointment model) {
     return AppointmentEntity(
       id: model.id,
-      ownerId: model.ownerId,
       branchId: model.branchId,
       customerId: model.customerId,
       staffId: model.staffId,
@@ -100,11 +101,11 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       notes: model.notes,
       status: StatusEntity(
         code: model.status.code,
-        label: model.status.name,  // ✅ Cambio: label -> name
+        label: model.status.name,
       ),
       source: SourceEntity(
-        code: model.source.code,    // ✅ Cambio: type -> code
-        name: model.source.name,    // ✅ Cambio: usar directamente name
+        code: model.source.code,
+        name: model.source.name,
       ),
       customer: CustomerEntity(
         id: model.customer.id,
@@ -120,7 +121,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: model.staff != null
           ? StaffEntity(
               id: model.staff!.id,
-              name: model.staff!.displayName,  // ✅ Cambio: name -> displayName
+              name: model.staff!.displayName,
               specialty: model.staff!.specialty,
               colorTag: model.staff!.colorTag,
             )
@@ -128,9 +129,14 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       services: model.services
           .map(
             (s) => ServiceEntity(
-              id: s.id,
-              name: s.name,
-              durationMin: s.durationMin,  // ✅ Cambio: durationMinutes -> durationMin
+              id: s.serviceId, // ✅ Usar serviceId de la tabla appointmentservices
+              branchId: s.branchId,
+              categoryId: s.categoryId,
+              name: s.serviceName ?? '', // ✅ Usar serviceName del JOIN
+              description: s.description,
+              durationMin: s.durationMin,
+              basePrice: s.basePrice,
+              enabled: s.enabled,
             ),
           )
           .toList(),
@@ -141,7 +147,6 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   Appointment _mapToModel(AppointmentEntity entity) {
     return Appointment(
       id: entity.id,
-      ownerId: entity.ownerId,
       branchId: entity.branchId,
       customerId: entity.customerId,
       staffId: entity.staffId,
@@ -149,14 +154,14 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       endAt: entity.endAt,
       notes: entity.notes,
       status: Status(
-        id: 0,                      // ✅ Agregado: id requerido
+        id: 0, // ID se asigna automáticamente desde el backend
         code: entity.status.code,
-        name: entity.status.label,  // ✅ Cambio: label -> name
+        name: entity.status.label,
       ),
       source: Source(
-        id: 0,                      // ✅ Agregado: id requerido
-        code: entity.source.code,   // ✅ Agregado: code requerido
-        name: entity.source.name,   // ✅ Cambio: type -> name
+        id: 0, // ID se asigna automáticamente desde el backend
+        code: entity.source.code,
+        name: entity.source.name,
       ),
       customer: Customer(
         id: entity.customer.id,
@@ -172,7 +177,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       staff: entity.staff != null
           ? Staff(
               id: entity.staff!.id,
-              displayName: entity.staff!.name,  // ✅ Cambio: name -> displayName
+              displayName: entity.staff!.name,
               specialty: entity.staff!.specialty,
               colorTag: entity.staff!.colorTag,
             )
@@ -180,30 +185,22 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       services: entity.services
           .map(
             (s) => AppointmentService(
-              id: s.id,
-              name: s.name,
-              durationMin: s.durationMin,  // ✅ Cambio: durationMinutes -> durationMin
+              id: '', // Se genera en el backend
+              appointmentId: entity.id,
+              serviceId: s.id,
+              durationMin: s.durationMin,
+              price: s.basePrice ?? 0.0,
+              // Campos del JOIN (se llenan al recibir del backend)
+              serviceName: s.name,
+              branchId: s.branchId,
+              categoryId: s.categoryId,
+              description: s.description,
+              basePrice: s.basePrice,
+              enabled: s.enabled,
             ),
           )
           .toList(),
     );
   }
 
-  /// Helper para obtener el nombre del source (ya no es necesario si usas directamente source.name)
-  String _getSourceName(String code) {
-    switch (code) {
-      case 'web':
-        return 'Web';
-      case 'app':
-        return 'Aplicación';
-      case 'whatsapp':
-        return 'WhatsApp';
-      case 'call':
-        return 'Llamada';
-      case 'in_person':
-        return 'Presencial';
-      default:
-        return code;
-    }
-  }
 }

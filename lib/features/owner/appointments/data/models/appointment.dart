@@ -1,31 +1,32 @@
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
-
 import 'customer.dart';
 import 'source.dart';
 import 'appointment_service.dart';
- class _Unset {
+
+class _Unset {
   const _Unset();
 }
 const _unset = _Unset();
+
 class Appointment {
   final String id;
-  final String ownerId;
+  // ❌ ELIMINAR: final String ownerId;
   final String branchId;
   final String customerId;
-  final String? staffId;      //  antes String
+  final String? staffId;
   final DateTime startAt;
   final DateTime endAt;
   final String? notes;
   final Status status;
   final Source source;
   final Customer customer;
-  final Staff? staff;         //  antes Staff
+  final Staff? staff;
   final List<AppointmentService> services;
 
   const Appointment({
     required this.id,
-    required this.ownerId,
+    // ❌ ELIMINAR: required this.ownerId,
     required this.branchId,
     required this.customerId,
     required this.staffId,
@@ -39,11 +40,10 @@ class Appointment {
     required this.services,
   });
 
-
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['id'],
-      ownerId: json['owner_id'],
+      // ❌ ELIMINAR: ownerId: json['owner_id'],
       branchId: json['branch_id'],
       customerId: json['customer_id'],
       staffId: json['staff_profile_id'],
@@ -59,37 +59,36 @@ class Appointment {
           .toList(),
     );
   }
- 
-  Appointment copyWith({
-  String? id,
-  String? ownerId,
-  String? branchId,
-  String? customerId,
-  String? staffId,
-  DateTime? startAt,
-  DateTime? endAt,
-  Object? notes = _unset,
-  Status? status,
-  Source? source,
-  Customer? customer,
-  Staff? staff,
-  List<AppointmentService>? services,
-}) {
-  return Appointment(
-    id: id ?? this.id,
-    ownerId: ownerId ?? this.ownerId,
-    branchId: branchId ?? this.branchId,
-    customerId: customerId ?? this.customerId,
-    staffId: staffId ?? this.staffId,
-    startAt: startAt ?? this.startAt,
-    endAt: endAt ?? this.endAt,
-    notes: notes == _unset ? this.notes : notes as String?,
-    status: status ?? this.status,
-    source: source ?? this.source,
-    customer: customer ?? this.customer,
-    staff: staff ?? this.staff,
-    services: services ?? this.services,
-  );
-}
 
+  Appointment copyWith({
+    String? id,
+    // ❌ ELIMINAR: String? ownerId,
+    String? branchId,
+    String? customerId,
+    String? staffId,
+    DateTime? startAt,
+    DateTime? endAt,
+    Object? notes = _unset,
+    Status? status,
+    Source? source,
+    Customer? customer,
+    Staff? staff,
+    List<AppointmentService>? services,
+  }) {
+    return Appointment(
+      id: id ?? this.id,
+      // ❌ ELIMINAR: ownerId: ownerId ?? this.ownerId,
+      branchId: branchId ?? this.branchId,
+      customerId: customerId ?? this.customerId,
+      staffId: staffId ?? this.staffId,
+      startAt: startAt ?? this.startAt,
+      endAt: endAt ?? this.endAt,
+      notes: notes == _unset ? this.notes : notes as String?,
+      status: status ?? this.status,
+      source: source ?? this.source,
+      customer: customer ?? this.customer,
+      staff: staff ?? this.staff,
+      services: services ?? this.services,
+    );
+  }
 }

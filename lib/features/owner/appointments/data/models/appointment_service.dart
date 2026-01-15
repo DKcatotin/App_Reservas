@@ -1,20 +1,28 @@
 class AppointmentService {
   final String id;
+  final String appointmentId;
+  final String serviceId;
+  final int durationMin;
+  final double price;
+  
+  // ✅ AGREGAR: Campos del servicio obtenidos por JOIN
+  final String? serviceName;
   final String? branchId;
   final String? categoryId;
-  final String name;
   final String? description;
-  final int durationMin;        // ✅ Asegúrate que sea int, no double
   final double? basePrice;
   final bool? enabled;
 
   AppointmentService({
     required this.id,
+    required this.appointmentId,
+    required this.serviceId,
+    required this.durationMin,
+    required this.price,
+    this.serviceName,
     this.branchId,
     this.categoryId,
-    required this.name,
     this.description,
-    required this.durationMin,
     this.basePrice,
     this.enabled,
   });
@@ -22,15 +30,19 @@ class AppointmentService {
   factory AppointmentService.fromJson(Map<String, dynamic> json) {
     return AppointmentService(
       id: json['id'] as String? ?? '',
-      branchId: json['branch_id'] as String?,
-      categoryId: json['category_id'] as String?,
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String?,
-      durationMin: (json['duration_min'] as num?)?.toInt() ?? 0,  // ✅ Convertir a int
-      basePrice: json['base_price'] != null
-          ? (json['base_price'] as num).toDouble()
+      appointmentId: json['appointment_id'] as String? ?? '',
+      serviceId: json['service_id'] as String? ?? '',
+      durationMin: (json['duration_min'] as num?)?.toInt() ?? 0,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      // Campos del JOIN con services
+      serviceName: json['service']?['name'] as String? ?? json['name'] as String?,
+      branchId: json['service']?['branch_id'] as String?,
+      categoryId: json['service']?['category_id'] as String?,
+      description: json['service']?['description'] as String?,
+      basePrice: json['service']?['base_price'] != null 
+          ? (json['service']?['base_price'] as num).toDouble() 
           : null,
-      enabled: json['enabled'] as bool?,
+      enabled: json['service']?['enabled'] as bool?,
     );
   }
 
@@ -48,13 +60,10 @@ class AppointmentService {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'branch_id': branchId,
-      'category_id': categoryId,
-      'name': name,
-      'description': description,
+      'appointment_id': appointmentId,
+      'service_id': serviceId,
       'duration_min': durationMin,
-      'base_price': basePrice,
-      'enabled': enabled,
+      'price': price,
     };
   }
 }

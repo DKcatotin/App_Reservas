@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccc01",
+      "code": "nails",
+      "name": "Uñas"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccc02",
+      "code": "feet",
+      "name": "Pies"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccc03",
+      "code": "brows_lashes",
+      "name": "Cejas y pestañas"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccc04",
+      "code": "waxing",
+      "name": "Depilación"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccc05",
+      "code": "packages",
+      "name": "Paquetes"
+    }
+  ]
+}
