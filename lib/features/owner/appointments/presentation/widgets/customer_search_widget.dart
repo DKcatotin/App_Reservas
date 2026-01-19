@@ -89,13 +89,13 @@ class _SearchCustomerWidgetState extends ConsumerState<SearchCustomerWidget> {  
       );
       return;
     }
-
+/*
     await ref.read(customerProvider.notifier).createCustomer(
           taxIdentification: taxId,  //  CAMBIO
           fullName: fullName,  //  CAMBIO
           phone: phone,  //  CAMBIO
         );
-
+*/
     setState(() {
       _customerExists = true;  // CAMBIO
     });

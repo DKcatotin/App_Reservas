@@ -12,7 +12,7 @@ import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/staff_entity.dart';
-import 'package:agenda_app/features/owner/catalogues/domain/entities/status_entity.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/status_entity.dart';
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final AppointmentsDatasource datasource;

@@ -1,4 +1,4 @@
-import '../../domain/entities/status_entity.dart';
+import '../../../appointments/domain/entities/status_entity.dart';
 
 class Status {
   final int id;

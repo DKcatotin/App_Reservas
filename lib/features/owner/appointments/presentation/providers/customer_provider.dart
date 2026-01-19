@@ -51,6 +51,7 @@ class CustomerNotifier extends StateNotifier<CustomerState> {  //  CAMBIO
 
   /// Create new customer in memory (optional, local cache only)
 /// Create new customer in memory (optional, local cache only)
+/*
 Future<void> createCustomer({
   required String taxIdentification,
   required String fullName,
@@ -81,7 +82,7 @@ Future<void> createCustomer({
 
   state = CustomerState(customer: newCustomer);
 }
-
+*/  
   /// Clear state
   void clear() {  //  CAMBIO
     state = CustomerState();

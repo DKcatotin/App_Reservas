@@ -36,7 +36,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
 
   Future<void> _guardarCliente() async {
   if (!_formKey.currentState!.validate()) return;
-
+/*
   await ref.read(customerProvider.notifier).createCustomer(
     taxIdentification: _cedulaController.text.trim(),  // 
     fullName: _nombreController.text.trim(),           //  
@@ -54,6 +54,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
     );
     Navigator.pop(context, clienteCreado);
   }
+  */
 }
 
   @override
