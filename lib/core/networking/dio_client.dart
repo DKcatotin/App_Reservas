@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // Para kDebugMode
 import '../config/env.dart';
 import '../storage/token_storage.dart';
 import 'auth_interceptor.dart';
-//Centraliza la configuracion HTTP
+
+/// Centraliza la configuración HTTP
 class DioClient {
   DioClient._();
 
@@ -16,8 +18,27 @@ class DioClient {
       ),
     );
 
-    dio.interceptors.add(AuthInterceptor(tokenStorage));
-    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+    // Agregar interceptor de autenticación con parámetros nombrados
+    dio.interceptors.add(
+      AuthInterceptor(
+        tokenStorage: tokenStorage, // Parámetro nombrado
+        dio: dio,                    // Parámetro nombrado
+      ),
+    );
+
+    // Solo agregar logs en modo debug
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          requestHeader: true,
+          responseHeader: false,
+          error: true,
+        ),
+      );
+    }
+
     return dio;
   }
 }

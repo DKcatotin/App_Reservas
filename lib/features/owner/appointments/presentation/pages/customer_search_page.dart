@@ -4,26 +4,27 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/customer.dart';
 import '../providers/customer_provider.dart';
 
-class CustomerSearchPage extends ConsumerStatefulWidget {  //  CAMBIO
-  const CustomerSearchPage({super.key});  //  CAMBIO
+class CustomerSearchPage extends ConsumerStatefulWidget {
+  const CustomerSearchPage({super.key});
 
   @override
-  ConsumerState<CustomerSearchPage> createState() =>  //  CAMBIO
-      _CustomerSearchPageState();  //  CAMBIO
+  ConsumerState<CustomerSearchPage> createState() =>
+      _CustomerSearchPageState();
 }
 
-class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  CAMBIO
-  final _taxIdController = TextEditingController();  //  CAMBIO
-  bool _searched = false;  // CAMBIO
+class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
+  final _taxIdController = TextEditingController();
+  bool _searched = false;
 
   @override
   void dispose() {
-    _taxIdController.dispose();  //  CAMBIO
+    _taxIdController.dispose();
+    ref.read(customerProvider.notifier).clear(); // Limpiar estado
     super.dispose();
   }
 
-  Future<void> _searchCustomer() async {  //  CAMBIO
-    final taxId = _taxIdController.text.trim();  // ✅ CAMBIO
+  Future<void> _searchCustomer() async {
+    final taxId = _taxIdController.text.trim();
 
     if (taxId.isEmpty || taxId.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -32,24 +33,13 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
       return;
     }
 
-    ref.read(customerProvider.notifier).searchByTaxIdentification(taxId);  //  CAMBIO
-    setState(() => _searched = true);  //  CAMBIO
+    await ref.read(customerProvider.notifier).searchByTaxIdentification(taxId);
+    setState(() => _searched = true);
   }
 
-/*
-  void _goToCreateCustomer() {  //  CAMBIO
-    final taxId = _taxIdController.text.trim();  // CAMBIO
-    context.push(
-      '/owner/appointments/customer/new',  //  CAMBIO en ruta (opcional)
-      extra: taxId,
-    ).then((_) {
-      context.push('/owner/appointments');  //  CAMBIO
-    });
-  }
-*/
   @override
   Widget build(BuildContext context) {
-    final customerState = ref.watch(customerProvider);  //  CAMBIO
+    final customerState = ref.watch(customerProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -78,7 +68,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
             ),
             const SizedBox(height: 8),
             Text(
-              'Si el cliente no existe, podrá crearlo',
+              'Busca un cliente existente en el sistema',
               style: TextStyle(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
@@ -86,7 +76,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
 
             // Campo de cédula
             TextField(
-              controller: _taxIdController,  //  CAMBIO
+              controller: _taxIdController,
               decoration: const InputDecoration(
                 labelText: 'Cédula',
                 hintText: '1712345678',
@@ -95,14 +85,15 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
               ),
               keyboardType: TextInputType.number,
               maxLength: 10,
-              onSubmitted: (_) => _searchCustomer(),  //  CAMBIO
+              enabled: !customerState.isLoading,
+              onSubmitted: (_) => _searchCustomer(),
             ),
             const SizedBox(height: 10),
 
             // Botón buscar
             ElevatedButton.icon(
-              onPressed: customerState.isLoading ? null : _searchCustomer,  //  CAMBIO
-              icon: customerState.isLoading  //  CAMBIO
+              onPressed: customerState.isLoading ? null : _searchCustomer,
+              icon: customerState.isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -118,11 +109,13 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
             const SizedBox(height: 20),
 
             // Resultado de la búsqueda
-            if (_searched) ...[  //  CAMBIO
-              if (customerState.customer != null)  //  CAMBIO
-                _buildCustomerFound(customerState.customer!)  //  CAMBIO
-              else
-                _buildCustomerNotFound(),  //  CAMBIO
+            if (_searched) ...[
+              if (customerState.error != null)
+                _buildError(customerState.error!)
+              else if (customerState.customer != null)
+                _buildCustomerFound(customerState.customer!)
+              else if (!customerState.isLoading)
+                _buildCustomerNotFound(),
             ],
 
             const SizedBox(height: 20),
@@ -132,7 +125,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
     );
   }
 
-  Widget _buildCustomerFound(Customer customer) {  //  CAMBIO
+  Widget _buildCustomerFound(Customer customer) {
     return Card(
       color: Colors.green[50],
       child: Padding(
@@ -153,10 +146,13 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
             _buildInfoRow(Icons.badge, 'Cédula', customer.taxIdentification ?? 'N/A'),
             _buildInfoRow(Icons.person, 'Nombre', customer.fullName ?? 'Sin nombre'),
             _buildInfoRow(Icons.phone, 'Celular', customer.phone ?? 'N/A'),
+            if (customer.email != null)
+              _buildInfoRow(Icons.email, 'Email', customer.email!),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                context.push('/owner/citas');  //  CAMBIO
+                // Pasar el cliente seleccionado a la página de citas
+                context.push('/owner/citas', extra: customer);
               },
               icon: const Icon(Icons.check),
               label: const Text('Seleccionar este cliente'),
@@ -172,14 +168,14 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
     );
   }
 
-  Widget _buildCustomerNotFound() {  //  CAMBIO
+  Widget _buildCustomerNotFound() {
     return Card(
       color: Colors.orange[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(Icons.person_add, color: Colors.orange[700], size: 48),
+            Icon(Icons.person_off, color: Colors.orange[700], size: 48),
             const SizedBox(height: 12),
             Text(
               'Cliente no encontrado',
@@ -191,10 +187,50 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {  //  
             ),
             const SizedBox(height: 8),
             Text(
-              'No existe un cliente con esta cédula',
+              'No existe un cliente con esta cédula en el sistema',
               style: TextStyle(color: Colors.grey[700]),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(String error) {
+    return Card(
+      color: Colors.red[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red[700], size: 48),
+            const SizedBox(height: 12),
+            Text(
+              'Error al buscar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: TextStyle(color: Colors.grey[700]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _searchCustomer,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
           ],
         ),
       ),

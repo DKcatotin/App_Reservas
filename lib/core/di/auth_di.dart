@@ -1,85 +1,41 @@
 import 'package:dio/dio.dart';
-
-// ==================== CORE ====================
-import '../networking/dio_client.dart';
+import '../config/env.dart';
 import '../storage/token_storage.dart';
 
-// ==================== AUTH ====================
-import '../../features/auth/data/sources/auth/auth_api.dart';
-import '../../features/auth/data/repositories/auth/auth_repository.dart';
+// ==================== AUTH (Clean Architecture) ====================
+import '../../features/auth/data/datasources/owner_auth_remote_datasource.dart';
+import '../../features/auth/data/datasources/owner_auth_remote_datasource_impl.dart';
+import '../../features/auth/data/repositories/owner_auth_repository_impl.dart';
+import '../../features/auth/domain/repositories/owner_auth_repository.dart';
+import '../../features/auth/domain/usecases/login_owner_usecase.dart';
+import '../../features/auth/domain/usecases/logout_owner_usecase.dart';
 
-// ==================== CATALOGUES ====================
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_datasource.dart';
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_local_datasource.dart';
-import 'package:agenda_app/features/owner/catalogues/data/repositories/catalogues_repository_impl.dart';
-import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
+/// Dependencias del módulo de autenticación (Clean Architecture)
+class AuthDependencies {
+  late final OwnerAuthRepository ownerAuthRepository;
+  late final LoginOwnerUseCase loginOwnerUseCase;
+  late final LogoutOwnerUseCase logoutOwnerUseCase;
 
-// ==================== APPOINTMENTS ====================
-import '../../features/owner/appointments/data/repositories/appointments_repository_impl.dart';
-import '../../features/owner/appointments/data/sources/appointments_json_datasource.dart';
-import '../../features/owner/appointments/data/sources/appointments_memory_datasource.dart';
-import '../../features/owner/appointments/data/sources/appointments_hybrid_datasource.dart';
+  void init({
+    required Dio dio,
+    required TokenStorage tokenStorage,
+  }) {
+    final OwnerAuthRemoteDataSource remoteDataSource = 
+        OwnerAuthRemoteDataSourceImpl(
+          client: dio,
+          storage: tokenStorage,
+          baseUrl: Env.baseUrl,
+        );
 
-class AppDependencies {
-  static final AppDependencies _instance = AppDependencies._();
-  factory AppDependencies() => _instance;
-
-  // ==================== CORE ====================
-  late final TokenStorage tokenStorage;
-  late final Dio dio;
-
-  // ==================== AUTH ====================
-  late final AuthRepository authRepository;
-
-  // ==================== CATALOGUES ====================
-  late final CataloguesDatasource _cataloguesDatasource;
-  late final CataloguesRepository cataloguesRepository;
-
-  // ==================== APPOINTMENTS ====================
-  late final AppointmentsRepositoryImpl appointmentsRepository;
-
-  AppDependencies._() {
-    _initCore();
-    _initAuth();
-    _initCatalogues();
-    _initAppointments();
-  }
-
-  // ==================== CORE INIT ====================
-  void _initCore() {
-    tokenStorage = TokenStorage();
-    dio = DioClient.create(tokenStorage);
-  }
-
-  // ==================== AUTH INIT ====================
-  void _initAuth() {
-    final authApi = AuthApi(dio);
-
-    authRepository = AuthRepository(
-      api: authApi,
-      tokenStorage: tokenStorage,
-    );
-  }
-
-  // CATALOGUES INIT 
-  void _initCatalogues() {
-  //TODO(backend): cambiar a CataloguesRemoteDatasource(dio)
-    _cataloguesDatasource = CataloguesLocalDatasource(dio);
-
-    cataloguesRepository = CataloguesRepositoryImpl(
-      datasource: _cataloguesDatasource,
-    );
-  }
-
-  // ==================== APPOINTMENTS INIT ====================
-  void _initAppointments() {
-    final appointmentsDatasource = AppointmentsHybridDatasource(
-      json: AppointmentsJsonDatasource(),
-      memory: AppointmentsMemoryDatasource(),
+    ownerAuthRepository = OwnerAuthRepositoryImpl(
+      remoteDataSource: remoteDataSource,
     );
 
-    appointmentsRepository = AppointmentsRepositoryImpl(
-      datasource: appointmentsDatasource,
-    );
+    loginOwnerUseCase = LoginOwnerUseCase(ownerAuthRepository);
+    logoutOwnerUseCase = LogoutOwnerUseCase(ownerAuthRepository);
   }
+
+  // Alias para mantener compatibilidad temporal con app_router.dart
+  // TODO: Eliminar después de migrar LoginPage
+  OwnerAuthRepository get authRepository => ownerAuthRepository;
 }

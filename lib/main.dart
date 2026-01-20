@@ -11,7 +11,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await initializeDateFormatting('es', null);
-  
+
   runApp(
     ProviderScope(
       child: classic_provider.MultiProvider(  //  Usar el alias

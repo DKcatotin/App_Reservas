@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../data/models/customer.dart';
 import '../../data/sources/customers_datasource.dart';
+import '../../data/sources/customers_local_datasource.dart'; // ← CAMBIO
 
 /// Customer state
-class CustomerState {  //  CAMBIO
-  final Customer? customer;  //  CAMBIO
-  final bool isLoading;  //  CAMBIO
+class CustomerState {
+  final Customer? customer;
+  final bool isLoading;
   final String? error;
 
   CustomerState({
@@ -17,86 +17,58 @@ class CustomerState {  //  CAMBIO
 
   CustomerState copyWith({
     Customer? customer,
-    bool? isLoading,  //  CAMBIO
+    bool? isLoading,
     String? error,
   }) {
     return CustomerState(
       customer: customer ?? this.customer,
-      isLoading: isLoading ?? this.isLoading,  //  CAMBIO
+      isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
     );
   }
 }
 
 /// Notifier to manage customer state
-class CustomerNotifier extends StateNotifier<CustomerState> {  //  CAMBIO
+class CustomerNotifier extends StateNotifier<CustomerState> {
   final CustomersDatasource datasource;
 
   CustomerNotifier(this.datasource) : super(CustomerState());
 
   /// Search customer by tax identification
-  Future<void> searchByTaxIdentification(String taxIdentification) async {  //  CAMBIO
-    state = CustomerState(isLoading: true);
+  Future<void> searchByTaxIdentification(String taxIdentification) async {
+  print('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification'); // DEBUG
+  state = CustomerState(isLoading: true);
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final customerFound = await datasource.getByTaxIdentification(taxIdentification);  //  CAMBIO
+  try {
+    print('🔵 [PROVIDER] Llamando datasource...'); // DEBUG
+    final customerFound = await datasource.getByTaxIdentification(taxIdentification);
+    print('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}'); // DEBUG
 
     if (customerFound != null) {
       state = CustomerState(customer: customerFound);
     } else {
       state = CustomerState(error: 'Cliente no encontrado');
     }
+  } catch (e, stackTrace) {
+    print('🔴 [PROVIDER] Error: $e'); // DEBUG
+    print('🔴 [PROVIDER] StackTrace: $stackTrace'); // DEBUG
+    state = CustomerState(error: 'Error al buscar cliente: $e');
   }
-
-  /// Create new customer in memory (optional, local cache only)
-/// Create new customer in memory (optional, local cache only)
-/*
-Future<void> createCustomer({
-  required String taxIdentification,
-  required String fullName,
-  required String phone,
-  String? userId,              // ✅ AGREGAR como opcional
-  String? email,
-  String? taxName,
-  String? allergies,
-  String? referredBy,
-}) async {
-  state = CustomerState(isLoading: true);
-
-  await Future.delayed(const Duration(milliseconds: 300));
-
-  final newCustomer = Customer(
-    id: taxIdentification,                    // Mock: usamos la cédula como id
-    userId: userId ?? 'temp-user-id',         // ✅ AGREGAR - Temporal para mock
-    taxIdentification: taxIdentification,
-    taxName: taxName,
-    fullName: fullName,
-    phone: phone,
-    email: email,
-    allergies: allergies,
-    referredBy: referredBy,
-  );
-
-  await datasource.add(newCustomer);
-
-  state = CustomerState(customer: newCustomer);
 }
-*/  
   /// Clear state
-  void clear() {  //  CAMBIO
+  void clear() {
     state = CustomerState();
   }
 }
 
-/// Datasource provider
+/// Datasource provider - Usa implementación local directamente
 final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
-  return CustomersDatasource();
+  return CustomersLocalDatasource(); // ← CAMBIO: Instancia concreta
 });
 
 /// Customer state provider
-final customerProvider =  // CAMBIO
-    StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {  //  CAMBIO
+final customerProvider =
+    StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {
   final datasource = ref.watch(customersDatasourceProvider);
   return CustomerNotifier(datasource);
 });

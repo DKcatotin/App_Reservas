@@ -1,9 +1,9 @@
+import 'package:agenda_app/core/di/app_dependencies.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_appointments_by_day.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upcoming_appointments.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/storage/token_storage.dart';
 import '../../appointments/data/repositories/appointments_repository_impl.dart';
 
 class OwnerHomePage extends StatefulWidget {
@@ -105,12 +105,14 @@ Future<void> _loadServicios() async {
 
   
 
-  Future<void> _logout(BuildContext context) async {
-    await TokenStorage().clear();
-    if (context.mounted) {
-      context.go('/login');
-    }
+ Future<void> _logout(BuildContext context) async {
+  // Usar el UseCase de logout
+  await AppDependencies().logoutOwnerUseCase();
+  
+  if (context.mounted) {
+    context.go('/login');
   }
+}
 
   Color _getStatusColor(String statusLabel) {
     switch (statusLabel.toLowerCase()) {

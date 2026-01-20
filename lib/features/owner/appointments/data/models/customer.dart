@@ -24,11 +24,16 @@ class Customer {
   });
 
 factory Customer.fromJson(Map<String, dynamic> json) {
+  print('🔍 [MODEL] Parseando customer: ${json.toString()}');
+  
   return Customer(
     id: json['id'] as String? ?? '',
     userId: json['user_id'] as String? ?? '',
     referredBy: json['referred_by'] as String?,
-    taxIdentification: json['tax_identification'] as String?,
+    
+    // ✅ SOLUCIÓN: Convertir a String independientemente del tipo
+    taxIdentification: json['tax_identification']?.toString(),
+    
     taxName: json['tax_name'] as String?,
     allergies: json['allergies'] as String?,
     fullName: json['user']?['full_name'] as String? ?? json['full_name'] as String?,

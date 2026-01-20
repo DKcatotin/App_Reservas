@@ -89,17 +89,6 @@
       "phone": "0967890123"
     },
     {
-      "id": "66666666-6666-6666-6666-666666666669",
-      "user_id": "77777777-7777-7777-7777-777777777779",
-      "tax_identification": "1712345679",
-      "tax_name": "Lucía Mendoza Silva",
-      "allergies": null,
-      "referred_by": null,
-      "full_name": "Lucía Mendoza",
-      "email": "lucia.mendoza@example.com",
-      "phone": "0995214236"
-    },
-    {
       "id": "66666666-6666-6666-6666-666666666670",
       "user_id": "77777777-7777-7777-7777-777777777780",
       "tax_identification": "1712345680",

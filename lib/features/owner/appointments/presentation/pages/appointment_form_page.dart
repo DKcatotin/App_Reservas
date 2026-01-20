@@ -1,4 +1,5 @@
-import 'package:agenda_app/core/di/auth_di.dart';
+import 'package:agenda_app/core/di/app_dependencies.dart';
+import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
@@ -13,10 +14,11 @@ import 'package:intl/intl.dart';
 
 class AppointmentFormPage extends ConsumerStatefulWidget {
   final AppointmentsRepositoryImpl repo;
-
+  final Customer? preselectedCustomer;
   const AppointmentFormPage({
     super.key,
     required this.repo,
+    this.preselectedCustomer,
   });
 
   @override
@@ -51,6 +53,10 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   void initState() {
     super.initState();
     _cataloguesRepo = AppDependencies().cataloguesRepository;
+    if (widget.preselectedCustomer != null) {
+      // Pre-llenar los campos con los datos del cliente
+      // _customerNameCtrl.text = widget.preselectedCustomer!.fullName ?? '';
+    }
     _loadData();
   }
 

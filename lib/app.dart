@@ -1,7 +1,7 @@
+import 'package:agenda_app/core/di/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'package:agenda_app/core/di/auth_di.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 //como se ve y se navega en la app

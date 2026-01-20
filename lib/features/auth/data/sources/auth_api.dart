@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../../../../core/networking/api_endpoints.dart';
-import '../../models/auth_response.dart';
+import '../../../../core/networking/api_endpoints.dart';
+import '../models/auth_response.dart';
 
 class AuthApi {
   final Dio dio;

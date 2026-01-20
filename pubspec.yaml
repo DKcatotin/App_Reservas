@@ -18,10 +18,12 @@ dependencies:
   url_launcher: ^6.2.0
   #manejo de estados 
   flutter_riverpod: ^2.5.1
-
+  #manejo de errores
+  dartz: ^0.10.1
   # Calendario
   table_calendar: ^3.0.9
-
+  # guardar datos simples
+  shared_preferences: ^2.2.2
   # HTTP client
   dio: ^5.9.0
 
