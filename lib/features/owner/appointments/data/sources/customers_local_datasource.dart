@@ -8,8 +8,7 @@ class CustomersLocalDatasource implements CustomersDatasource {
   static const _assetPath = 'assets/data/owner/catalogues/customers_mock.json';
   List<Customer>? _cache;
 
-  @override
-  Future<List<Customer>> getAll() async {
+  Future<List<Customer>> _getAll() async {
     if (_cache != null) return _cache!;
 
     final jsonString = await rootBundle.loadString(_assetPath);
@@ -24,48 +23,31 @@ class CustomersLocalDatasource implements CustomersDatasource {
   }
 
   @override
-  Future<Customer?> getByTaxIdentification(String taxIdentification) async {
-    final customers = await getAll();
+  Future<Customer?> getByTaxIdentification(String cedula) async {
+    final customers = await _getAll();
     try {
-      return customers.firstWhere((c) => c.taxIdentification == taxIdentification);
+      return customers.firstWhere(
+        (c) => c.taxIdentification == cedula,
+      );
     } catch (_) {
       return null;
     }
   }
 
   @override
-  Future<Customer?> getById(String id) async {
-    final customers = await getAll();
-    try {
-      return customers.firstWhere((c) => c.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
+  Future<List<Customer>> searchCustomers(String query) async {
+    final customers = await _getAll();
+    final lower = query.toLowerCase();
 
-  @override
-  Future<Customer> create(Customer customer) async {
-    final customers = await getAll();
-    customers.add(customer);
-    _cache = customers;
-    return customer;
-  }
-
-  @override
-  Future<Customer> update(Customer customer) async {
-    final customers = await getAll();
-    final index = customers.indexWhere((c) => c.id == customer.id);
-    if (index != -1) {
-      customers[index] = customer;
-      _cache = customers;
-    }
-    return customer;
-  }
-
-  @override
-  Future<void> delete(String id) async {
-    final customers = await getAll();
-    customers.removeWhere((c) => c.id == id);
-    _cache = customers;
+    return customers.where((c) {
+      final name = c.fullName?.toLowerCase() ?? '';
+      final email = c.email?.toLowerCase() ?? '';
+      final phone = c.phone?.toLowerCase() ?? '';
+      final ci = c.taxIdentification?.toLowerCase() ?? '';
+      return name.contains(lower) ||
+          email.contains(lower) ||
+          phone.contains(lower) ||
+          ci.contains(lower);
+    }).toList();
   }
 }

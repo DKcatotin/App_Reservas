@@ -8,10 +8,10 @@ class CustomersDependencies {
 
   void init({required Dio dio, bool useRemote = true}) {
     if (useRemote) {
-      print('🟢 Usando CustomersRemoteDatasource'); // DEBUG
-      customersDatasource = CustomersRemoteDatasource(client: dio);
+      // print('🟢 Usando CustomersRemoteDatasource'); // DEBUG
+      customersDatasource = CustomersRemoteDatasource(dio);
     } else {
-      print('🟡 Usando CustomersLocalDatasource (mock)'); // DEBUG
+      // print('🟡 Usando CustomersLocalDatasource (mock)'); // DEBUG
       customersDatasource = CustomersLocalDatasource();
     }
   }

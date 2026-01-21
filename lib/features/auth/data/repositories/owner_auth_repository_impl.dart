@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../domain/entities/owner.dart';
 import '../../domain/repositories/owner_auth_repository.dart';
-import '../models/owner_model.dart'; // ← AGREGAR IMPORT
 import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../datasources/owner_auth_remote_datasource.dart';

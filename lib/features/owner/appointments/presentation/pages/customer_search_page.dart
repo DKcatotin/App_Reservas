@@ -8,8 +8,7 @@ class CustomerSearchPage extends ConsumerStatefulWidget {
   const CustomerSearchPage({super.key});
 
   @override
-  ConsumerState<CustomerSearchPage> createState() =>
-      _CustomerSearchPageState();
+  ConsumerState<CustomerSearchPage> createState() => _CustomerSearchPageState();
 }
 
 class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
@@ -19,7 +18,6 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
   @override
   void dispose() {
     _taxIdController.dispose();
-    ref.read(customerProvider.notifier).clear(); // Limpiar estado
     super.dispose();
   }
 
@@ -28,7 +26,8 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
 
     if (taxId.isEmpty || taxId.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingrese una cédula válida de 10 dígitos')),
+        const SnackBar(
+            content: Text('Ingrese una cédula válida de 10 dígitos')),
       );
       return;
     }
@@ -143,18 +142,25 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.badge, 'Cédula', customer.taxIdentification ?? 'N/A'),
-            _buildInfoRow(Icons.person, 'Nombre', customer.fullName ?? 'Sin nombre'),
+            _buildInfoRow(
+                Icons.badge, 'Cédula', customer.taxIdentification ?? 'N/A'),
+            _buildInfoRow(
+                Icons.person, 'Nombre', customer.fullName ?? 'Sin nombre'),
             _buildInfoRow(Icons.phone, 'Celular', customer.phone ?? 'N/A'),
             if (customer.email != null)
               _buildInfoRow(Icons.email, 'Email', customer.email!),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () {
-                // Pasar el cliente seleccionado a la página de citas
-                context.push('/owner/citas', extra: customer);
+              onPressed: () async {
+                final result =
+                    await context.push('/owner/citas', extra: customer);
+
+                if (result == true && mounted) {
+                  ref.read(customerProvider.notifier).clear();
+                  _taxIdController.clear();
+                  setState(() => _searched = false);
+                }
               },
-              icon: const Icon(Icons.check),
               label: const Text('Seleccionar este cliente'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,

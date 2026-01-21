@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/customer.dart';
 import '../../data/sources/customers_datasource.dart';
-import '../../data/sources/customers_local_datasource.dart'; // ← CAMBIO
+import '../../../../../core/di/app_dependencies.dart'; // ← IMPORTAR
 
 /// Customer state
 class CustomerState {
@@ -36,34 +36,36 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 
   /// Search customer by tax identification
   Future<void> searchByTaxIdentification(String taxIdentification) async {
-  print('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification'); // DEBUG
-  state = CustomerState(isLoading: true);
+    print('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification');
+    state = CustomerState(isLoading: true);
 
-  try {
-    print('🔵 [PROVIDER] Llamando datasource...'); // DEBUG
-    final customerFound = await datasource.getByTaxIdentification(taxIdentification);
-    print('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}'); // DEBUG
+    try {
+      print('🔵 [PROVIDER] Llamando datasource...');
+      
+      final customerFound = await datasource.getByTaxIdentification(taxIdentification);
+      print('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}');
 
-    if (customerFound != null) {
-      state = CustomerState(customer: customerFound);
-    } else {
-      state = CustomerState(error: 'Cliente no encontrado');
+      if (customerFound != null) {
+        state = CustomerState(customer: customerFound);
+      } else {
+        state = CustomerState(error: 'Cliente no encontrado');
+      }
+    } catch (e, stackTrace) {
+      print('🔴 [PROVIDER] Error: $e');
+      print('🔴 [PROVIDER] StackTrace: $stackTrace');
+      state = CustomerState(error: 'Error al buscar cliente: $e');
     }
-  } catch (e, stackTrace) {
-    print('🔴 [PROVIDER] Error: $e'); // DEBUG
-    print('🔴 [PROVIDER] StackTrace: $stackTrace'); // DEBUG
-    state = CustomerState(error: 'Error al buscar cliente: $e');
   }
-}
+
   /// Clear state
   void clear() {
     state = CustomerState();
   }
 }
 
-/// Datasource provider - Usa implementación local directamente
+// ✅ SOLUCIÓN: Usar el datasource de AppDependencies
 final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
-  return CustomersLocalDatasource(); // ← CAMBIO: Instancia concreta
+  return AppDependencies().customersDatasource; // ← USAR DI
 });
 
 /// Customer state provider

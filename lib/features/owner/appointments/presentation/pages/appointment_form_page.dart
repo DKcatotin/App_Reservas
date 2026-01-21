@@ -60,11 +60,11 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
     _loadData();
   }
 
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
+ @override
+void dispose() {
+  _notesController.dispose();
+  super.dispose();
+}
 
   Future<void> _loadData() async {
     try {
@@ -80,69 +80,70 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   }
 
   Future<void> _saveAppointment() async {
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
+  if (_isSaving) return;
+  setState(() => _isSaving = true);
 
-    try {
-      final customerState = ref.read(customerProvider);
+  try {
+    final customerState = ref.read(customerProvider);
 
-      if (customerState.customer == null) {
-        _showError('Debe seleccionar o crear un cliente');
-        return;
-      }
-
-      if (_selectedServices.isEmpty) {
-        _showError('Debe seleccionar al menos un servicio');
-        return;
-      }
-
-      final startAt = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      final input = CreateAppointmentInput(
-        customerId: customerState.customer!.id,
-        customer: CustomerEntity(
-          id: customerState.customer!.id,
-          userId: customerState.customer!.userId,
-          referredBy: customerState.customer!.referredBy,
-          taxIdentification: customerState.customer!.taxIdentification,
-          taxName: customerState.customer!.taxName,
-          fullName: customerState.customer!.fullName,
-          phone: customerState.customer!.phone,
-          email: customerState.customer!.email,
-          allergies: customerState.customer!.allergies,
-        ),
-        startAt: startAt,
-        services: List<ServiceEntity>.from(_selectedServices),
-        source: _selectedSource,
-        notes: _notesController.text,
-      );
-
-      final createUseCase = CreateAppointmentUseCase(widget.repo);
-      await createUseCase.call(input);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Cita creada exitosamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      context.pop(true);
-    } catch (e) {
-      if (!mounted) return;
-      _showError('Error al crear la cita: $e');
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    if (customerState.customer == null) {
+      _showError('Debe seleccionar o crear un cliente');
+      return;
     }
+
+    if (_selectedServices.isEmpty) {
+      _showError('Debe seleccionar al menos un servicio');
+      return;
+    }
+
+    final startAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    final input = CreateAppointmentInput(
+      customerId: customerState.customer!.id,
+      customer: CustomerEntity(
+        id: customerState.customer!.id,
+        userId: customerState.customer!.userId,
+        referredBy: customerState.customer!.referredBy,
+        taxIdentification: customerState.customer!.taxIdentification,
+        taxName: customerState.customer!.taxName,
+        fullName: customerState.customer!.fullName,
+        phone: customerState.customer!.phone,
+        email: customerState.customer!.email,
+        allergies: customerState.customer!.allergies,
+      ),
+      startAt: startAt,
+      services: List<ServiceEntity>.from(_selectedServices),
+      source: _selectedSource,
+      notes: _notesController.text,
+    );
+
+    final createUseCase = CreateAppointmentUseCase(widget.repo);
+    await createUseCase.call(input);
+
+    if (!mounted) return;
+
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Cita creada exitosamente'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    context.pop(true);
+  } catch (e) {
+    if (!mounted) return;
+    _showError('Error al crear la cita: $e');
+  } finally {
+    if (mounted) setState(() => _isSaving = false);
   }
+}
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -393,4 +394,4 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
       }).toList(),
     );
   }
-} // ✅ Llave de cierre de la clase _AppointmentFormPageState
+} 
