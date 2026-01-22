@@ -1,4 +1,5 @@
 import 'package:agenda_app/core/di/customers_di.dart';
+import 'package:agenda_app/features/auth/domain/usecases/get_current_owner_usecase.dart';
 
 import 'core_di.dart';
 import 'auth_di.dart';
@@ -9,8 +10,9 @@ import 'appointments_di.dart';
 class AppDependencies {
   static final AppDependencies _instance = AppDependencies._();
   factory AppDependencies() => _instance;
-  late final CustomersDependencies customers;
 
+  late final CustomersDependencies customers;
+  late final GetCurrentOwnerUseCase getCurrentOwnerUseCase;
   late final CoreDependencies core;
   late final AuthDependencies auth;
   late final CataloguesDependencies catalogues;
@@ -30,11 +32,15 @@ class AppDependencies {
       tokenStorage: core.tokenStorage,
     );
 
+    // Inicializar el usecase aquí
+    getCurrentOwnerUseCase = auth.getCurrentOwnerUseCase;
+
     catalogues = CataloguesDependencies();
     catalogues.init(dio: core.dio);
 
     appointments = AppointmentsDependencies();
     appointments.init();
+
     customers = CustomersDependencies();
     customers.init(
       dio: core.dio,
@@ -47,7 +53,7 @@ class AppDependencies {
   get tokenStorage => core.tokenStorage;
 
   // Auth - Exponer loginOwnerUseCase
-  get loginOwnerUseCase => auth.loginOwnerUseCase; // ← ASEGÚRATE DE TENER ESTO
+  get loginOwnerUseCase => auth.loginOwnerUseCase;
   get logoutOwnerUseCase => auth.logoutOwnerUseCase;
   get ownerAuthRepository => auth.ownerAuthRepository;
 
@@ -58,4 +64,3 @@ class AppDependencies {
   get appointmentsRepository => appointments.appointmentsRepository;
   get customersDatasource => customers.customersDatasource;
 }
-

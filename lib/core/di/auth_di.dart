@@ -9,18 +9,20 @@ import '../../features/auth/data/repositories/owner_auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/owner_auth_repository.dart';
 import '../../features/auth/domain/usecases/login_owner_usecase.dart';
 import '../../features/auth/domain/usecases/logout_owner_usecase.dart';
+import '../../features/auth/domain/usecases/get_current_owner_usecase.dart'; // ← IMPORTAR
 
 /// Dependencias del módulo de autenticación (Clean Architecture)
 class AuthDependencies {
   late final OwnerAuthRepository ownerAuthRepository;
   late final LoginOwnerUseCase loginOwnerUseCase;
   late final LogoutOwnerUseCase logoutOwnerUseCase;
+  late final GetCurrentOwnerUseCase getCurrentOwnerUseCase; // ← AGREGAR
 
   void init({
     required Dio dio,
     required TokenStorage tokenStorage,
   }) {
-    final OwnerAuthRemoteDataSource remoteDataSource = 
+    final OwnerAuthRemoteDataSource remoteDataSource =
         OwnerAuthRemoteDataSourceImpl(
           client: dio,
           storage: tokenStorage,
@@ -33,9 +35,9 @@ class AuthDependencies {
 
     loginOwnerUseCase = LoginOwnerUseCase(ownerAuthRepository);
     logoutOwnerUseCase = LogoutOwnerUseCase(ownerAuthRepository);
+    getCurrentOwnerUseCase = GetCurrentOwnerUseCase(ownerAuthRepository); // ← INICIALIZAR
   }
 
   // Alias para mantener compatibilidad temporal con app_router.dart
-  // TODO: Eliminar después de migrar LoginPage
   OwnerAuthRepository get authRepository => ownerAuthRepository;
 }

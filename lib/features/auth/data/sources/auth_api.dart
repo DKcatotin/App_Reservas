@@ -16,10 +16,4 @@ class AuthApi {
     );
     return AuthResponse.fromJson(res.data as Map<String, dynamic>);
   }
-  Future<AuthResponse> greetPrivate() async {
-    final res = await dio.get(
-      'greet-private',
-    );
-    return AuthResponse.fromJson(res.data as Map<String, dynamic>);
-  }
 }

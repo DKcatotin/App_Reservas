@@ -16,7 +16,6 @@ class OwnerAuthRemoteDataSourceImpl implements OwnerAuthRemoteDataSource {
   });
 
 @override
-@override
 Future<OwnerModel> loginOwner({
   required String email,
   required String password,

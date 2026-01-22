@@ -1,9 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'owner_model.dart';
 
-import 'package:equatable/equatable.dart';
-import 'owner_model.dart';
-
 class AuthResponse extends Equatable {
   final String accessToken;
   final OwnerModel user;

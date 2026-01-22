@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../domain/entities/owner.dart';
 import '../../domain/repositories/owner_auth_repository.dart';
-import '../models/owner_model.dart'; // ← AGREGAR IMPORT
 import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../datasources/owner_auth_remote_datasource.dart';
@@ -18,11 +17,11 @@ class OwnerAuthRepositoryImpl implements OwnerAuthRepository {
   }) async {
     try {
       // Delegar al DataSource
-      final owner = await remoteDataSource.loginOwner(
-        email: email,
-        password: password,
-      );
-      return Right(owner);
+      final ownerModel = await remoteDataSource.loginOwner(
+  email: email,
+  password: password,
+);
+return Right(ownerModel.toEntity());
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } on ServerException catch (e) {
@@ -45,8 +44,8 @@ class OwnerAuthRepositoryImpl implements OwnerAuthRepository {
   @override
   Future<Either<Failure, Owner>> getCurrentOwner() async {
     try {
-      final owner = await remoteDataSource.getCurrentOwner();
-      return Right(owner);
+     final ownerModel = await remoteDataSource.getCurrentOwner();
+return Right(ownerModel.toEntity());
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (e) {
