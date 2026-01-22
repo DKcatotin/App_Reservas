@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../../../../core/errors/exceptions.dart';
-import '../models/customer.dart';
+import '../../../../../../core/errors/exceptions.dart';
+import '../../models/customer.dart';
 import 'customers_datasource.dart';
 
 /// Implementación remota usando API del backend

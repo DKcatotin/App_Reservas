@@ -12,6 +12,11 @@ class LoginOwnerUseCase {
     required String email,
     required String password,
   }) async {
+    // Validar datos antes de llamar al repositorio
+    if (email.isEmpty || password.isEmpty) {
+      return Left(ValidationFailure('Email y Contraseña son requeridos'));
+    }
+
     return await repository.loginOwner(email: email, password: password);
   }
 }

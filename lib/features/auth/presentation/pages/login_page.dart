@@ -35,28 +35,34 @@ class LoginPage extends StatelessWidget {
                     child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          SizedBox(height: 8),
+                        children: [
+                          const SizedBox(height: 8),
                           CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Color(0xFF8B5CF6),
-                            child: Icon(Icons.storefront, size: 32, color: Colors.white),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 100,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                ),
+                              )),
+                          const SizedBox(height: 16),
+                          const Text(
                             'Francis Nails',
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 4),
+                          const Text(
                             'Owner App',
                             style: TextStyle(color: Colors.black54),
                           ),
-                          SizedBox(height: 24),
-                          OwnerLoginForm(), // ← Aquí va el formulario modular
+                          const SizedBox(height: 24),
+                          const OwnerLoginForm(), // ← Aquí va el formulario modular
                         ],
                       ),
                     ),

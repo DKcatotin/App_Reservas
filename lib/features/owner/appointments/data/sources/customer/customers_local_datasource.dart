@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-import '../models/customer.dart';
+import '../../models/customer.dart';
 import 'customers_datasource.dart';
 
 /// Implementación local usando JSON mock

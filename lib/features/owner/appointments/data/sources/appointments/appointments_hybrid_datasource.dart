@@ -1,7 +1,7 @@
 import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
-import 'package:agenda_app/features/owner/appointments/data/sources/appointments_datasource.dart';
-import 'package:agenda_app/features/owner/appointments/data/sources/appointments_json_datasource.dart';
-import 'package:agenda_app/features/owner/appointments/data/sources/appointments_memory_datasource.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_datasource.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_json_datasource.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_memory_datasource.dart';
 //carga datos json 
 class AppointmentsHybridDatasource implements AppointmentsDatasource {
   final AppointmentsJsonDatasource json;

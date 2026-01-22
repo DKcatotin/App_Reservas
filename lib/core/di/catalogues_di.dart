@@ -10,7 +10,7 @@ class CataloguesDependencies {
   late final CataloguesRepository cataloguesRepository;
 
   void init({required Dio dio}) {
-    // TODO(backend): cambiar a CataloguesRemoteDatasource(dio)
+    // (backend): cambiar a CataloguesRemoteDatasource(dio)
     _cataloguesDatasource = CataloguesLocalDatasource(dio);
 
     cataloguesRepository = CataloguesRepositoryImpl(

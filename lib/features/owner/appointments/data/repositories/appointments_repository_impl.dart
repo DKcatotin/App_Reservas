@@ -2,7 +2,7 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment.d
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
-import 'package:agenda_app/features/owner/appointments/data/sources/appointments_datasource.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/source_entity.dart';

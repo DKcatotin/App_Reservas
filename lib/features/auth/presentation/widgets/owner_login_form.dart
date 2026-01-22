@@ -13,23 +13,27 @@ class OwnerLoginForm extends StatefulWidget {
 }
 
 class _OwnerLoginFormState extends State<OwnerLoginForm> {
-  final TextEditingController _userCtrl =
-      TextEditingController(text: 'admin@admin.com');
-  final TextEditingController _passCtrl =
-      TextEditingController(text: 'admin');
+  final _identificationController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   String? _error;
 
-  void _login(BuildContext context) {
-    final email = _userCtrl.text.trim();
-    final password = _passCtrl.text.trim();
-    context.read<AuthBloc>().add(LoginSubmitted(email: email, password: password));
+  void _handleLogin() {
+    if (_formKey.currentState?.validate() ?? false) {
+      context.read<AuthBloc>().add(
+        LoginSubmitted(
+          email: _identificationController.text.trim(),
+          password: _passwordController.text.trim(),
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _userCtrl.dispose();
-    _passCtrl.dispose();
+    _identificationController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -46,92 +50,120 @@ class _OwnerLoginFormState extends State<OwnerLoginForm> {
       builder: (context, state) {
         final isLoading = state is AuthLoading;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _userCtrl,
-              decoration: InputDecoration(
-                labelText: 'Usuario',
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+        return Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /// Identification
+              TextFormField(
+                controller: _identificationController,
+                keyboardType: TextInputType.number,
+                enabled: !isLoading,
+                decoration: InputDecoration(
+                  labelText: 'Identification',
+                  hintText: 'Enter your ID number',
+                  prefixIcon: const Icon(Icons.badge),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Identification is required';
+                  }
+                  if (value!.length < 10) {
+                    return 'Invalid identification format';
+                  }
+                  return null;
+                },
               ),
-              enabled: !isLoading,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passCtrl,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+
+              const SizedBox(height: 16),
+
+              /// Password
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                enabled: !isLoading,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Password is required';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _handleLogin(),
               ),
-              enabled: !isLoading,
-              onSubmitted: (_) => _login(context),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 12,
+
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              /// Login button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ],
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : () => _login(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Entrar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-          ],
+          ),
         );
       },
     );

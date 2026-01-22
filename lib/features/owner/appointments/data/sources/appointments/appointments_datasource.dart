@@ -1,4 +1,4 @@
-import '../models/appointment.dart';
+import '../../models/appointment.dart';
 //Define un contrato para las fuentes de citas
 abstract class AppointmentsDatasource {
   Future<List<Appointment>> getAll();

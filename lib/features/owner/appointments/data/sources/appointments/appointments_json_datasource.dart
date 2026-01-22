@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../models/appointment.dart';
+import '../../models/appointment.dart';
 import 'appointments_datasource.dart';
 
 class AppointmentsJsonDatasource implements AppointmentsDatasource {

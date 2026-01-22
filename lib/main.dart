@@ -1,5 +1,5 @@
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
-import 'package:agenda_app/features/owner/appointments/data/sources/appointments_memory_datasource.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_memory_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';

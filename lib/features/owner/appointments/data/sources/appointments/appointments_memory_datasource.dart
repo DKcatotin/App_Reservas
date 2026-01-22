@@ -1,4 +1,4 @@
-import '../models/appointment.dart';
+import '../../models/appointment.dart';
 import 'appointments_datasource.dart';
 
 class AppointmentsMemoryDatasource implements AppointmentsDatasource {

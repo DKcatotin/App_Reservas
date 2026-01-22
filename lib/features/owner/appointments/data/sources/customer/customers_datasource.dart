@@ -1,4 +1,4 @@
-import '../models/customer.dart';
+import '../../models/customer.dart';
 
 /// Interface para obtener customers (local o remoto)
 abstract class CustomersDatasource {

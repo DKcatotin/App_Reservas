@@ -27,14 +27,14 @@ class CreateAppointmentUseCase {
   // 4. Crear entidad Appointment (SIN crear customer)
   final appointment = AppointmentEntity(
     id: IdGenerator.generate('appointment'),
-    branchId: 'branch1', // TODO: Obtener del contexto/sesión
+    branchId: 'branch1', // Obtener del contexto sesión
     customerId: input.customerId, //  CAMBIO: Ya viene del formulario
     staffProfileId: null,
     startAt: input.startAt,
     endAt: input.startAt.add(Duration(minutes: totalMinutes)),
     notes: cleanNotes,
     status: StatusEntity.pending,
-    source: _getSourceEntity(input.source), // ✅ Usar helper
+    source: _getSourceEntity(input.source), //  Usar helper
   customer: input.customer,
   staff: null,
   services: input.services,

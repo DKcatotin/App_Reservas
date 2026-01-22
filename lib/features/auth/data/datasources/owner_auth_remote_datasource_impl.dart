@@ -1,13 +1,16 @@
+import 'package:agenda_app/core/networking/api_endpoints.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../models/owner_model.dart';
 import 'owner_auth_remote_datasource.dart';
+import 'package:logger/logger.dart';
 
 class OwnerAuthRemoteDataSourceImpl implements OwnerAuthRemoteDataSource {
   final Dio client;
   final TokenStorage storage;
   final String baseUrl;
+  final logger = Logger();
 
   OwnerAuthRemoteDataSourceImpl({
     required this.client,
@@ -21,28 +24,28 @@ Future<OwnerModel> loginOwner({
   required String password,
 }) async {
   try {
-    final response = await client.post(
-      '/auth/sign-in',
+    final response = await 
+    client.post('${baseUrl}${ApiEndpoints.signIn}',
       data: {
         'username': email,
         'password': password,
       },
     );
 
-    print('🔍 Status Code: ${response.statusCode}'); // DEBUG
-
+      logger.d('Status Code: ${response.statusCode}');
     // Aceptar 200 (OK) y 201 (Created)
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = response.data;
       final accessToken = data['data']['accessToken'];
       final authData = data['data']['auth'];
       
-      print('🔍 Token: ${accessToken.substring(0, 20)}...'); // DEBUG
-      print('🔍 Auth Data: $authData'); // DEBUG
       
+      logger.d('Token recibido correctamente'); // DEBUG
+      logger.d('Auth Data: $authData');
+      //guarda token
       await storage.saveAccessToken(accessToken);
       await storage.saveUser(authData);
-      
+      //convierte respuesta a modelo 
       final owner = OwnerModel.fromJson(authData);
       print('🔍 Owner creado: ${owner.fullName}'); // DEBUG
       

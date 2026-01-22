@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/customer.dart';
-import '../../data/sources/customers_datasource.dart';
-import '../../data/sources/customers_local_datasource.dart'; // ← CAMBIO
+import '../../data/sources/customer/customers_datasource.dart';
+import '../../data/sources/customer/customers_local_datasource.dart'; // ← CAMBIO
 
 /// Customer state
 class CustomerState {
