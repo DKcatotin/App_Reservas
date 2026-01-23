@@ -7,28 +7,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Domain
-import '../../domain/entities/appointment_entity.dart';
-import '../../domain/entities/status_entity.dart';
-import '../../domain/use_cases/update_appointment.dart';
-import '../../domain/use_cases/delete_appointment.dart';
+import '../../../domain/entities/appointment_entity.dart';
+import '../../../../catalogues/domain/entities/status_entity.dart';
+import '../../../domain/use_cases/update_appointment.dart';
+import '../../../domain/use_cases/delete_appointment.dart';
 // Data
-import '../../data/repositories/appointments_repository_impl.dart';
-import '../../../catalogues/data/models/staff.dart';
-import '../../../catalogues/data/models/service.dart';
+import '../../../data/repositories/appointments_repository_impl.dart';
+import '../../../../catalogues/data/models/staff.dart';
+import '../../../../catalogues/data/models/service.dart';
 // Entities from catalogues
-import '../../../catalogues/domain/entities/service_entity.dart';
-import '../../../catalogues/domain/entities/staff_entity.dart';
+import '../../../../catalogues/domain/entities/service_entity.dart';
+import '../../../../catalogues/domain/entities/staff_entity.dart';
 // Providers
-import '../providers/staff_provider.dart';
+import '../../providers/staff_provider.dart';
 // Widgets - Reutilizables de catalogues
-import '../../../catalogues/presentation/widgets/service_selector.dart';
-import '../../../catalogues/presentation/widgets/staff_selector.dart';
+import '../../../../catalogues/presentation/widgets/service_selector.dart';
+import '../../../../catalogues/presentation/widgets/staff_selector.dart';
 // Widgets - Específicos de appointments
-import '../widgets/appointment_header.dart';
-import '../widgets/appointment_date_time_section.dart';
-import '../widgets/appointment_status_selector.dart';
-import '../widgets/appointment_notes_section.dart';
-import '../widgets/client_info_card.dart';
+import '../../widgets/appointments/appointment_header.dart';
+import '../../widgets/appointments/appointment_date_time_section.dart';
+import '../../widgets/appointments/appointment_status_selector.dart';
+import '../../widgets/appointments/appointment_notes_section.dart';
+import '../../widgets/customer/customer_info_card.dart';
 // Widgets - Shared
 class AppointmentDetailPage extends ConsumerStatefulWidget {
   final AppointmentEntity appointment;
@@ -425,7 +425,7 @@ Servicio: $services
               child: Column(
                 children: [
                   // ✅ CLIENTE (refactorizado)
-                  ClientInfoCard(
+                  CustomerInfoCard(
                     customer: widget.appointment.customer,
                     isEditing: _isEditing,
                     nameController: _nameController,

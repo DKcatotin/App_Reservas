@@ -26,3 +26,11 @@ class UnexpectedFailure extends Failure {
 class NetworkFailure extends Failure {
   const NetworkFailure(super.message);
 }
+
+ class AppointmentsFailure implements Exception {
+  final String message;
+  AppointmentsFailure(this.message);
+
+  @override
+  String toString() => message;
+}

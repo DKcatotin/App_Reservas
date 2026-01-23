@@ -1,7 +1,7 @@
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upcoming_appointments.dart';
-import 'package:agenda_app/features/owner/appointments/presentation/pages/appointment_detail_page.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/pages/appointments/appointment_detail_page.dart';
 import 'package:flutter/material.dart';
 
 import 'package:intl/intl.dart';

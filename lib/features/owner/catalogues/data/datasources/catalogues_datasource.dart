@@ -13,5 +13,5 @@ abstract class CataloguesDatasource {
   Future<List<Staff>> getStaff();
   
  Future<List<CatalogueItem>> getAppointmentStatuses();
-  // TODO: Agregar getStatuses() si lo necesitas para appointment_statuses
+  // Agregar getStatuses() si lo necesitas para appointment_statuses
 }

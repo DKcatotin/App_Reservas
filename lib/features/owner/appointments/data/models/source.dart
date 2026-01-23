@@ -1,3 +1,5 @@
+import '../../domain/entities/source_entity.dart';
+
 class Source {
   final int id;
   final String code;
@@ -11,9 +13,9 @@ class Source {
 
   factory Source.fromJson(Map<String, dynamic> json) {
     return Source(
-      id: json['id'] as int? ?? 0,
-      code: json['code'] as String? ?? '',
-      name: json['name'] as String? ?? '',
+      id: json['id'],
+      code: json['code'],
+      name: json['name'],
     );
   }
 
@@ -23,5 +25,23 @@ class Source {
       'code': code,
       'name': name,
     };
+  }
+
+  // ✅ MODEL → ENTITY
+  SourceEntity toEntity() {
+    return SourceEntity(
+      id: id,
+      code: code,
+      name: name,
+    );
+  }
+
+  // ✅ ENTITY → MODEL
+  factory Source.fromEntity(SourceEntity entity) {
+    return Source(
+      id: entity.id,
+      code: entity.code,
+      name: entity.name,
+    );
   }
 }

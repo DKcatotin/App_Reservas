@@ -2,7 +2,7 @@ import 'package:agenda_app/features/owner/appointments/data/models/appointment.d
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_json_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_memory_datasource.dart';
-//carga datos json 
+
 class AppointmentsHybridDatasource implements AppointmentsDatasource {
   final AppointmentsJsonDatasource json;
   final AppointmentsMemoryDatasource memory;
@@ -17,9 +17,10 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
 
-    final all = await json.getAll();
+    final all = await json.getAll(); // ✅ List<Appointment>
+
     for (final a in all) {
-      await memory.create(a);
+      await memory.create(a); // ✅ Guardar en memoria
     }
 
     _loaded = true;
@@ -28,7 +29,7 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   @override
   Future<List<Appointment>> getAll() async {
     await _ensureLoaded();
-    return memory.getAll();
+    return memory.getAll(); // ✅ devolver desde memoria
   }
 
   @override
@@ -36,16 +37,16 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
     await _ensureLoaded();
     return memory.create(appointment);
   }
+
   @override
-Future<void> update(Appointment appointment) async {
-  await _ensureLoaded();
-  return memory.update(appointment);
-}
+  Future<void> update(Appointment appointment) async {
+    await _ensureLoaded();
+    return memory.update(appointment);
+  }
 
-@override
-Future<void> delete(String id) async {
-  await _ensureLoaded();
-  return memory.delete(id);
-}
-
+  @override
+  Future<void> delete(String id) async {
+    await _ensureLoaded();
+    return memory.delete(id);
+  }
 }

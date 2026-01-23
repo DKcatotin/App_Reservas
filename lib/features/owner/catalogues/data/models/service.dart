@@ -25,12 +25,12 @@ class Service {
   factory Service.fromJson(Map<String, dynamic> json) {
     return Service(
       id: json['id'] as String,
-      branchId: json['branch_id'] as String,
-      categoryId: json['category_id'] as String?,
+      branchId: json['branchId'] as String,
+      categoryId: json['categoryId'] as String?,
       name: json['name'] as String,
       description: json['description'] as String?,
-      durationMin: json['duration_min'] as int,
-      basePrice: (json['base_price'] as num).toDouble(),
+      durationMin: json['durationMin'] as int,
+      basePrice: (json['basePrice'] as num).toDouble(),
       enabled: json['enabled'] as bool? ?? true,
     );
   }
@@ -39,12 +39,12 @@ class Service {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'branch_id': branchId,
-      'category_id': categoryId,
+      'branchId': branchId,
+      'categoryId': categoryId,
       'name': name,
       'description': description,
-      'duration_min': durationMin,
-      'base_price': basePrice,
+      'durationMin': durationMin,
+      'basePrice': basePrice,
       'enabled': enabled,
     };
   }

@@ -1,4 +1,7 @@
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
+import 'package:logger/logger.dart';
+
+Logger logger = Logger();
 
 class Customer {
   final String id;
@@ -24,21 +27,30 @@ class Customer {
   });
 
 factory Customer.fromJson(Map<String, dynamic> json) {
-  print('🔍 [MODEL] Parseando customer: ${json.toString()}');
-  
+  logger.d('🔍 [MODEL] Parseando customer: ${json.toString()}');
+
+  final user = json['user'] as Map<String, dynamic>?;
+
   return Customer(
-    id: json['id'] as String? ?? '',
-    userId: json['user_id'] as String? ?? '',
-    referredBy: json['referred_by'] as String?,
-    
-    // ✅ SOLUCIÓN: Convertir a String independientemente del tipo
-    taxIdentification: json['tax_identification']?.toString(),
-    
-    taxName: json['tax_name'] as String?,
-    allergies: json['allergies'] as String?,
-    fullName: json['user']?['full_name'] as String? ?? json['full_name'] as String?,
-    email: json['user']?['email'] as String? ?? json['email'] as String?,
-    phone: json['user']?['phone'] as String? ?? json['phone'] as String?,
+    id: (json['id'] ?? '').toString(),
+    userId: (json['userId'] ?? json['user_id'] ?? '').toString(),
+    referredBy: (json['referralId'] ?? json['referred_by'])?.toString(),
+    taxIdentification: (json['taxIdentification'] ?? json['tax_identification'])?.toString(),
+    taxName: (json['taxName'] ?? json['tax_name'])?.toString(),
+    allergies: (json['allergies'])?.toString(),
+
+    // Campos del user (JOIN)
+    fullName: user != null
+        ? '${user['name'] ?? ''} ${user['lastname'] ?? ''}'.trim()
+        : (json['full_name'] ?? json['fullName'])?.toString(),
+
+    email: user != null
+        ? (user['email']?.toString())
+        : (json['email']?.toString()),
+
+    phone: user != null
+        ? (user['cellPhone']?.toString() ?? user['phone']?.toString())
+        : (json['phone']?.toString()),
   );
 }
 
@@ -78,4 +90,17 @@ factory Customer.fromJson(Map<String, dynamic> json) {
 
   @override
   int get hashCode => id.hashCode;
+   factory Customer.fromEntity(CustomerEntity entity) {
+    return Customer(
+      id: entity.id,
+      userId: entity.userId,
+      referredBy: entity.referredBy,
+      taxIdentification: entity.taxIdentification,
+      taxName: entity.taxName,
+      fullName: entity.fullName,
+      phone: entity.phone,
+      email: entity.email,
+      allergies: entity.allergies,
+    );
+  }
 }

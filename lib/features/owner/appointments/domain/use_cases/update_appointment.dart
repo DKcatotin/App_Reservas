@@ -23,7 +23,7 @@ class UpdateAppointmentUseCase {
     required AppointmentEntity appointment,
     required String? newStaffId,
   }) async {
-    final updated = appointment.copyWith(staffId: newStaffId);
+    final updated = appointment.copyWith(staffProfileId: newStaffId);
     await call(updated);
   }
 

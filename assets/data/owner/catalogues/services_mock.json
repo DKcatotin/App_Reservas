@@ -2,32 +2,32 @@
   "data": [
     {
       "id": "service-001",
-      "branch_id": "branch-001",
-      "category_id": "cat-001",
+      "branchId": "branch-001",
+      "categoryId": "cat-001",
       "name": "Manicura Clásica",
       "description": "Manicura básica con esmaltado",
-      "duration_min": 45,
-      "base_price": 15.00,
+      "durationMin": 45,
+      "basePrice": 15.00,
       "enabled": true
     },
     {
       "id": "service-002",
-      "branch_id": "branch-001",
-      "category_id": "cat-001",
+      "branchId": "branch-001",
+      "categoryId": "cat-001",
       "name": "Uñas Acrílicas",
       "description": "Aplicación completa de uñas acrílicas",
-      "duration_min": 120,
-      "base_price": 45.00,
+      "durationMin": 120,
+      "basePrice": 45.00,
       "enabled": true
     },
     {
       "id": "service-003",
-      "branch_id": "branch-001",
-      "category_id": "cat-002",
+      "branchId": "branch-001",
+      "categoryId": "cat-002",
       "name": "Pedicura Spa",
       "description": "Pedicura con masaje y exfoliación",
-      "duration_min": 60,
-      "base_price": 25.00,
+      "durationMin": 60,
+      "basePrice": 25.00,
       "enabled": true
     }
   ]

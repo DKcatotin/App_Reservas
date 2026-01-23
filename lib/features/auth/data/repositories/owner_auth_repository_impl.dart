@@ -3,7 +3,7 @@ import '../../domain/entities/owner.dart';
 import '../../domain/repositories/owner_auth_repository.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/exceptions.dart';
-import '../datasources/owner_auth_remote_datasource.dart';
+import '../sources/owner_auth_remote_datasource.dart';
 
 class OwnerAuthRepositoryImpl implements OwnerAuthRepository {
   final OwnerAuthRemoteDataSource remoteDataSource;

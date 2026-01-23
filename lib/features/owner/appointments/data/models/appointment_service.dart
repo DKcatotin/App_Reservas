@@ -5,7 +5,7 @@ class AppointmentService {
   final int durationMin;
   final double price;
   
-  // ✅ AGREGAR: Campos del servicio obtenidos por JOIN
+  //  AGREGAR: Campos del servicio obtenidos por JOIN
   final String? serviceName;
   final String? branchId;
   final String? categoryId;
@@ -32,15 +32,15 @@ class AppointmentService {
       id: json['id'] as String? ?? '',
       appointmentId: json['appointment_id'] as String? ?? '',
       serviceId: json['service_id'] as String? ?? '',
-      durationMin: (json['duration_min'] as num?)?.toInt() ?? 0,
+      durationMin: (json['durationMin'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       // Campos del JOIN con services
       serviceName: json['service']?['name'] as String? ?? json['name'] as String?,
-      branchId: json['service']?['branch_id'] as String?,
-      categoryId: json['service']?['category_id'] as String?,
+      branchId: json['service']?['branchId'] as String?,
+      categoryId: json['service']?['categoryId'] as String?,
       description: json['service']?['description'] as String?,
-      basePrice: json['service']?['base_price'] != null 
-          ? (json['service']?['base_price'] as num).toDouble() 
+      basePrice: json['service']?['basePrice'] != null 
+          ? (json['service']?['basePrice'] as num).toDouble() 
           : null,
       enabled: json['service']?['enabled'] as bool?,
     );
@@ -62,7 +62,7 @@ class AppointmentService {
       'id': id,
       'appointment_id': appointmentId,
       'service_id': serviceId,
-      'duration_min': durationMin,
+      'durationMin': durationMin,
       'price': price,
     };
   }

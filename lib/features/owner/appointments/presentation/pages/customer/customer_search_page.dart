@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/customer.dart';
-import '../providers/customer_provider.dart';
+import '../../../data/models/customer.dart';
+import '../../providers/customer_provider.dart';
 
 class CustomerSearchPage extends ConsumerStatefulWidget {
   const CustomerSearchPage({super.key});
@@ -16,12 +16,12 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
   final _taxIdController = TextEditingController();
   bool _searched = false;
 
-  @override
+   @override
   void dispose() {
     _taxIdController.dispose();
-    ref.read(customerProvider.notifier).clear(); // Limpiar estado
     super.dispose();
   }
+
 
   Future<void> _searchCustomer() async {
     final taxId = _taxIdController.text.trim();

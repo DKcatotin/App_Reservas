@@ -1,8 +1,10 @@
+import 'package:agenda_app/core/di/app_dependencies.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/customer.dart';
 import '../../data/sources/customer/customers_datasource.dart';
-import '../../data/sources/customer/customers_local_datasource.dart'; // ← CAMBIO
+import 'package:logger/logger.dart';
 
+final logger = Logger();
 /// Customer state
 class CustomerState {
   final Customer? customer;
@@ -36,13 +38,13 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 
   /// Search customer by tax identification
   Future<void> searchByTaxIdentification(String taxIdentification) async {
-  print('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification'); // DEBUG
+  logger.d('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification'); // DEBUG
   state = CustomerState(isLoading: true);
 
   try {
-    print('🔵 [PROVIDER] Llamando datasource...'); // DEBUG
+    logger.d('🔵 [PROVIDER] Llamando datasource...'); // DEBUG
     final customerFound = await datasource.getByTaxIdentification(taxIdentification);
-    print('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}'); // DEBUG
+    logger.d('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}'); // DEBUG
 
     if (customerFound != null) {
       state = CustomerState(customer: customerFound);
@@ -50,8 +52,8 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
       state = CustomerState(error: 'Cliente no encontrado');
     }
   } catch (e, stackTrace) {
-    print('🔴 [PROVIDER] Error: $e'); // DEBUG
-    print('🔴 [PROVIDER] StackTrace: $stackTrace'); // DEBUG
+    logger.d('🔴 [PROVIDER] Error: $e'); // DEBUG
+    logger.d('🔴 [PROVIDER] StackTrace: $stackTrace'); // DEBUG
     state = CustomerState(error: 'Error al buscar cliente: $e');
   }
 }
@@ -63,9 +65,8 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 
 /// Datasource provider - Usa implementación local directamente
 final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
-  return CustomersLocalDatasource(); // ← CAMBIO: Instancia concreta
+  return AppDependencies().customersDatasource; // ✅ Remote desde DI real
 });
-
 /// Customer state provider
 final customerProvider =
     StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {

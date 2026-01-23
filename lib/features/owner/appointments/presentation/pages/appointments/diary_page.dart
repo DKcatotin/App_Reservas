@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:go_router/go_router.dart'; 
 
-import '../widgets/appointment_card.dart';
+import '../../widgets/appointments/appointment_card.dart';
 
 
 class DiaryPage extends StatefulWidget {

@@ -2,25 +2,26 @@ import 'package:dio/dio.dart';
 import '../../../../../../core/errors/exceptions.dart';
 import '../../models/customer.dart';
 import 'customers_datasource.dart';
+import 'package:logger/logger.dart';
 
 /// Implementación remota usando API del backend
 class CustomersRemoteDatasource implements CustomersDatasource {
   final Dio client;
-  
+  final logger = Logger();
   // ⚠️ AJUSTA ESTA RUTA SEGÚN TU BACKEND
-  static const String _baseEndpoint = 'core/owner/customers';
+  static const String _baseEndpoint = '/core/owner/customers';
 
   CustomersRemoteDatasource({required this.client});
 
   @override
   Future<List<Customer>> getAll() async {
     try {
-      print('🔵 GET Request: $_baseEndpoint'); // DEBUG
+      logger.d('🔵 GET Request: $_baseEndpoint'); // DEBUG
       
       final response = await client.get(_baseEndpoint);
       
-      print('🔵 Response Status: ${response.statusCode}'); // DEBUG
-      print('🔵 Response Data: ${response.data}'); // DEBUG
+      logger.d('🔵 Response Status: ${response.statusCode}'); // DEBUG
+      logger.d('🔵 Response Data: ${response.data}'); // DEBUG
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Ajustar según estructura de tu backend
@@ -30,8 +31,8 @@ class CustomersRemoteDatasource implements CustomersDatasource {
 
       throw ServerException('Error al obtener customers: ${response.statusCode}');
     } on DioException catch (e) {
-      print('🔴 DioException: ${e.message}'); // DEBUG
-      print('🔴 Response: ${e.response?.data}'); // DEBUG
+      logger.d('🔴 DioException: ${e.message}'); // DEBUG
+      logger.d('🔴 Response: ${e.response?.data}'); // DEBUG
       
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
@@ -41,58 +42,61 @@ class CustomersRemoteDatasource implements CustomersDatasource {
       }
       throw ServerException('Error al obtener customers: ${e.message}');
     } catch (e) {
-      print('🔴 Error inesperado: $e'); // DEBUG
+      logger.d('🔴 Error inesperado: $e'); // DEBUG
       throw ServerException('Error inesperado: $e');
     }
   }
 
- @override
+@override
 Future<Customer?> getByTaxIdentification(String taxIdentification) async {
   try {
-    print('🔵 [DATASOURCE] Buscando customer por cédula: $taxIdentification');
-    
-    // Obtener todos y filtrar
-    print('🔵 [DATASOURCE] Obteniendo todos los customers...');
-    
-    final customers = await getAll();
-    
-    print('🔵 [DATASOURCE] Total customers recibidos: ${customers.length}');
-    
-    // Debug: Mostrar todas las cédulas disponibles
-    for (var c in customers) {
-      print('🔍 [DATASOURCE] Customer: ${c.fullName} - Cédula: ${c.taxIdentification}');
+    final endpoint = '$_baseEndpoint/$taxIdentification/exist';
+    logger.d('🔵 [REMOTE] GET $endpoint');
+
+    final response = await client.get(endpoint);
+
+    logger.d('🔵 [REMOTE] Status: ${response.statusCode}');
+    logger.d('🔵 [REMOTE] Data: ${response.data}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = response.data['data'] as Map<String, dynamic>?;
+
+      if (data == null) return null;
+
+      final exists = data['exists'] == true;
+      if (!exists) return null;
+
+      final customerJson = data['customer'] as Map<String, dynamic>?;
+      if (customerJson == null) return null;
+
+      return Customer.fromJson(customerJson);
     }
-    
-    try {
-      final found = customers.firstWhere(
-        (c) {
-          print('🔍 [DATASOURCE] Comparando: "${c.taxIdentification}" == "$taxIdentification"');
-          return c.taxIdentification == taxIdentification;
-        },
-      );
-      print('🟢 [DATASOURCE] Customer encontrado: ${found.fullName}');
-      return found;
-    } catch (_) {
-      print('🟡 [DATASOURCE] Customer no encontrado con cédula: $taxIdentification');
-      print('🟡 [DATASOURCE] Total customers buscados: ${customers.length}');
+
+    throw ServerException('Error al buscar customer: ${response.statusCode}');
+  } on DioException catch (e) {
+    logger.d('🔴 [REMOTE] DioException: ${e.message}');
+    logger.d('🔴 [REMOTE] Response: ${e.response?.data}');
+
+    if (e.response?.statusCode == 404) {
       return null;
     }
-  } catch (e, stackTrace) {
-    print('🔴 [DATASOURCE] Error: $e');
-    print('🔴 [DATASOURCE] StackTrace: $stackTrace');
-    rethrow;
+
+    throw ServerException('Error al buscar customer: ${e.message}');
+  } catch (e) {
+    logger.d('🔴 [REMOTE] Error inesperado: $e');
+    throw ServerException('Error inesperado: $e');
   }
 }
 
   @override
   Future<Customer?> getById(String id) async {
     try {
-      print('🔵 GET Request: $_baseEndpoint/$id'); // DEBUG
+      logger.d('🔵 GET Request: $_baseEndpoint/$id'); // DEBUG
       
       final response = await client.get('$_baseEndpoint/$id');
 
-      print('🔵 Response Status: ${response.statusCode}'); // DEBUG
-      print('🔵 Response Data: ${response.data}'); // DEBUG
+      logger.d('🔵 Response Status: ${response.statusCode}'); // DEBUG
+      logger.d('🔵 Response Data: ${response.data}'); // DEBUG
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final customerData = response.data['data'] ?? response.data;
@@ -103,14 +107,14 @@ Future<Customer?> getByTaxIdentification(String taxIdentification) async {
 
       throw ServerException('Error al obtener customer: ${response.statusCode}');
     } on DioException catch (e) {
-      print('🔴 DioException: ${e.message}'); // DEBUG
+      logger.d('🔴 DioException: ${e.message}'); // DEBUG
       
       if (e.response?.statusCode == 404) {
         return null;
       }
       throw ServerException('Error al obtener customer: ${e.message}');
     } catch (e) {
-      print('🔴 Error inesperado: $e'); // DEBUG
+      logger.d('🔴 Error inesperado: $e'); // DEBUG
       throw ServerException('Error inesperado: $e');
     }
   }

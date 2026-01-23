@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/appointments/domain/entities/status_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/status_entity.dart';
 
 import '../entities/appointment_entity.dart';
 import '../entities/source_entity.dart';

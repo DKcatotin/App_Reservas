@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 
 /// Widget que muestra la información del cliente en el detalle de la cita
 /// Incluye: nombre (editable), teléfono (editable con acción de WhatsApp)
-class ClientInfoCard extends StatelessWidget {
+class CustomerInfoCard extends StatelessWidget {
   final CustomerEntity customer;
   final bool isEditing;
   final TextEditingController nameController;
   final TextEditingController phoneController;
   final VoidCallback? onWhatsAppTap;
 
-  const ClientInfoCard({
+  const CustomerInfoCard({
     super.key,
     required this.customer,
     required this.isEditing,

@@ -5,17 +5,17 @@ import 'catalogues_datasource.dart';
 import '../models/service.dart';
 
 /// Datasource que obtiene catálogos desde API REST.
-/// TODO(backend): Implementar llamadas HTTP cuando el backend esté listo.
+/// (backend): Implementar llamadas HTTP cuando el backend esté listo.
 class CataloguesRemoteDatasource implements CataloguesDatasource {
    final Dio dio;
    CataloguesRemoteDatasource(this.dio);
-  // TODO(backend): Inyectar Dio o http client
+  // (backend): Inyectar Dio o http client
   // final Dio _dio;
   // CataloguesRemoteDatasource(this._dio);
 
   @override
   Future<List<Service>> getServices() async {
-    // TODO(backend): Reemplazar con llamada real
+    // (backend): Reemplazar con llamada real
     // final response = await _dio.get('/api/services');
     // return (response.data as List)
     //     .map((e) => Service.fromJson(e))
@@ -29,7 +29,7 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
 
   @override
   Future<List<Staff>> getStaff() async {
-    // TODO(backend): Reemplazar con llamada real
+    // (backend): Reemplazar con llamada real
     // final response = await _dio.get('/api/staff');
     // return (response.data as List)
     //     .map((e) => Staff.fromJson(e))
