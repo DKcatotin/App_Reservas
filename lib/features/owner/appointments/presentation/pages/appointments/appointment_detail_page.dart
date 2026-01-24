@@ -240,13 +240,13 @@ Servicio: $services
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
     } else {
-      // ✅ CORREGIDO: verificar mounted antes de usar context
+      // CORREGIDO: verificar mounted antes de usar context
       if (mounted) {
         _showError('No se pudo abrir WhatsApp');
       }
     }
   } catch (e) {
-    // ✅ CORREGIDO: verificar mounted antes de usar context
+    //  CORREGIDO: verificar mounted antes de usar context
     if (mounted) {
       _showError('Error al abrir WhatsApp: $e');
     }
@@ -369,7 +369,7 @@ Servicio: $services
     _selectedStatus = widget.appointment.status.name;
     _notesController.text = widget.appointment.notes ?? '';
     _selectedServices = widget.appointment.services;
-    // ✅ CORREGIDO: manejar nullables
+    // CORREGIDO: manejar nullables
     _nameController.text = widget.appointment.customer.fullName ?? ''; 
     _phoneController.text = widget.appointment.customer.phone ?? '';
     _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
@@ -380,7 +380,7 @@ Servicio: $services
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ $message'),
+        content: Text(' $message'),
         backgroundColor: Colors.green,
       ),
     );
@@ -389,7 +389,7 @@ Servicio: $services
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('❌ $message'),
+        content: Text(' $message'),
         backgroundColor: Colors.red,
       ),
     );
@@ -409,7 +409,7 @@ Servicio: $services
       backgroundColor: const Color(0xFFF5F3FF),
       body: CustomScrollView(
         slivers: [
-          // ✅ HEADER (refactorizado)
+          // HEADER (refactorizado)
           AppointmentHeader(
             isEditing: _isEditing,
             onEdit: () => setState(() => _isEditing = true),
@@ -418,13 +418,13 @@ Servicio: $services
             onDelete: _confirmDelete,
           ),
 
-          // ✅ CONTENIDO
+          // CONTENIDO
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // ✅ CLIENTE (refactorizado)
+                  //  CLIENTE (refactorizado)
                   CustomerInfoCard(
                     customer: widget.appointment.customer,
                     isEditing: _isEditing,
@@ -435,7 +435,7 @@ Servicio: $services
 
                   const SizedBox(height: 16),
 
-                  // ✅ FECHA Y HORA (refactorizado)
+                  // FECHA Y HORA (refactorizado)
                   CustomInfoCard.white(
                     icon: Icons.calendar_today_rounded,
                     iconColor: const Color(0xFF7C3AED),
@@ -452,7 +452,7 @@ Servicio: $services
 
                   const SizedBox(height: 16),
 
-                  // ✅ EMPLEADO/STAFF (refactorizado)
+                  // EMPLEADO/STAFF (refactorizado)
                   CustomInfoCard.white(
                     icon: Icons.person_outline_rounded,
                     iconColor: const Color(0xFF3B82F6),
@@ -462,7 +462,7 @@ Servicio: $services
 
                   const SizedBox(height: 16),
 
-                  // ✅ ESTADO (refactorizado)
+                  // ESTADO (refactorizado)
                   CustomInfoCard.white(
                     icon: Icons.info_rounded,
                     iconColor: _getStatusColor(_selectedStatus),
@@ -478,7 +478,7 @@ Servicio: $services
 
                   const SizedBox(height: 16),
 
-                  // ✅ SERVICIOS (refactorizado)
+                  // SERVICIOS (refactorizado)
                   CustomInfoCard.white(
                     icon: Icons.spa_rounded,
                     iconColor: const Color(0xFF7C3AED),
@@ -488,7 +488,7 @@ Servicio: $services
 
                   const SizedBox(height: 16),
 
-                  // ✅ NOTAS (refactorizado)
+                  //  NOTAS (refactorizado)
                   CustomInfoCard.white(
                     icon: Icons.notes_rounded,
                     iconColor: const Color(0xFFF59E0B),

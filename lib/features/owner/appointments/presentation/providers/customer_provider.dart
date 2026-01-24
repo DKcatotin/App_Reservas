@@ -1,10 +1,9 @@
-import 'package:agenda_app/core/di/app_dependencies.dart';
+import 'package:agenda_app/core/logger/app_logger.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/customer/customers_datasource.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/customer.dart';
-import '../../data/sources/customer/customers_datasource.dart';
-import 'package:logger/logger.dart';
+import '../../../../../core/di/app_dependencies.dart'; // ← IMPORTAR
 
-final logger = Logger();
 /// Customer state
 class CustomerState {
   final Customer? customer;
@@ -38,35 +37,38 @@ class CustomerNotifier extends StateNotifier<CustomerState> {
 
   /// Search customer by tax identification
   Future<void> searchByTaxIdentification(String taxIdentification) async {
-  logger.d('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification'); // DEBUG
-  state = CustomerState(isLoading: true);
+    AppLogger.d('🔵 [PROVIDER] Buscando customer por cédula: $taxIdentification');
+    state = CustomerState(isLoading: true);
 
-  try {
-    logger.d('🔵 [PROVIDER] Llamando datasource...'); // DEBUG
-    final customerFound = await datasource.getByTaxIdentification(taxIdentification);
-    logger.d('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}'); // DEBUG
+    try {
+      AppLogger.d('🔵 [PROVIDER] Llamando datasource...');
+      
+      final customerFound = await datasource.getByTaxIdentification(taxIdentification);
+      AppLogger.d('🔵 [PROVIDER] Resultado: ${customerFound?.fullName ?? "null"}');
 
-    if (customerFound != null) {
-      state = CustomerState(customer: customerFound);
-    } else {
-      state = CustomerState(error: 'Cliente no encontrado');
+      if (customerFound != null) {
+        state = CustomerState(customer: customerFound);
+      } else {
+        state = CustomerState(error: 'Cliente no encontrado');
+      }
+    } catch (e, stackTrace) {
+      AppLogger.d('🔴 [PROVIDER] Error: $e');
+      AppLogger.d('🔴 [PROVIDER] StackTrace: $stackTrace');
+      state = CustomerState(error: 'Error al buscar cliente: $e');
     }
-  } catch (e, stackTrace) {
-    logger.d('🔴 [PROVIDER] Error: $e'); // DEBUG
-    logger.d('🔴 [PROVIDER] StackTrace: $stackTrace'); // DEBUG
-    state = CustomerState(error: 'Error al buscar cliente: $e');
   }
-}
+
   /// Clear state
   void clear() {
     state = CustomerState();
   }
 }
 
-/// Datasource provider - Usa implementación local directamente
+// ✅ SOLUCIÓN: Usar el datasource de AppDependencies
 final customersDatasourceProvider = Provider<CustomersDatasource>((ref) {
-  return AppDependencies().customersDatasource; // ✅ Remote desde DI real
+  return AppDependencies().customersDatasource; // ← USAR DI
 });
+
 /// Customer state provider
 final customerProvider =
     StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {

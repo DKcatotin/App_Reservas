@@ -1,11 +1,11 @@
 // lib/features/owner/catalogues/presentation/widgets/staff_selector.dart
 
 import 'package:flutter/material.dart';
-import '../../data/models/staff.dart'; // ✅ USAR Staff, no StaffEntity
+import '../../data/models/staff.dart'; 
 
 /// Widget reutilizable para seleccionar staff
 class StaffSelector extends StatelessWidget {
-  final List<Staff> staffList; // ✅ List<Staff>
+  final List<Staff> staffList; 
   final String? selectedStaffId;
   final Function(String?) onChanged;
   final bool allowNull;

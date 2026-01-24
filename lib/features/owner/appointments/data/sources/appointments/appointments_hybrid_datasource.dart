@@ -17,10 +17,10 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
 
-    final all = await json.getAll(); // ✅ List<Appointment>
+    final all = await json.getAll(); //  List<Appointment>
 
     for (final a in all) {
-      await memory.create(a); // ✅ Guardar en memoria
+      await memory.create(a); //  Guardar en memoria
     }
 
     _loaded = true;
@@ -29,7 +29,7 @@ class AppointmentsHybridDatasource implements AppointmentsDatasource {
   @override
   Future<List<Appointment>> getAll() async {
     await _ensureLoaded();
-    return memory.getAll(); // ✅ devolver desde memoria
+    return memory.getAll(); //  devolver desde memoria
   }
 
   @override

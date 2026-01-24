@@ -1,34 +1,33 @@
+import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/customer.dart';
-import '../../providers/customer_provider.dart';
 
 class CustomerSearchPage extends ConsumerStatefulWidget {
   const CustomerSearchPage({super.key});
 
   @override
-  ConsumerState<CustomerSearchPage> createState() =>
-      _CustomerSearchPageState();
+  ConsumerState<CustomerSearchPage> createState() => _CustomerSearchPageState();
 }
 
 class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
   final _taxIdController = TextEditingController();
   bool _searched = false;
 
-   @override
+  @override
   void dispose() {
     _taxIdController.dispose();
     super.dispose();
   }
-
 
   Future<void> _searchCustomer() async {
     final taxId = _taxIdController.text.trim();
 
     if (taxId.isEmpty || taxId.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingrese una cédula válida de 10 dígitos')),
+        const SnackBar(
+            content: Text('Ingrese una cédula válida de 10 dígitos')),
       );
       return;
     }
@@ -143,18 +142,25 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.badge, 'Cédula', customer.taxIdentification ?? 'N/A'),
-            _buildInfoRow(Icons.person, 'Nombre', customer.fullName ?? 'Sin nombre'),
+            _buildInfoRow(
+                Icons.badge, 'Cédula', customer.taxIdentification ?? 'N/A'),
+            _buildInfoRow(
+                Icons.person, 'Nombre', customer.fullName ?? 'Sin nombre'),
             _buildInfoRow(Icons.phone, 'Celular', customer.phone ?? 'N/A'),
             if (customer.email != null)
               _buildInfoRow(Icons.email, 'Email', customer.email!),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () {
-                // Pasar el cliente seleccionado a la página de citas
-                context.push('/owner/citas', extra: customer);
+              onPressed: () async {
+                final result =
+                    await context.push('/owner/citas', extra: customer);
+
+                if (result == true && mounted) {
+                  ref.read(customerProvider.notifier).clear();
+                  _taxIdController.clear();
+                  setState(() => _searched = false);
+                }
               },
-              icon: const Icon(Icons.check),
               label: const Text('Seleccionar este cliente'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,

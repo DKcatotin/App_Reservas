@@ -92,7 +92,7 @@ void _validateInput(CreateAppointmentInput input) {
     throw ArgumentError('La fecha de inicio no puede ser en el pasado');
   }
 }
-
+/*
   /// Mapea el código de source a un nombre legible
   String _getSourceName(String code) {
     switch (code) {
@@ -110,4 +110,5 @@ void _validateInput(CreateAppointmentInput input) {
         return 'Desconocido';
     }
   }
+  */
 }

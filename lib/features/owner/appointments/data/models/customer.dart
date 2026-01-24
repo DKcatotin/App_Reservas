@@ -1,7 +1,6 @@
+import 'package:agenda_app/core/logger/app_logger.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
-import 'package:logger/logger.dart';
 
-Logger logger = Logger();
 
 class Customer {
   final String id;
@@ -27,7 +26,7 @@ class Customer {
   });
 
 factory Customer.fromJson(Map<String, dynamic> json) {
-  logger.d('🔍 [MODEL] Parseando customer: ${json.toString()}');
+  AppLogger.d('[MODEL] Parseando customer: ${json.toString()}');
 
   final user = json['user'] as Map<String, dynamic>?;
 

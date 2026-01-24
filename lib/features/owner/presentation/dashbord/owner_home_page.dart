@@ -527,7 +527,7 @@ Future<void> _loadServicios() async {
     );
   }
 
-Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointment → AppointmentEntity
+Widget _buildPremiumCitaCard(AppointmentEntity cita) { 
   final time = TimeOfDay.fromDateTime(cita.startAt).format(context);
   final serviceName = cita.services.isNotEmpty ? cita.services.first.name : 'Sin servicio';
   final statusColor = _getStatusColor(cita.status.name);
@@ -549,7 +549,7 @@ Widget _buildPremiumCitaCard(AppointmentEntity cita) { // ✅ CAMBIO: Appointmen
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
-          // ✅ CORRECCIÓN: Navegar al detalle con la cita
+          //Navegar al detalle con la cita
           await context.push(
             '/owner/appointments/${cita.id}',
             extra: cita, // Ya es AppointmentEntity

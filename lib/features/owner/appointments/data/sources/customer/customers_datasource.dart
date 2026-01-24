@@ -5,7 +5,7 @@ abstract class CustomersDatasource {
   Future<List<Customer>> getAll();
   Future<Customer?> getByTaxIdentification(String taxIdentification);
   Future<Customer?> getById(String id);
-  Future<Customer> create(Customer customer);
-  Future<Customer> update(Customer customer);
-  Future<void> delete(String id);
+  //Future<Customer> create(Customer customer);
+  //Future<Customer> update(Customer customer);
+  //Future<void> delete(String id);
 }

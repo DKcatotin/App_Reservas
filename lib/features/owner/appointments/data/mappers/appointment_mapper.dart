@@ -10,7 +10,7 @@ import 'package:agenda_app/features/owner/appointments/data/models/customer.dart
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
 
 class AppointmentMapper {
-  // ✅ FIX: customer puede venir "plano" o dentro de {customer: {...}}
+  // FIX: customer puede venir "plano" o dentro de {customer: {...}}
   static Customer customerFromJson(dynamic json) {
     if (json == null) {
       // aquí tú decides si quieres lanzar error o devolver vacío
@@ -43,7 +43,7 @@ class AppointmentMapper {
     throw Exception('Formato inválido para customer: $json');
   }
 
-  /// ✅ MODEL -> ENTITY
+  /// MODEL -> ENTITY
   static AppointmentEntity toEntity(Appointment model) {
     return AppointmentEntity(
       id: model.id,
@@ -74,7 +74,7 @@ class AppointmentMapper {
     );
   }
 
-  /// ✅ ENTITY -> MODEL
+  /// ENTITY -> MODEL
   static Appointment toModel(AppointmentEntity entity) {
     return Appointment(
       id: entity.id,

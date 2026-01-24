@@ -48,7 +48,7 @@ class _ClienteFormPageState extends ConsumerState<ClienteFormPage> {
   if (mounted && clienteCreado != null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ Cliente creado exitosamente'),
+        content: Text(' Cliente creado exitosamente'),
         backgroundColor: Colors.green,
       ),
     );

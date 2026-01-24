@@ -13,11 +13,11 @@ class AppointmentDateTimeSection extends StatelessWidget {
   final VoidCallback? onStartTimeTap;
 
   const AppointmentDateTimeSection({
-    super.key, // ✅ AGREGADO: key parameter
-    required this.date, // ✅ AGREGADO: required
-    required this.startTime, // ✅ AGREGADO: required
-    required this.endTime, // ✅ AGREGADO: required
-    required this.isEditing, // ✅ AGREGADO: required
+    super.key, 
+    required this.date, 
+    required this.startTime, 
+    required this.endTime, 
+    required this.isEditing, 
     this.onDateTap,
     this.onStartTimeTap,
   });

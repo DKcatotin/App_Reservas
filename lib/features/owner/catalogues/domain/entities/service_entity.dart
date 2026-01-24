@@ -16,7 +16,7 @@ class ServiceEntity {
     this.description,
     required this.durationMin,
     required this.basePrice,
-    required this.enabled, // ✅ Está bien como required
+    required this.enabled, 
   });
 
   Duration get duration => Duration(minutes: durationMin);

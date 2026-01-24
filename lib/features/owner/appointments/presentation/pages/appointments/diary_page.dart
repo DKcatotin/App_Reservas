@@ -120,7 +120,7 @@ class _DiaryPageState extends State<DiaryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Cita actualizada exitosamente'),
+            content: Text(' Cita actualizada exitosamente'),
             backgroundColor: Colors.green,
           ),
         );
@@ -151,7 +151,7 @@ class _DiaryPageState extends State<DiaryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Cita eliminada exitosamente'),
+            content: Text(' Cita eliminada exitosamente'),
             backgroundColor: Colors.orange,
           ),
         );

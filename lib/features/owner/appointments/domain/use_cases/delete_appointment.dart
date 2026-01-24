@@ -1,3 +1,5 @@
+import 'package:agenda_app/core/logger/app_logger.dart';
+
 import '../entities/appointment_entity.dart';
 import '../repositories/appointments_repository.dart';
 
@@ -65,7 +67,7 @@ class DeleteAppointmentUseCase {
     final hoursUntilAppointment = appointment.startAt.difference(DateTime.now()).inHours;
     if (hoursUntilAppointment < 2 && hoursUntilAppointment > 0) {
       // Podrías lanzar una excepción o solo hacer un log
-      print(' Advertencia: Eliminando cita que comienza en menos de 2 horas');
+      AppLogger.d(' Advertencia: Eliminando cita que comienza en menos de 2 horas');
     }
   }
 

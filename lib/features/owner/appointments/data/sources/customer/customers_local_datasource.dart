@@ -42,7 +42,7 @@ class CustomersLocalDatasource implements CustomersDatasource {
       return null;
     }
   }
-
+/*
   @override
   Future<Customer> create(Customer customer) async {
     final customers = await getAll();
@@ -68,4 +68,5 @@ class CustomersLocalDatasource implements CustomersDatasource {
     customers.removeWhere((c) => c.id == id);
     _cache = customers;
   }
+  */
 }

@@ -89,14 +89,14 @@ class AppointmentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            a.customer.fullName ?? 'Sin nombre',  // ✅ CORRECCIÓN línea 92
+            a.customer.fullName ?? 'Sin nombre',  
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           Text(
-            a.customer.phone ?? 'Sin teléfono',  // ✅ CORRECCIÓN línea 99
+            a.customer.phone ?? 'Sin teléfono',  
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],

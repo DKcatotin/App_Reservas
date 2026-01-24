@@ -237,7 +237,7 @@ Widget _buildAppointmentCard(AppointmentEntity appointment) {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        appointment.customer.fullName ?? 'Sin nombre',  // ✅ CORRECCIÓN
+        appointment.customer.fullName ?? 'Sin nombre',  
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,

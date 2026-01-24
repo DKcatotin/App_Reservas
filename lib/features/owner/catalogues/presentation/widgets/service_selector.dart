@@ -12,7 +12,7 @@ class ServiceSelector extends StatelessWidget {
   final bool showPrices;
 
   const ServiceSelector({
-    super.key, // ✅ AGREGADO
+    super.key, 
     required this.services,
     required this.selectedIds,
     required this.onToggle,

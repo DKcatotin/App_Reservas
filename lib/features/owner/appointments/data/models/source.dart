@@ -27,7 +27,7 @@ class Source {
     };
   }
 
-  // ✅ MODEL → ENTITY
+  // MODEL → ENTITY
   SourceEntity toEntity() {
     return SourceEntity(
       id: id,
@@ -36,7 +36,7 @@ class Source {
     );
   }
 
-  // ✅ ENTITY → MODEL
+  // ENTITY → MODEL
   factory Source.fromEntity(SourceEntity entity) {
     return Source(
       id: entity.id,

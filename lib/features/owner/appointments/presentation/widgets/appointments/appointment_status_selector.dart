@@ -11,9 +11,9 @@ class AppointmentStatusSelector extends StatelessWidget {
   final List<String> availableStatuses;
 
   const AppointmentStatusSelector({
-    super.key, // ✅ AGREGADO: key parameter
-    required this.status, // ✅ AGREGADO: required
-    required this.isEditing, // ✅ AGREGADO: required
+    super.key, 
+    required this.status, 
+    required this.isEditing, 
     this.onChanged,
     this.availableStatuses = const ['Confirmada', 'Pendiente', 'Cancelada'],
   });
@@ -30,7 +30,7 @@ class AppointmentStatusSelector extends StatelessWidget {
   /// Dropdown para editar el estado
   Widget _buildStatusDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: status, // ✅ CORREGIDO: 'initialValue' en vez de 'value'
+      initialValue: status, 
       decoration: InputDecoration(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -69,7 +69,7 @@ class AppointmentStatusSelector extends StatelessWidget {
         );
       }).toList(),
       onChanged: (String? value) {
-        // ✅ CORREGIDO: manejar nullable String? y llamar onChanged correctamente
+        // manejo de nullable a string
         if (value != null && onChanged != null) {
           onChanged!(value);
         }

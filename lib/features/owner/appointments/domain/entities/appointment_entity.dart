@@ -10,7 +10,7 @@ part 'appointment_entity.freezed.dart';
 
 @freezed
 class AppointmentEntity with _$AppointmentEntity {
-  const AppointmentEntity._(); // ✅ para poder tener getters (lógica)
+  const AppointmentEntity._(); //  para poder tener getters (lógica)
 
   const factory AppointmentEntity({
     required String id,
@@ -27,7 +27,7 @@ class AppointmentEntity with _$AppointmentEntity {
     required List<ServiceEntity> services,
   }) = _AppointmentEntity;
 
-  // ✅ lógica de negocio sigue existiendo normal
+  // lógica de negocio sigue existiendo normal
   Duration get totalDuration => endAt.difference(startAt);
   bool get isPast => endAt.isBefore(DateTime.now());
   bool get isFuture => startAt.isAfter(DateTime.now());
