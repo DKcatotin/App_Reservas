@@ -9,7 +9,8 @@ class CreateAppointmentUseCase {
 
   CreateAppointmentUseCase(this.repository);
 
-  /// Crear una nueva cita
+  /// Crear una nueva cita SIN servicios
+  /// Los servicios se asignan después cuando se EDITA la cita
   Future<void> call(CreateAppointmentInput input) async {
     // 1. Validar input
     _validateInput(input);
@@ -18,27 +19,23 @@ class CreateAppointmentUseCase {
     final notes = input.notes?.trim();
     final cleanNotes = (notes == null || notes.isEmpty) ? null : notes;
 
-    // 3. Calcular duración total de los servicios
-    final int totalMinutes =
-        input.services.fold(0, (sum, s) => sum + s.durationMin);
-
-    // 4. Crear entidad Appointment
+    // 3. Crear entidad Appointment SIN servicios
     final appointment = AppointmentEntity(
       id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
-      branch: input.branch,  // ← Usar input.branch
+      branch: input.branch,
       customerId: input.customerId,
-      staffProfileId: null,
+      staffProfileId: null,  // Sin staff al crear
       startAt: input.startAt,
-      endAt: input.startAt.add(Duration(minutes: totalMinutes)),
+      endAt: input.endAt,  // ✅ Ya viene calculado
       notes: cleanNotes,
-      status: StatusEntity.pending,  // ← Constante, no función
+      status: StatusEntity.pending,
       source: input.source,
       customer: input.customer,
       staff: null,
-      services: input.services,
+      services: [],  // ✅ VACÍO al crear
     );
 
-    // 5. Guardar en repositorio
+    // 4. Guardar en repositorio
     AppLogger.d('[USE_CASE] Creando appointment: ${appointment.id}');
     await repository.create(appointment);
     AppLogger.d('[USE_CASE] Appointment creado exitosamente');
@@ -49,12 +46,12 @@ class CreateAppointmentUseCase {
       throw ArgumentError('El cliente es requerido');
     }
 
-    if (input.services.isEmpty) {
-      throw ArgumentError('Debe seleccionar al menos un servicio');
-    }
-
     if (input.startAt.isBefore(DateTime.now())) {
       throw ArgumentError('La fecha de inicio no puede ser en el pasado');
+    }
+
+    if (input.endAt.isBefore(input.startAt)) {
+      throw ArgumentError('La fecha de fin debe ser después de la fecha de inicio');
     }
 
     if (input.source.id.isEmpty) {

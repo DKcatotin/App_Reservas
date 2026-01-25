@@ -38,14 +38,11 @@ class AppointmentCard extends StatelessWidget {
             ),
           );
 
-          //  CORRECCIÓN: Manejar la cita actualizada
           if (result != null) {
             if (result is AppointmentEntity && onAppointmentUpdated != null) {
-              // Si devolvió una cita actualizada, llamar al callback
               await onAppointmentUpdated!(result);
             } else if (result is bool && result == true && onAppointmentDeleted != null) {
-              // Si devolvió true (eliminada), ya se manejó en el detail page
-              // No necesitas hacer nada aquí porque el callback ya fue llamado
+              // Eliminada - ya se manejó
             }
           }
         },
@@ -76,64 +73,94 @@ class AppointmentCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              /// CLIENTE
+              /// CLIENTE - ✅ CORRECCIÓN AQUÍ
               Row(
-  children: [
-    const CircleAvatar(
-      radius: 20,
-      child: Icon(Icons.person),
-    ),
-    const SizedBox(width: 12),
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            a.customer.fullName ?? 'Sin nombre',  
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            a.customer.phone ?? 'Sin teléfono',  
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
+                children: [
+                  const CircleAvatar(
+                    radius: 20,
+                    child: Icon(Icons.person),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ✅ Usar customer.fullName en lugar de a.customer.fullName directamente
+                        Text(
+                          a.customer.fullName ?? 'Sin nombre',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        // ✅ Usar customer.phone en lugar de a.customer.phone directamente
+                        Text(
+                          a.customer.phone ?? 'Sin teléfono',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
 
-              /// SERVICIOS
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: a.services.map((s) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      '${s.name} (${s.durationMin}m)',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF8B5CF6),
-                        fontWeight: FontWeight.w500,
+              /// SERVICIOS - Mostrar solo si existen
+              if (a.services.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: a.services.map((s) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${s.name} (${s.durationMin}m)',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF8B5CF6),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                )
+              else
+                // ✅ Mostrar mensaje si no hay servicios
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.info_outline, size: 14, color: Colors.orange[700]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Sin servicios asignados',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange[900],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               /// STAFF (si existe)
               if (a.staff != null) ...[
@@ -225,14 +252,14 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Color _getStatusColor(String statusCode) {
-    switch (statusCode) {
-      case 'pending':
+    switch (statusCode.toUpperCase()) {
+      case 'PENDING':
         return Colors.orange;
-      case 'confirmed':
+      case 'CONFIRMED':
         return Colors.blue;
-      case 'completed':
+      case 'COMPLETED':
         return Colors.green;
-      case 'cancelled':
+      case 'CANCELLED':
         return Colors.red;
       default:
         return Colors.grey;

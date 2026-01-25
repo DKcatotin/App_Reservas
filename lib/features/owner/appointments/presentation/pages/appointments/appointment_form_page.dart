@@ -4,7 +4,6 @@ import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appo
 import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
-import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,8 +20,7 @@ class AppointmentFormPage extends ConsumerStatefulWidget {
 class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
-
-  final List<ServiceEntity> _selectedServices = [];
+  final _durationController = TextEditingController(text: '60');  // ✅ Duración en minutos
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -33,7 +31,6 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   @override
   void initState() {
     super.initState();
-    // Cargar servicios y sources al abrir la página
     Future.microtask(() {
       ref.read(appointmentFormProvider).loadData();
     });
@@ -42,102 +39,103 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   @override
   void dispose() {
     _notesController.dispose();
+    _durationController.dispose();
     super.dispose();
   }
 
-  /// Guardar la cita
+  /// Guardar la cita SIN servicios
   Future<void> _saveAppointment() async {
-  if (_isSaving) return;
+    if (_isSaving) return;
 
-  // ✅ OBTENER customer del provider
-  final customerState = ref.read(customerProvider);
+    // ✅ OBTENER customer del provider
+    final customerState = ref.read(customerProvider);
 
-  if (customerState.customer == null) {
-    _showError('Debe seleccionar un cliente');
-    return;
+    if (customerState.customer == null) {
+      _showError('Debe seleccionar un cliente');
+      return;
+    }
+
+    if (_selectedSource == null) {
+      _showError('Debe seleccionar una fuente de cita');
+      return;
+    }
+
+    // ✅ Validar duración
+    final duration = int.tryParse(_durationController.text.trim());
+    if (duration == null || duration <= 0) {
+      _showError('Ingrese una duración válida en minutos');
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final customer = customerState.customer!;
+      
+      final startAt = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      // ✅ Calcular endAt con la duración ingresada
+      final endAt = startAt.add(Duration(minutes: duration));
+
+      debugPrint('📍 Customer ID: ${customer.id}');
+      debugPrint('📍 Source: ${_selectedSource!.name} (${_selectedSource!.id})');
+      debugPrint('📍 Duración: $duration minutos');
+      debugPrint('📍 Start: $startAt');
+      debugPrint('📍 End: $endAt');
+
+      final input = CreateAppointmentInput(
+        customerId: customer.id,
+        customer: CustomerEntity(
+          id: customer.id,
+          userId: customer.userId,
+          referredBy: customer.referredBy,
+          taxIdentification: customer.taxIdentification,
+          taxName: customer.taxName,
+          fullName: customer.fullName,
+          phone: customer.phone,
+          email: customer.email,
+          allergies: customer.allergies,
+        ),
+        startAt: startAt,
+        endAt: endAt,  // ✅ Enviar endAt calculado
+        source: _selectedSource!,
+        branch: const BranchEntity(
+          id: "0859edd6-9b10-41b7-8503-20352a4d8c68",
+          name: "Sucursal Centro",
+          phone: "+593987654321",
+          email: "centro@empresa.com",
+          address: "Av. Amazonas y Naciones Unidas",
+          city: "Quito",
+          enabled: true,
+        ),
+        notes: _notesController.text,
+      );
+
+      await ref.read(appointmentFormProvider).createAppointment(input);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Cita creada exitosamente. Ahora puedes asignar servicios editándola.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      context.pop(true);
+    } catch (e) {
+      _showError('Error al crear la cita: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
-
-  if (_selectedServices.isEmpty) {
-    _showError('Debe seleccionar al menos un servicio');
-    return;
-  }
-
-  if (_selectedSource == null) {
-    _showError('Debe seleccionar una fuente de cita');
-    return;
-  }
-
-  setState(() => _isSaving = true);
-
-  try {
-    final customer = customerState.customer!;
-    
-    final startAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
-
-    // Calcular duración total
-    final totalDurationMin = _selectedServices.fold<int>(
-      0,
-      (sum, service) => sum + service.durationMin,
-    );
-    final endAt = startAt.add(Duration(minutes: totalDurationMin));
-    debugPrint('📍 Customer ID: ${customer.id}');
-    debugPrint('📍 Source selected: ${_selectedSource!.name}');
-    debugPrint('📍 Source ID (UUID): ${_selectedSource!.id}');
-    debugPrint('📍 Source SORT (número): ${_selectedSource!.sort}');
-final input = CreateAppointmentInput(
-  customerId: customer.id,
-  customer: CustomerEntity(
-    id: customer.id,
-    userId: customer.userId,
-    referredBy: customer.referredBy,
-    taxIdentification: customer.taxIdentification,
-    taxName: customer.taxName,
-    fullName: customer.fullName,
-    phone: customer.phone,
-    email: customer.email,
-    allergies: customer.allergies,
-  ),
-  startAt: startAt,
-  services: _selectedServices,
-  source: _selectedSource!,
-  branch: const BranchEntity(
-    id: "0859edd6-9b10-41b7-8503-20352a4d8c68",
-    name: "Sucursal Centro",
-    phone: "+593987654321",
-    email: "centro@empresa.com",
-    address: "Av. Amazonas y Naciones Unidas",
-    city: "Quito",
-    enabled: true,
-  ),
-  notes: _notesController.text,
-);
-
-await ref.read(appointmentFormProvider).createAppointment(input);
-
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ Cita creada exitosamente'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    context.pop(true);
-  } catch (e) {
-    _showError('Error al crear la cita: $e');
-  } finally {
-    if (mounted) setState(() => _isSaving = false);
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -197,8 +195,27 @@ await ref.read(appointmentFormProvider).createAppointment(input);
             _buildDateTimeSelector(),
             const SizedBox(height: 16),
 
-            // Servicios
-            _buildServicesSelector(formState.services),
+            // ✅ Duración estimada
+            TextFormField(
+              controller: _durationController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Duración estimada (minutos)',
+                border: OutlineInputBorder(),
+                hintText: 'Ej: 60, 90, 120',
+                prefixIcon: Icon(Icons.timer),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Ingrese la duración';
+                }
+                final duration = int.tryParse(value);
+                if (duration == null || duration <= 0) {
+                  return 'Duración inválida';
+                }
+                return null;
+              },
+            ),
             const SizedBox(height: 16),
 
             // Fuente de cita
@@ -213,6 +230,32 @@ await ref.read(appointmentFormProvider).createAppointment(input);
                 labelText: 'Notas',
                 border: OutlineInputBorder(),
                 hintText: 'Ej: Cliente nuevo, preferencias especiales...',
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // ✅ AVISO
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Los servicios se asignan después de crear la cita',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[900],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -319,9 +362,9 @@ await ref.read(appointmentFormProvider).createAppointment(input);
     );
   }
 
-  /// Widget: Selector de servicios
-  Widget _buildServicesSelector(List<ServiceEntity> services) {
-    if (services.isEmpty) {
+  /// Widget: Selector de fuente de cita
+  Widget _buildSourceSelector(List<SourceEntity> sources) {
+    if (sources.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -329,7 +372,7 @@ await ref.read(appointmentFormProvider).createAppointment(input);
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Text(
-          'No hay servicios disponibles',
+          'No hay fuentes disponibles',
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -339,80 +382,31 @@ await ref.read(appointmentFormProvider).createAppointment(input);
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Servicios',
+          'Fuente de Cita',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        ...services.map((service) {
-          final isSelected =
-              _selectedServices.any((s) => s.id == service.id);
-
-          return CheckboxListTile(
-            title: Text(service.name),
-            subtitle: Text(
-              '${service.durationMin} min • \$${service.basePrice.toStringAsFixed(2)}',
+        ...sources.map((source) {
+          final isSelected = _selectedSource?.id == source.id;
+          
+          return ListTile(
+            leading: Radio<String>(
+              value: source.id,
+              groupValue: _selectedSource?.id,
+              onChanged: (value) {
+                setState(() => _selectedSource = source);
+              },
             ),
-            value: isSelected,
-            onChanged: (checked) {
-              setState(() {
-                if (checked == true) {
-                  _selectedServices.add(service);
-                } else {
-                  _selectedServices.removeWhere((s) => s.id == service.id);
-                }
-              });
+            title: Text(source.name),
+            subtitle: Text(source.description ?? ''),
+            onTap: () {
+              setState(() => _selectedSource = source);
             },
           );
-        }).toList(),
+        }),
       ],
     );
   }
-
-  /// Widget: Selector de fuente de cita
- Widget _buildSourceSelector(List<SourceEntity> sources) {
-  if (sources.isEmpty) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Text(
-        'No hay fuentes disponibles',
-        style: TextStyle(color: Colors.grey),
-      ),
-    );
-  }
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Fuente de Cita',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 8),
-      ...sources.map((source) {
-        final isSelected = _selectedSource?.id == source.id;
-        
-        return ListTile(
-          leading: Radio<String>(
-            value: source.id,
-            groupValue: _selectedSource?.id,
-            onChanged: (value) {
-              setState(() => _selectedSource = source);
-            },
-          ),
-          title: Text(source.name),
-          subtitle: Text(source.description ?? ''),
-          onTap: () {
-            setState(() => _selectedSource = source);
-          },
-        );
-      }),
-    ],
-  );
-}
 
   /// Mostrar error
   void _showError(String message) {

@@ -1,5 +1,6 @@
 // lib/features/owner/appointments/presentation/pages/appointment_detail_page.dart
 import 'dart:convert';
+import 'package:agenda_app/features/owner/catalogues/presentation/provider/services_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/widgets/custom_info_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -75,7 +76,6 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     super.initState();
     _initializeData();
     _initializeUseCases();
-    _loadServices();
   }
 
   void _initializeData() {
@@ -101,6 +101,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadStaffFromProvider();
+     _loadServicesFromProvider();
   }
 
   void _loadStaffFromProvider() {
@@ -111,28 +112,36 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
       }
     });
   }
-
-  Future<void> _loadServices() async {
-    setState(() => _isLoadingServices = true);
-
-    try {
-      final String jsonString = await rootBundle.loadString(
-        'assets/data/owner/catalogues/services_mock.json',
-      );
-      final List<dynamic> jsonList = json.decode(jsonString);
-
-      setState(() {
-        _allServices = jsonList
-            .map((json) => Service.fromJson(json).toEntity())
-            .toList();
-        _isLoadingServices = false;
-      });
-    } catch (e) {
-      debugPrint('Error cargando servicios: $e');
-      setState(() => _isLoadingServices = false);
-    }
-  }
-
+void _loadServicesFromProvider() {
+  final servicesAsync = ref.watch(servicesListProvider);
+  
+  servicesAsync.when(
+    data: (list) {
+      if (mounted && _allServices.isEmpty) {
+        setState(() {
+          _allServices = list.map((s) => s.toEntity()).toList();
+          _isLoadingServices = false;
+        });
+      }
+    },
+    loading: () {
+      if (mounted) {
+        setState(() => _isLoadingServices = true);
+      }
+    },
+    error: (error, stack) {
+      if (mounted) {
+        setState(() => _isLoadingServices = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar servicios: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    },
+  );
+}
   void _recalculateEndTime() {
     if (_selectedServices.isEmpty) return;
 
@@ -607,6 +616,9 @@ Future<void> _saveChanges() async {
   }
 
   /// Widget para la sección de servicios
+  // Continuación de _buildServicesSection() - MODO VISUALIZACIÓN MEJORADO
+
+  /// Widget para la sección de servicios
   Widget _buildServicesSection() {
     if (_isEditing) {
       if (_isLoadingServices) {
@@ -638,7 +650,63 @@ Future<void> _saveChanges() async {
       );
     }
 
-    // Modo visualización
+    // ✅ MODO VISUALIZACIÓN - Mejorado
+    if (_selectedServices.isEmpty) {
+      // Si no hay servicios asignados
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.orange[200]!,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.orange[700],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Sin servicios asignados',
+                    style: TextStyle(
+                      color: Colors.orange[900],
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() => _isEditing = true);
+                },
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Asignar servicios'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Si hay servicios asignados
     return Column(
       children: _selectedServices.map((service) {
         return Container(

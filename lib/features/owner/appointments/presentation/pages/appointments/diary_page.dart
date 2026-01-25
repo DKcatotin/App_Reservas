@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../widgets/appointments/appointment_card.dart';
 
-
 class DiaryPage extends StatefulWidget {
   final AppointmentsRepositoryImpl repo;
 
@@ -24,12 +23,10 @@ class DiaryPage extends StatefulWidget {
 }
 
 class _DiaryPageState extends State<DiaryPage> {
-  // Use Cases
   late final GetAppointmentsByDayUseCase _getAppointmentsByDayUseCase;
   late final UpdateAppointmentUseCase _updateAppointmentUseCase;
   late final DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
-  // State
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   List<AppointmentEntity> _allAppointments = [];
@@ -40,7 +37,6 @@ class _DiaryPageState extends State<DiaryPage> {
   void initState() {
     super.initState();
     
-    //  Inicializar Use Cases
     _getAppointmentsByDayUseCase = GetAppointmentsByDayUseCase(widget.repo);
     _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repo);
     _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repo);
@@ -51,42 +47,35 @@ class _DiaryPageState extends State<DiaryPage> {
 
   /// Carga todas las citas
   Future<void> _loadAllAppointments() async {
-  setState(() => _isLoading = true);
-  
-  try {
-    //  CORRECCIÓN: Invalidar caché antes de cargar
-    // Forzar recarga desde datasource
+    setState(() => _isLoading = true);
     
-    final all = await widget.repo.getAll();
-    
-    //  Eliminar duplicados basándose en el ID
-  
-    
-    setState(() {
-      _allAppointments =all;
-      _isLoading = false;
-    });
-    
-    await _loadAppointmentsForSelectedDay();
-  } catch (e) {
-    setState(() => _isLoading = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar citas: $e')),
-      );
+    try {
+      // ✅ Invalidar caché del repositorio
+      widget.repo.invalidateCache();
+      
+      final all = await widget.repo.getAll();
+      
+      setState(() {
+        _allAppointments = all;
+        _isLoading = false;
+      });
+      
+      await _loadAppointmentsForSelectedDay();
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar citas: $e')),
+        );
+      }
     }
   }
-}
 
   /// Carga citas del día seleccionado
   Future<void> _loadAppointmentsForSelectedDay() async {
     final day = _selectedDay ?? DateTime.now();
     
-    // Usar use case
     final items = await _getAppointmentsByDayUseCase.call(day);
-    
-    // Eliminar duplicados también aquí por ID
-  
     
     setState(() {
       _filteredAppointments = items;
@@ -101,13 +90,10 @@ class _DiaryPageState extends State<DiaryPage> {
     return items;
   }
 
-  /// Maneja actualización de una cita
   Future<void> _handleAppointmentUpdated(AppointmentEntity updated) async {
     try {
-      //  Usar use case para actualizar
       await _updateAppointmentUseCase.call(updated);
       
-      // Actualizar UI local
       setState(() {
         final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
         if (allIndex != -1) _allAppointments[allIndex] = updated;
@@ -120,7 +106,7 @@ class _DiaryPageState extends State<DiaryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(' Cita actualizada exitosamente'),
+            content: Text('✅ Cita actualizada exitosamente'),
             backgroundColor: Colors.green,
           ),
         );
@@ -137,10 +123,8 @@ class _DiaryPageState extends State<DiaryPage> {
     }
   }
 
-  /// Maneja eliminación de una cita
   Future<void> _handleAppointmentDeleted(String id) async {
     try {
-      //  Usar use case para eliminar
       await _deleteAppointmentUseCase.call(id);
 
       setState(() {
@@ -151,7 +135,7 @@ class _DiaryPageState extends State<DiaryPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(' Cita eliminada exitosamente'),
+            content: Text('✅ Cita eliminada exitosamente'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -181,7 +165,6 @@ class _DiaryPageState extends State<DiaryPage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                /// CALENDARIO
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -193,7 +176,7 @@ class _DiaryPageState extends State<DiaryPage> {
                       ),
                     ],
                   ),
-                  child:TableCalendar<AppointmentEntity>(
+                  child: TableCalendar<AppointmentEntity>(
                     firstDay: DateTime.utc(2024, 1, 1),
                     lastDay: DateTime.utc(2026, 12, 31),
                     focusedDay: _focusedDay,
@@ -239,7 +222,6 @@ class _DiaryPageState extends State<DiaryPage> {
                   ),
                 ),
 
-                /// LISTA
                 Expanded(
                   child: _filteredAppointments.isEmpty
                       ? _buildEmptyState()
@@ -265,31 +247,30 @@ class _DiaryPageState extends State<DiaryPage> {
                 ),
               ],
             ),
-floatingActionButton: FloatingActionButton.extended(
-  onPressed: () async {
-    //  Navegar a búsqueda de cliente
-    final result = await context.push('/owner/appointments/cliente/buscar');  // ✅ Capturar resultado
-    
-    //  Recargar citas si se creó una nueva
-    if (mounted) {
-      await _loadAllAppointments();  // ✅ Recargar siempre al volver
-      
-      // ✅ OPCIONAL: Mostrar mensaje solo si se creó exitosamente
-      if (result == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Cita creada exitosamente'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  },
-  backgroundColor: const Color(0xFF8B5CF6),
-  icon: const Icon(Icons.add),
-  label: const Text('Nueva Cita'),
-),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // ✅ Navegar y esperar resultado
+          final result = await context.push('/owner/appointments/cliente/buscar');
+          
+          // ✅ Si result es true, recargar citas
+          if (result == true && mounted) {
+            await _loadAllAppointments();
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Cita creada exitosamente'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        },
+        backgroundColor: const Color(0xFF8B5CF6),
+        icon: const Icon(Icons.add),
+        label: const Text('Nueva Cita'),
+      ),
     );
   }
 

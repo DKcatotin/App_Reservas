@@ -4,7 +4,7 @@ import 'package:agenda_app/core/networking/dio_client.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/datasources/sources_remote_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_remote_datasource.dart';
+import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_remote_datasource.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

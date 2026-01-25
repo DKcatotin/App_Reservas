@@ -1,4 +1,4 @@
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_datasource.dart';
+import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/staff_entity.dart';

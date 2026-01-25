@@ -2,8 +2,8 @@ import 'package:agenda_app/features/owner/appointments/data/sources/appointments
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_remote_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/datasources/source_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/datasources/sources_remote_datasource.dart';
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_datasource.dart';
-import 'package:agenda_app/features/owner/catalogues/data/datasources/catalogues_remote_datasource.dart';
+import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_datasource.dart';
+import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_remote_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/data/repositories/sources_repository.dart';
 import 'package:agenda_app/features/owner/catalogues/data/repositories/sources_repository_impl.dart';
 import 'package:get_it/get_it.dart';

@@ -37,43 +37,45 @@ class AppointmentsRemoteDatasource implements AppointmentsDatasource {
     }
   }
 
-@override
-Future<void> create(Appointment appointment) async {
-  try {
-    final body = {
-      'branch': {
-        'id': appointment.branch.id,
-        'name': appointment.branch.name,
-        'phone': appointment.branch.phone,
-        'email': appointment.branch.email,
-        'address': appointment.branch.address,
-        'city': appointment.branch.city,
-        'enabled': appointment.branch.enabled,
-      },
-      'customerId': appointment.customerId,
-      'staffProfileId': appointment.staffProfileId,
-      'sourceId': appointment.source.id,  // ✅ UUID
-      // ✅ statusId opcional - el backend lo asigna automáticamente
-      if (appointment.status.id.isNotEmpty) 
-        'statusId': appointment.status.id,
-      'startAt': appointment.startAt.toIso8601String(),
-      'endAt': appointment.endAt.toIso8601String(),
-      'notes': appointment.notes,
-    };
+  @override
+  Future<void> create(Appointment appointment) async {
+    try {
+      // ✅ CORRECCIÓN: NO enviar services al crear
+      final body = {
+        'branch': {
+          'id': appointment.branch.id,
+          'name': appointment.branch.name,
+          'phone': appointment.branch.phone,
+          'email': appointment.branch.email,
+          'address': appointment.branch.address,
+          'city': appointment.branch.city,
+          'enabled': appointment.branch.enabled,
+        },
+        'customerId': appointment.customerId,
+        'staffProfileId': appointment.staffProfileId,
+        'sourceId': appointment.source.id,
+        if (appointment.status.id.isNotEmpty) 
+          'statusId': appointment.status.id,
+        'startAt': appointment.startAt.toIso8601String(),
+        'endAt': appointment.endAt.toIso8601String(),
+        'notes': appointment.notes,
+        // ✅ NO incluir services aquí - se asignan después al editar
+      };
 
-    debugPrint('📍 Creando appointment: $body');
+      debugPrint('📍 Creando appointment SIN servicios: $body');
 
-    final response = await dio.post(
-      '/core/owner/appointments',
-      data: body,
-    );
+      final response = await dio.post(
+        '/core/owner/appointments',
+        data: body,
+      );
 
-    debugPrint('✅ Appointment creado: ${response.data}');
-  } on DioException catch (e) {
-    debugPrint('❌ Error creando appointment: ${e.response?.data}');
-    throw ServerException('Error al crear cita: ${e.response?.data ?? e.message}');
+      debugPrint('✅ Appointment creado: ${response.data}');
+    } on DioException catch (e) {
+      debugPrint('❌ Error creando appointment: ${e.response?.data}');
+      throw ServerException('Error al crear cita: ${e.response?.data ?? e.message}');
+    }
   }
-}
+
   @override
   Future<void> update(Appointment appointment) async {
     try {

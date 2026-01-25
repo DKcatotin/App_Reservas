@@ -1,10 +1,9 @@
 import 'package:agenda_app/core/logger/app_logger.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
 
-
 class Customer {
   final String id;
-  final String userId;              // NUEVO
+  final String userId;
   final String? referredBy;
   final String? taxIdentification;
   final String? taxName;
@@ -15,7 +14,7 @@ class Customer {
 
   Customer({
     required this.id,
-    required this.userId,           //  NUEVO
+    required this.userId,
     this.referredBy,
     this.taxIdentification,
     this.taxName,
@@ -25,38 +24,50 @@ class Customer {
     this.phone,
   });
 
-factory Customer.fromJson(Map<String, dynamic> json) {
-  AppLogger.d('[MODEL] Parseando customer: ${json.toString()}');
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    AppLogger.d('[CUSTOMER MODEL] Parseando: ${json.toString()}');
 
-  final user = json['user'] as Map<String, dynamic>?;
+    Map<String, dynamic> customerData = json;
+    
+    if (json.containsKey('customer') && json['customer'] is Map) {
+      customerData = json['customer'] as Map<String, dynamic>;
+      AppLogger.d('[CUSTOMER MODEL] Customer anidado detectado');
+    }
 
-  return Customer(
-    id: (json['id'] ?? '').toString(),
-    userId: (json['userId'] ?? json['user_id'] ?? '').toString(),
-    referredBy: (json['referralId'] ?? json['referred_by'])?.toString(),
-    taxIdentification: (json['taxIdentification'] ?? json['tax_identification'])?.toString(),
-    taxName: (json['taxName'] ?? json['tax_name'])?.toString(),
-    allergies: (json['allergies'])?.toString(),
+    // ✅ Extraer user si existe (JOIN)
+    final user = customerData['user'] as Map<String, dynamic>?;
 
-    // Campos del user (JOIN)
-    fullName: user != null
-        ? '${user['name'] ?? ''} ${user['lastname'] ?? ''}'.trim()
-        : (json['full_name'] ?? json['fullName'])?.toString(),
+    final customer = Customer(
+      id: (customerData['id'] ?? '').toString(),
+      userId: (customerData['userId'] ?? customerData['user_id'] ?? '').toString(),
+      referredBy: (customerData['referralId'] ?? customerData['referred_by'])?.toString(),
+      taxIdentification: (customerData['taxIdentification'] ?? customerData['tax_identification'])?.toString(),
+      taxName: (customerData['taxName'] ?? customerData['tax_name'])?.toString(),
+      allergies: customerData['allergies']?.toString(),
 
-    email: user != null
-        ? (user['email']?.toString())
-        : (json['email']?.toString()),
+      // ✅ PRIORIDAD: user JOIN
+      fullName: user != null
+          ? '${user['name'] ?? ''} ${user['lastname'] ?? ''}'.trim()
+          : (customerData['taxName'] ?? customerData['tax_name'])?.toString(),
 
-    phone: user != null
-        ? (user['cellPhone']?.toString() ?? user['phone']?.toString())
-        : (json['phone']?.toString()),
-  );
-}
+      email: user != null
+          ? user['email']?.toString()
+          : customerData['email']?.toString(),
+
+      // ✅ FIX: cellPhone es el campo correcto en user
+      phone: user != null
+          ? (user['cellPhone']?.toString() ?? user['phone']?.toString())
+          : customerData['phone']?.toString(),
+    );
+
+    AppLogger.d('[CUSTOMER MODEL] ✅ Parseado: ${customer.fullName} - ${customer.phone}');
+    return customer;
+  }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'user_id': userId,                        //  NUEVO
+      'user_id': userId,
       'referred_by': referredBy,
       'tax_identification': taxIdentification,
       'tax_name': taxName,
@@ -70,7 +81,7 @@ factory Customer.fromJson(Map<String, dynamic> json) {
   CustomerEntity toEntity() {
     return CustomerEntity(
       id: id,
-      userId: userId,                           //  NUEVO
+      userId: userId,
       referredBy: referredBy,
       taxIdentification: taxIdentification,
       taxName: taxName,
@@ -81,15 +92,7 @@ factory Customer.fromJson(Map<String, dynamic> json) {
     );
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Customer && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
-   factory Customer.fromEntity(CustomerEntity entity) {
+  factory Customer.fromEntity(CustomerEntity entity) {
     return Customer(
       id: entity.id,
       userId: entity.userId,
@@ -102,4 +105,13 @@ factory Customer.fromJson(Map<String, dynamic> json) {
       allergies: entity.allergies,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Customer && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

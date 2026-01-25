@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+
+/// Página para buscar clientes existentes en el sistema
 class CustomerSearchPage extends ConsumerStatefulWidget {
   const CustomerSearchPage({super.key});
 
@@ -27,7 +29,8 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
     if (taxId.isEmpty || taxId.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Ingrese una cédula válida de 10 dígitos')),
+          content: Text('Ingrese una cédula válida de 10 dígitos'),
+        ),
       );
       return;
     }
@@ -51,7 +54,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Ilustración
+            // Icono
             Icon(
               Icons.person_search,
               size: 100,
@@ -59,7 +62,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
             ),
             const SizedBox(height: 24),
 
-            // Instrucciones
+            // Título
             const Text(
               'Ingrese la cédula del cliente',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -73,7 +76,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
             ),
             const SizedBox(height: 32),
 
-            // Campo de cédula
+            // Campo de búsqueda
             TextField(
               controller: _taxIdController,
               decoration: const InputDecoration(
@@ -107,7 +110,7 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
 
             const SizedBox(height: 20),
 
-            // Resultado de la búsqueda
+            // Resultado
             if (_searched) ...[
               if (customerState.error != null)
                 _buildError(customerState.error!)
@@ -152,13 +155,18 @@ class _CustomerSearchPageState extends ConsumerState<CustomerSearchPage> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () async {
-                final result =
-                    await context.push('/owner/citas', extra: customer);
+                // Navegar a formulario de cita
+                final result = await context.push('/owner/citas', extra: customer);
 
+                // Si se creó exitosamente, regresar con true
                 if (result == true && mounted) {
                   ref.read(customerProvider.notifier).clear();
                   _taxIdController.clear();
                   setState(() => _searched = false);
+                  
+                  if (mounted) {
+                    Navigator.pop(context, true); // ✅ Retornar true
+                  }
                 }
               },
               label: const Text('Seleccionar este cliente'),
