@@ -1,47 +1,31 @@
 class SourceEntity {
-  final int id; 
+  final String id;
   final String code;
   final String name;
+  final String? description;
+  final int sort;
 
   const SourceEntity({
     required this.id,
     required this.code,
     required this.name,
+    this.description,
+    required this.sort,
   });
 
-  // Constantes para los sources comunes (según tu BD)
-  static const SourceEntity web = SourceEntity(
-    id: 1,
-    code: 'web',
-    name: 'Web',
-  );
-
-  static const SourceEntity whatsapp = SourceEntity(
-    id: 2,
-    code: 'whatsapp',
-    name: 'WhatsApp',
-  );
-
-  static const SourceEntity call = SourceEntity(
-    id: 3,
-    code: 'call',
-    name: 'Llamada',
-  );
-
-  static const SourceEntity inPerson = SourceEntity(
-    id:4,
-    code: 'in_person',
-    name: 'Presencial',
-  );
-
   SourceEntity copyWith({
+    String? id,
     String? code,
     String? name,
+    String? description,
+    int? sort,
   }) {
     return SourceEntity(
-      id: id,
+      id: id ?? this.id,
       code: code ?? this.code,
       name: name ?? this.name,
+      description: description ?? this.description,
+      sort: sort ?? this.sort,
     );
   }
 }

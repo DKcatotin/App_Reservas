@@ -1,25 +1,17 @@
-import 'package:agenda_app/core/di/app_dependencies.dart';
-import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
-import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
+import 'package:agenda_app/features/owner/appointments/domain/entities/source_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
-import 'package:agenda_app/features/owner/appointments/domain/use_cases/create_appointment.dart';
+import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
-import 'package:agenda_app/features/owner/catalogues/domain/repositories/catalogues_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class AppointmentFormPage extends ConsumerStatefulWidget {
-  final AppointmentsRepositoryImpl repo;
-  final Customer? preselectedCustomer;
-  const AppointmentFormPage({
-    super.key,
-    required this.repo,
-    this.preselectedCustomer,
-  });
+  const AppointmentFormPage({super.key});
 
   @override
   ConsumerState<AppointmentFormPage> createState() =>
@@ -30,64 +22,39 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
 
-  late final CataloguesRepository _cataloguesRepo;
-
-  List<ServiceEntity> _services = []; // ✅ CORREGIDO
   final List<ServiceEntity> _selectedServices = [];
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  String _selectedSource = 'whatsapp';
+  SourceEntity? _selectedSource;
 
-  bool _isLoading = true;
   bool _isSaving = false;
-
-  final List<Map<String, dynamic>> _sources = [
-    {'id': 'whatsapp', 'label': 'WhatsApp', 'icon': Icons.chat},
-    {'id': 'llamada', 'label': 'Llamada', 'icon': Icons.phone},
-    {'id': 'web', 'label': 'Web', 'icon': Icons.language},
-    {'id': 'presencial', 'label': 'Presencial', 'icon': Icons.store},
-  ];
 
   @override
   void initState() {
     super.initState();
-    _cataloguesRepo = AppDependencies().cataloguesRepository;
-    if (widget.preselectedCustomer != null) {
-      // Pre-llenar los campos con los datos del cliente
-      // _customerNameCtrl.text = widget.preselectedCustomer!.fullName ?? '';
-    }
-    _loadData();
+    // Cargar servicios y sources al abrir la página
+    Future.microtask(() {
+      ref.read(appointmentFormProvider).loadData();
+    });
   }
 
- @override
-void dispose() {
-  _notesController.dispose();
-  super.dispose();
-}
-
-  Future<void> _loadData() async {
-    try {
-      final services = await _cataloguesRepo.getServices();
-      setState(() {
-        _services = services;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error cargando servicios: $e'); // ✅ Cambiar print por debugPrint
-      setState(() => _isLoading = false);
-    }
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
   }
 
+  /// Guardar la cita
   Future<void> _saveAppointment() async {
-  if (_isSaving) return;
-  setState(() => _isSaving = true);
+    if (_isSaving) return;
 
-  try {
+    final formProvider = ref.read(appointmentFormProvider);
     final customerState = ref.read(customerProvider);
 
+    // Validaciones
     if (customerState.customer == null) {
-      _showError('Debe seleccionar o crear un cliente');
+      _showError('Debe seleccionar un cliente');
       return;
     }
 
@@ -96,117 +63,103 @@ void dispose() {
       return;
     }
 
-    final startAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
-
-    final input = CreateAppointmentInput(
-      customerId: customerState.customer!.id,
-      customer: CustomerEntity(
-        id: customerState.customer!.id,
-        userId: customerState.customer!.userId,
-        referredBy: customerState.customer!.referredBy,
-        taxIdentification: customerState.customer!.taxIdentification,
-        taxName: customerState.customer!.taxName,
-        fullName: customerState.customer!.fullName,
-        phone: customerState.customer!.phone,
-        email: customerState.customer!.email,
-        allergies: customerState.customer!.allergies,
-      ),
-      startAt: startAt,
-      services: List<ServiceEntity>.from(_selectedServices),
-      source: _selectedSource,
-      notes: _notesController.text,
-    );
-
-    final createUseCase = CreateAppointmentUseCase(widget.repo);
-    await createUseCase.call(input);
-
-    if (!mounted) return;
-
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✅ Cita creada exitosamente'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    context.pop(true);
-  } catch (e) {
-    if (!mounted) return;
-    _showError('Error al crear la cita: $e');
-  } finally {
-    if (mounted) setState(() => _isSaving = false);
-  }
-}
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  Widget _buildClienteSelector() {
-    final clienteState = ref.watch(customerProvider);
-
-    if (clienteState.customer == null) {
-      return OutlinedButton.icon(
-        onPressed: _irABuscarCliente,
-        icon: const Icon(Icons.person_search),
-        label: const Text('Buscar o crear cliente'),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.all(16),
-        ),
-      );
+    if (_selectedSource == null) {
+      _showError('Debe seleccionar una fuente de cita');
+      return;
     }
 
-    return Card(
-      color: Colors.green[50],
-      child: ListTile(
-        leading: const CircleAvatar(
-          child: Icon(Icons.person),
-        ),
-        title: Text(clienteState.customer!.fullName ?? 'Sin nombre'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('CI: ${clienteState.customer!.taxIdentification ?? 'N/A'}'),
-            Text('Tel: ${clienteState.customer!.phone ?? 'N/A'}'),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.swap_horiz),
-          onPressed: _irABuscarCliente,
-        ),
-      ),
-    );
-  }
+    setState(() => _isSaving = true);
 
-  Future<void> _irABuscarCliente() async {
-    final clienteSeleccionado = await context.push(
-      '/owner/appointments/cliente/buscar',
-    );
-
-    if (clienteSeleccionado != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cliente seleccionado')),
+    try {
+      final startAt = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
       );
+
+      // Calcular endAt basado en la duración total de los servicios
+      final totalDurationMin =
+          _selectedServices.fold<int>(0, (sum, service) => sum + service.durationMin);
+      final endAt = startAt.add(Duration(minutes: totalDurationMin));
+
+      final customer = customerState.customer!;
+
+      final input = CreateAppointmentInput(
+  customerId: customer.id,
+  customer: CustomerEntity(
+    id: customer.id,
+    userId: customer.userId,
+    referredBy: customer.referredBy,
+    taxIdentification: customer.taxIdentification,
+    taxName: customer.taxName,
+    fullName: customer.fullName,
+    phone: customer.phone,
+    email: customer.email,
+    allergies: customer.allergies,
+  ),
+  startAt: startAt,
+  // ❌ REMOVER endAt - se calcula automático en el use case
+  services: _selectedServices,  // ❌ REMOVER .toList() innecesario
+  source: _selectedSource!,  // ✅ Ya es SourceEntity
+  notes: _notesController.text,
+);
+
+      await formProvider.createAppointment(input);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Cita creada exitosamente'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      context.pop(true);
+    } catch (e) {
+      _showError('Error al crear la cita: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final formState = ref.watch(appointmentFormProvider);
+    final customerState = ref.watch(customerProvider);
+
+    if (formState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (formState.errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Nueva Cita')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Error al cargar datos',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(formState.errorMessage!),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  formState.loadData();
+                },
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -223,175 +176,239 @@ void dispose() {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildSection(
-              title: 'Cliente',
-              icon: Icons.person,
-              child: _buildClienteSelector(),
-            ),
+            // Cliente
+            _buildClientInfo(customerState),
             const SizedBox(height: 16),
-            _buildSection(
-              title: 'Fecha y hora',
-              icon: Icons.event,
-              child: Row(
-                children: [
-                  Expanded(child: _buildDateButton()),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildTimeButton()),
-                ],
-              ),
-            ),
+
+            // Fecha y hora
+            _buildDateTimeSelector(),
             const SizedBox(height: 16),
-            _buildSection(
-              title: 'Servicios',
-              icon: Icons.spa,
-              child: _buildServicesSelector(),
-            ),
+
+            // Servicios
+            _buildServicesSelector(formState.services),
             const SizedBox(height: 16),
-            _buildSection(
-              title: 'Fuente de la cita',
-              icon: Icons.source,
-              child: _buildSourceSelector(),
-            ),
+
+            // Fuente de cita
+            _buildSourceSelector(formState.sources),
             const SizedBox(height: 16),
-            _buildSection(
-              title: 'Notas (opcional)',
-              icon: Icons.note,
-              child: TextField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Preferencias, alergias, etc.',
-                  border: OutlineInputBorder(),
-                ),
+
+            // Notas
+            TextFormField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Notas',
+                border: OutlineInputBorder(),
+                hintText: 'Ej: Cliente nuevo, preferencias especiales...',
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveAppointment,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
-              ),
+
+            // Botón guardar
+            ElevatedButton.icon(
+              onPressed: _isSaving ? null : _saveAppointment,
+              icon: _isSaving ? null : const Icon(Icons.check),
+              label: Text(_isSaving ? 'Guardando...' : 'Crear Cita'),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
+  /// Widget: Información del cliente
+  Widget _buildClientInfo(CustomerState state) {
+    if (state.customer == null) {
+      return OutlinedButton.icon(
+        onPressed: () => context.push('/owner/appointments/cliente/buscar'),
+        icon: const Icon(Icons.person_search),
+        label: const Text('Buscar o crear cliente'),
+      );
+    }
+
+    return Card(
+      color: Colors.green[50],
+      child: ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.person)),
+        title: Text(state.customer!.fullName ?? 'Sin nombre'),
+        subtitle: Text(state.customer!.phone ?? 'Sin teléfono'),
+        trailing: IconButton(
+          icon: const Icon(Icons.edit),
+          onPressed: () =>
+              context.push('/owner/appointments/cliente/buscar'),
+        ),
+      ),
+    );
+  }
+
+  /// Widget: Selector de fecha y hora
+  Widget _buildDateTimeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          'Fecha y Hora',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
-            Icon(icon),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    locale: const Locale('es'),
+                  );
+                  if (picked != null) {
+                    setState(() => _selectedDate = picked);
+                  }
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.calendar_today, size: 18),
+                    const SizedBox(width: 8),
+                    Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(width: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _selectedTime,
+                  );
+                  if (picked != null) {
+                    setState(() => _selectedTime = picked);
+                  }
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.access_time, size: 18),
+                    const SizedBox(width: 8),
+                    Text(_selectedTime.format(context)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
-        child,
       ],
     );
   }
 
-  Widget _buildDateButton() {
-    return OutlinedButton(
-      onPressed: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: _selectedDate,
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          locale: const Locale('es'),
-        );
-        if (picked != null) setState(() => _selectedDate = picked);
-      },
-      child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-    );
-  }
-
-  Widget _buildTimeButton() {
-    return OutlinedButton(
-      onPressed: () async {
-        final picked =
-            await showTimePicker(context: context, initialTime: _selectedTime);
-        if (picked != null) setState(() => _selectedTime = picked);
-      },
-      child: Text(_selectedTime.format(context)),
-    );
-  }
-
-  Widget _buildServicesSelector() {
-    if (_services.isEmpty) {
-      return const Text('No hay servicios disponibles');
+  /// Widget: Selector de servicios
+  Widget _buildServicesSelector(List<ServiceEntity> services) {
+    if (services.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'No hay servicios disponibles',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
     }
 
     return Column(
-      children: _services.map((service) {
-        final isSelected = _selectedServices.any((selected) => selected.id == service.id);
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Servicios',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        ...services.map((service) {
+          final isSelected =
+              _selectedServices.any((s) => s.id == service.id);
 
-        return CheckboxListTile(
-          title: Text(service.name),
-          subtitle: Text(
-            '${service.durationLabel} • \$${service.basePrice.toStringAsFixed(2)}',
+          return CheckboxListTile(
+            title: Text(service.name),
+            subtitle: Text(
+              '${service.durationMin} min • \$${service.basePrice.toStringAsFixed(2)}',
+            ),
+            value: isSelected,
+            onChanged: (checked) {
+              setState(() {
+                if (checked == true) {
+                  _selectedServices.add(service);
+                } else {
+                  _selectedServices.removeWhere((s) => s.id == service.id);
+                }
+              });
+            },
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  /// Widget: Selector de fuente de cita
+ Widget _buildSourceSelector(List<SourceEntity> sources) {
+  if (sources.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Text(
+        'No hay fuentes disponibles',
+        style: TextStyle(color: Colors.grey),
+      ),
+    );
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Fuente de Cita',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      ...sources.map((source) {
+        final isSelected = _selectedSource?.id == source.id;
+        
+        return ListTile(
+          leading: Radio<String>(
+            value: source.id,
+            groupValue: _selectedSource?.id,
+            onChanged: (value) {
+              setState(() => _selectedSource = source);
+            },
           ),
-          value: isSelected,
-          onChanged: (checked) {
-            setState(() {
-              if (checked == true) {
-                _selectedServices.add(service);
-              } else {
-                _selectedServices.removeWhere((item) => item.id == service.id);
-              }
-            });
+          title: Text(source.name),
+          subtitle: Text(source.description ?? ''),
+          onTap: () {
+            setState(() => _selectedSource = source);
           },
         );
-      }).toList(),
-    );
-  }
+      }),
+    ],
+  );
+}
 
-  Widget _buildSourceSelector() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _sources.map((source) {
-        final isSelected = _selectedSource == source['id'];
-        return ChoiceChip(
-          label: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                source['icon'],
-                size: 18,
-                color: isSelected ? Colors.white : Colors.black54,
-              ),
-              const SizedBox(width: 6),
-              Text(source['label']),
-            ],
-          ),
-          selected: isSelected,
-          onSelected: (_) => setState(() => _selectedSource = source['id']),
-          selectedColor: const Color(0xFF8B5CF6),
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        );
-      }).toList(),
+  /// Mostrar error
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
-} 
+}

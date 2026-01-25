@@ -32,27 +32,26 @@ class AppDependencies {
       tokenStorage: core.tokenStorage,
     );
 
-    // Inicializar el usecase aquí
     getCurrentOwnerUseCase = auth.getCurrentOwnerUseCase;
 
     catalogues = CataloguesDependencies();
     catalogues.init(dio: core.dio);
 
     appointments = AppointmentsDependencies();
-    appointments.init();
+    appointments.init(core.dio);
 
     customers = CustomersDependencies();
     customers.init(
       dio: core.dio,
       useRemote: true,
-    ); // ← Cambiar a false para usar mock local
+    );
   }
 
   // Getters de conveniencia
   get dio => core.dio;
   get tokenStorage => core.tokenStorage;
 
-  // Auth - Exponer loginOwnerUseCase
+  // Auth
   get loginOwnerUseCase => auth.loginOwnerUseCase;
   get logoutOwnerUseCase => auth.logoutOwnerUseCase;
   get ownerAuthRepository => auth.ownerAuthRepository;
@@ -62,5 +61,9 @@ class AppDependencies {
 
   // Appointments
   get appointmentsRepository => appointments.appointmentsRepository;
+  get createAppointmentUseCase =>
+      appointments.createAppointmentUseCase;
+
+  // Customers
   get customersDatasource => customers.customersDatasource;
 }

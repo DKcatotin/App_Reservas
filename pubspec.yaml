@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.2
+  #get_it
+  get_it: ^7.6.7
   #
   json_annotation: ^4.9.0
   # iOS style icons

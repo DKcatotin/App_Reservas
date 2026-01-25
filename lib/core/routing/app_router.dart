@@ -66,9 +66,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/owner/citas',
-          builder: (_, __) => AppointmentFormPage(
-            repo: deps.appointmentsRepository,
-          ),
+          builder: (_, __) => const AppointmentFormPage(),
         ),
         GoRoute(
           path: '/owner/agenda',

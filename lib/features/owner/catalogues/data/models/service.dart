@@ -22,18 +22,18 @@ class Service {
   });
 
   // JSON → Model
-  factory Service.fromJson(Map<String, dynamic> json) {
-    return Service(
-      id: json['id'] as String,
-      branchId: json['branchId'] as String,
-      categoryId: json['categoryId'] as String?,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      durationMin: json['durationMin'] as int,
-      basePrice: (json['basePrice'] as num).toDouble(),
-      enabled: json['enabled'] as bool? ?? true,
-    );
-  }
+ factory Service.fromJson(Map<String, dynamic> json) {
+  return Service(
+    id: json['id'] as String,
+    branchId: json['branchId'] as String,
+    categoryId: json['categoryId'] as String?,
+    name: json['name'] as String,
+    description: json['description'] as String?,
+    durationMin: json['durationMin'] as int,
+    basePrice: double.parse(json['basePrice'].toString()), // ← IMPORTANTE: convertir de String
+    enabled: json['isEnabled'] as bool? ?? json['enabled'] as bool? ?? true,
+  );
+}
 
   // Model → JSON
   Map<String, dynamic> toJson() {

@@ -7,7 +7,12 @@ import 'auth_interceptor.dart';
 /// Centraliza la configuración HTTP
 class DioClient {
   DioClient._();
+  static late Dio _instance;
+  static Dio get instance => _instance;
 
+static void setInstance(Dio dio) {
+  _instance = dio;
+}
   static Dio create(TokenStorage tokenStorage) {
     final dio = Dio(
       BaseOptions(

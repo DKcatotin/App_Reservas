@@ -8,16 +8,17 @@ import 'package:agenda_app/features/owner/appointments/domain/repositories/appoi
 import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
-  final AppointmentsDatasource datasource;
+  final AppointmentsDatasource remoteDatasource;
 
   // Cache
   List<Appointment>? _cache;
   List<AppointmentEntity>? _entityCache;
   DateTime? _cacheTime;
-
   final Duration _cacheDuration = const Duration(minutes: 5);
 
-  AppointmentsRepositoryImpl({required this.datasource});
+  AppointmentsRepositoryImpl({
+    required this.remoteDatasource,
+  });
 
   bool get _isCacheValid =>
       _cache != null &&
@@ -37,12 +38,15 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
         return _entityCache!;
       }
 
-      _cache = await datasource.getAll();
+      final appointments = await remoteDatasource.getAll();
+      _cache = appointments;
       _cacheTime = DateTime.now();
-
-      _entityCache =
-          _cache!.map(AppointmentMapper.toEntity).toList();
-
+      
+      // Usar el mapper que ya tienes
+      _entityCache = appointments
+          .map((a) => AppointmentMapper.toEntity(a))
+          .toList();
+      
       return _entityCache!;
     } on ServerException catch (e) {
       throw AppointmentsFailure(e.message);
@@ -65,23 +69,41 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   @override
   Future<void> create(AppointmentEntity appointment) async {
-    await datasource.create(
-      AppointmentMapper.toModel(appointment),
-    );
-    invalidateCache();
+    try {
+      // Usar el mapper para convertir entity a model
+      final appointmentModel = AppointmentMapper.toModel(appointment);
+      await remoteDatasource.create(appointmentModel);
+      invalidateCache();
+    } on ServerException catch (e) {
+      throw AppointmentsFailure(e.message);
+    } catch (e) {
+      throw AppointmentsFailure('Error al crear cita: $e');
+    }
   }
 
   @override
   Future<void> update(AppointmentEntity appointment) async {
-    await datasource.update(
-      AppointmentMapper.toModel(appointment),
-    );
-    invalidateCache();
+    try {
+      // Usar el mapper para convertir entity a model
+      final appointmentModel = AppointmentMapper.toModel(appointment);
+      await remoteDatasource.update(appointmentModel);
+      invalidateCache();
+    } on ServerException catch (e) {
+      throw AppointmentsFailure(e.message);
+    } catch (e) {
+      throw AppointmentsFailure('Error al actualizar cita: $e');
+    }
   }
 
   @override
   Future<void> delete(String id) async {
-    await datasource.delete(id);
-    invalidateCache();
+    try {
+      await remoteDatasource.delete(id);
+      invalidateCache();
+    } on ServerException catch (e) {
+      throw AppointmentsFailure(e.message);
+    } catch (e) {
+      throw AppointmentsFailure('Error al eliminar cita: $e');
+    }
   }
 }

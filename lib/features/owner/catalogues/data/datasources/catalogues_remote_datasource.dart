@@ -1,54 +1,88 @@
+import 'package:agenda_app/core/api/api_client.dart';
+import 'package:agenda_app/core/errors/exceptions.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
-import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'catalogues_datasource.dart';
 import '../models/service.dart';
 
-/// Datasource que obtiene catálogos desde API REST.
-/// (backend): Implementar llamadas HTTP cuando el backend esté listo.
 class CataloguesRemoteDatasource implements CataloguesDatasource {
-   final Dio dio;
-   CataloguesRemoteDatasource(this.dio);
-  // (backend): Inyectar Dio o http client
-  // final Dio _dio;
-  // CataloguesRemoteDatasource(this._dio);
+  final ApiClient apiClient;
+  
+  CataloguesRemoteDatasource({required this.apiClient});
 
-  @override
-  Future<List<Service>> getServices() async {
-    // (backend): Reemplazar con llamada real
-    // final response = await _dio.get('/api/services');
-    // return (response.data as List)
-    //     .map((e) => Service.fromJson(e))
-    //     .toList();
-
-    throw UnimplementedError(
-      'CataloguesRemoteDatasource.getServices() requiere backend.\n'
-      'Conecta endpoint GET /api/services y descomenta implementación.',
+ @override
+Future<List<Service>> getServices() async {
+  try {
+    final response = await apiClient.get(
+      '/core/owner/services',
+      queryParameters: {
+        'page': 1,
+        'limit': 10,  // ← Cambiar si necesitas más
+      },
     );
+
+    // El backend retorna { "data": [...] }
+    final data = response['data'] as List<dynamic>;
+    
+    if (data.isEmpty) {
+      return [];
+    }
+
+    final services = <Service>[];
+    
+    for (final item in data) {
+      try {
+        final json = item as Map<String, dynamic>;
+        
+        // Log para debug
+        debugPrint('📍 Parseando servicio: ${json['name']}');
+        
+        final service = Service.fromJson(json);
+        services.add(service);
+      } catch (e) {
+        debugPrint('⚠️ Error parseando servicio: $e, datos: $item');
+        // Continuar con el siguiente
+      }
+    }
+
+    debugPrint('✅ Servicios parseados: ${services.length}');
+    return services;
+    
+  } catch (e) {
+    debugPrint('❌ Error en getServices: $e');
+    throw ServerException('Error al obtener servicios: $e');
   }
+}
+
 
   @override
   Future<List<Staff>> getStaff() async {
-    // (backend): Reemplazar con llamada real
-    // final response = await _dio.get('/api/staff');
-    // return (response.data as List)
-    //     .map((e) => Staff.fromJson(e))
-    //     .toList();
-
-    throw UnimplementedError(
-      'CataloguesRemoteDatasource.getStaff() requiere backend.\n'
-      'Conecta endpoint GET /api/staff y descomenta implementación.',
-    );
+    try {
+      final response = await apiClient.get('/staff');
+      
+      final data = response['data'] as List<dynamic>;
+      
+      return data
+          .map((json) => Staff.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw ServerException('Error al obtener personal: $e');
+    }
   }
-   ///  Ruta privada usada antes en `/test1`
+
   @override
   Future<List<CatalogueItem>> getAppointmentStatuses() async {
-    final res = await dio.get('/test1');
-
-    final data = res.data['data'] as List<dynamic>;
-
-    return data
-        .map((e) => CatalogueItem.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final response = await apiClient.get('/test1');
+      
+      final data = response['data'] as List<dynamic>;
+      
+      return data
+          .map((json) => CatalogueItem.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw ServerException('Error al obtener estados: $e');
+    }
   }
 }
