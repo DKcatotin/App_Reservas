@@ -2,6 +2,7 @@ import 'package:agenda_app/core/errors/exceptions.dart';
 import 'package:agenda_app/core/errors/failures.dart';
 import 'package:agenda_app/features/owner/appointments/data/mappers/appointment_mapper.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointment_services_remote_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/repositories/appointments_repository.dart';
@@ -9,7 +10,7 @@ import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.d
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final AppointmentsDatasource remoteDatasource;
-
+   final AppointmentServicesRemoteDatasource servicesDataSource;
   // Cache
   List<Appointment>? _cache;
   List<AppointmentEntity>? _entityCache;
@@ -18,6 +19,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   AppointmentsRepositoryImpl({
     required this.remoteDatasource,
+     required this.servicesDataSource,
   });
 
   bool get _isCacheValid =>
@@ -84,9 +86,24 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   @override
   Future<void> update(AppointmentEntity appointment) async {
     try {
-      // Usar el mapper para convertir entity a model
+      // 1. Actualizar datos básicos de la cita
       final appointmentModel = AppointmentMapper.toModel(appointment);
       await remoteDatasource.update(appointmentModel);
+
+      // 2. Actualizar servicios
+      if (appointment.services.isNotEmpty) {
+        final servicesData = appointment.services.map((s) => {
+          'serviceId': s.id,
+          'durationMin': s.durationMin,
+          'price': s.basePrice,
+        }).toList();
+
+        await servicesDataSource.updateAppointmentServices(
+          appointmentId: appointment.id,
+          services: servicesData,
+        );
+      }
+
       invalidateCache();
     } on ServerException catch (e) {
       throw AppointmentsFailure(e.message);

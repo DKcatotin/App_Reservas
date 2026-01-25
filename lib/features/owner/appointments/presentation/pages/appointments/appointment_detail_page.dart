@@ -64,10 +64,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late TextEditingController _phoneController;
   // Listas de datos
   List<Staff> _staffList = [];
-  Set<String> _selectedServiceIds = {};
-  List<ServiceEntity> _allServices = [];
-  bool _isLoadingServices = true;
-  // Use cases
+  Set<String> _selectedServiceIds = {};  // Use cases
   late UpdateAppointmentUseCase _updateAppointmentUseCase;
   late DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
@@ -79,18 +76,21 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   }
 
   void _initializeData() {
-    _selectedDate = widget.appointment.startAt;
-    _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
-    _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
-    _selectedStatus = widget.appointment.status.name;
-    _selectedServices = widget.appointment.services;
-    _selectedStaffId = widget.appointment.staff?.id;
-    _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
+  _selectedDate = widget.appointment.startAt;
+  _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
+  _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
+  _selectedStatus = widget.appointment.status.name;
+  
+  // ✅ CAMBIO: Crear una copia mutable de la lista
+  _selectedServices = List.from(widget.appointment.services); 
+  
+  _selectedStaffId = widget.appointment.staff?.id;
+  _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
 
-    _notesController = TextEditingController(text: widget.appointment.notes ?? '');
-    _nameController = TextEditingController(text: widget.appointment.customer.fullName);
-    _phoneController = TextEditingController(text: widget.appointment.customer.phone);
-  }
+  _notesController = TextEditingController(text: widget.appointment.notes ?? '');
+  _nameController = TextEditingController(text: widget.appointment.customer.fullName);
+  _phoneController = TextEditingController(text: widget.appointment.customer.phone);
+}
 
   void _initializeUseCases() {
     _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repository);
@@ -100,48 +100,9 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadStaffFromProvider();
-     _loadServicesFromProvider();
+   
   }
 
-  void _loadStaffFromProvider() {
-    final staffAsync = ref.watch(staffListProvider);
-    staffAsync.whenData((list) {
-      if (mounted && _staffList.isEmpty) {
-        setState(() => _staffList = list);
-      }
-    });
-  }
-void _loadServicesFromProvider() {
-  final servicesAsync = ref.watch(servicesListProvider);
-  
-  servicesAsync.when(
-    data: (list) {
-      if (mounted && _allServices.isEmpty) {
-        setState(() {
-          _allServices = list.map((s) => s.toEntity()).toList();
-          _isLoadingServices = false;
-        });
-      }
-    },
-    loading: () {
-      if (mounted) {
-        setState(() => _isLoadingServices = true);
-      }
-    },
-    error: (error, stack) {
-      if (mounted) {
-        setState(() => _isLoadingServices = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar servicios: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    },
-  );
-}
   void _recalculateEndTime() {
     if (_selectedServices.isEmpty) return;
 
@@ -378,13 +339,16 @@ Future<void> _saveChanges() async {
     _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
     _selectedStatus = widget.appointment.status.name;
     _notesController.text = widget.appointment.notes ?? '';
-    _selectedServices = widget.appointment.services;
-    // CORREGIDO: manejar nullables
+    
+    // ✅ CAMBIO: Crear una copia mutable
+    _selectedServices = List<ServiceEntity>.from(widget.appointment.services);
+    
     _nameController.text = widget.appointment.customer.fullName ?? ''; 
     _phoneController.text = widget.appointment.customer.phone ?? '';
     _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
   });
 }
+
 
 
   void _showSuccess(String message) {
@@ -615,152 +579,177 @@ Future<void> _saveChanges() async {
     );
   }
 
-  /// Widget para la sección de servicios
-  // Continuación de _buildServicesSection() - MODO VISUALIZACIÓN MEJORADO
+
 
   /// Widget para la sección de servicios
-  Widget _buildServicesSection() {
-    if (_isEditing) {
-      if (_isLoadingServices) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: CircularProgressIndicator(),
+Widget _buildServicesSection() {
+  // ✅ Usar ref.watch() directamente en el build
+  final servicesAsync = ref.watch(servicesListProvider);
+  
+  return servicesAsync.when(
+    // Cuando está cargando
+    loading: () => const Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: CircularProgressIndicator(),
+      ),
+    ),
+    
+    // Cuando hay error
+    error: (error, stack) => Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red[200]!, width: 1),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700], size: 30),
+          const SizedBox(height: 8),
+          Text(
+            'Error al cargar servicios',
+            style: TextStyle(
+              color: Colors.red[900],
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            error.toString(),
+            style: TextStyle(color: Colors.red[700], fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+    
+    // Cuando los datos están disponibles
+    data: (servicesList) {
+      final allServices = servicesList.map((s) => s.toEntity()).toList();
+      
+      if (_isEditing) {
+        // ✅ MODO EDICIÓN
+        return ServiceSelector(
+          services: allServices,
+          selectedIds: _selectedServiceIds,
+          onToggle: (serviceId) {
+            setState(() {
+              if (_selectedServiceIds.contains(serviceId)) {
+                _selectedServiceIds.remove(serviceId);
+                _selectedServices.removeWhere((s) => s.id == serviceId);
+              } else {
+                _selectedServiceIds.add(serviceId);
+                final service = allServices.firstWhere((s) => s.id == serviceId);
+                _selectedServices.add(service);
+              }
+              _recalculateEndTime();
+            });
+          },
+          showPrices: true,
         );
       }
-
-      return ServiceSelector(
-        services: _allServices,
-        selectedIds: _selectedServiceIds,
-        onToggle: (serviceId) {
-          setState(() {
-            if (_selectedServiceIds.contains(serviceId)) {
-              _selectedServiceIds.remove(serviceId);
-              _selectedServices.removeWhere((s) => s.id == serviceId);
-            } else {
-              _selectedServiceIds.add(serviceId);
-              final service = _allServices.firstWhere((s) => s.id == serviceId);
-              _selectedServices.add(service);
-            }
-            _recalculateEndTime();
-          });
-        },
-        showPrices: true,
-      );
-    }
-
-    // ✅ MODO VISUALIZACIÓN - Mejorado
-    if (_selectedServices.isEmpty) {
-      // Si no hay servicios asignados
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.orange[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.orange[200]!,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.orange[700],
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Sin servicios asignados',
-                    style: TextStyle(
-                      color: Colors.orange[900],
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  setState(() => _isEditing = true);
-                },
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Asignar servicios'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Si hay servicios asignados
-    return Column(
-      children: _selectedServices.map((service) {
+      
+      // ✅ MODO VISUALIZACIÓN
+      if (_selectedServices.isEmpty) {
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange[200]!, width: 1),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      service.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+              Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Sin servicios asignados',
+                      style: TextStyle(
+                        color: Colors.orange[900],
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          service.durationLabel,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Text(
-                '\$${service.basePrice.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Color(0xFF7C3AED),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _isEditing = true),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Asignar servicios'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
             ],
           ),
         );
-      }).toList(),
-    );
-  }
+      }
+      
+      // Mostrar servicios seleccionados
+      return Column(
+        children: _selectedServices.map((service) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        service.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            service.durationLabel,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '\$${service.basePrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF7C3AED),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    },
+  );
+}
 
   /// Obtener color según el estado
   Color _getStatusColor(String status) {

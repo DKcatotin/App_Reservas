@@ -1,6 +1,7 @@
 import 'package:agenda_app/core/storage/token_storage.dart';
 import 'package:agenda_app/core/networking/dio_client.dart';
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointment_services_remote_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/appointments/appointments_memory_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +30,7 @@ void main() async {
           classic_provider.Provider<AppointmentsRepositoryImpl>(
             create: (_) => AppointmentsRepositoryImpl(
               remoteDatasource: AppointmentsMemoryDatasource(),
+              servicesDataSource: AppointmentServicesRemoteDatasource(dio: dio),  // ✅ AGREGAR dio
             ),
           ),
         ],

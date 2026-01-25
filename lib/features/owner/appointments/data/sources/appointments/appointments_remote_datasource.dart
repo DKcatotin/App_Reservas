@@ -76,17 +76,43 @@ class AppointmentsRemoteDatasource implements AppointmentsDatasource {
     }
   }
 
-  @override
-  Future<void> update(Appointment appointment) async {
-    try {
-      await dio.put(
-        '${ApiEndpoints.appointments}/${appointment.id}',
-        data: appointment.toJson(),
-      );
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Error al actualizar cita');
-    }
+@override
+Future<void> update(Appointment appointment) async {
+  try {
+    // ✅ Incluir el objeto branch completo
+    final body = {
+      'branch': {
+        'id': appointment.branch.id,
+        'name': appointment.branch.name,
+        'phone': appointment.branch.phone,
+        'email': appointment.branch.email,
+        'address': appointment.branch.address,
+        'city': appointment.branch.city,
+        'enabled': appointment.branch.enabled,
+      },
+      'customerId': appointment.customerId,
+      'staffProfileId': appointment.staffProfileId,
+      'sourceId': appointment.source.id,
+      'statusId': appointment.status.id,
+      'startAt': appointment.startAt.toIso8601String(),
+      'endAt': appointment.endAt.toIso8601String(),
+      'notes': appointment.notes,
+    };
+
+    debugPrint('📍 Actualizando appointment: $body');
+
+    final response = await dio.patch(
+      '/core/owner/appointments/${appointment.id}',
+      data: body,
+    );
+
+    debugPrint('✅ Appointment actualizado: ${response.data}');
+  } on DioException catch (e) {
+    debugPrint('❌ Error actualizando appointment: ${e.response?.data}');
+    throw ServerException('Error al actualizar cita: ${e.response?.data ?? e.message}');
   }
+}
+
 
   @override
   Future<void> delete(String id) async {
