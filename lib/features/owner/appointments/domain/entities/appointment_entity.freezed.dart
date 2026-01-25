@@ -17,7 +17,8 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$AppointmentEntity {
   String get id => throw _privateConstructorUsedError;
-  String get branchId => throw _privateConstructorUsedError;
+  BranchEntity get branch =>
+      throw _privateConstructorUsedError; // ← CAMBIAR de String branchId a BranchEntity branch
   String get customerId => throw _privateConstructorUsedError;
   String? get staffProfileId => throw _privateConstructorUsedError;
   DateTime get startAt => throw _privateConstructorUsedError;
@@ -44,7 +45,7 @@ abstract class $AppointmentEntityCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String branchId,
+      BranchEntity branch,
       String customerId,
       String? staffProfileId,
       DateTime startAt,
@@ -55,6 +56,8 @@ abstract class $AppointmentEntityCopyWith<$Res> {
       CustomerEntity customer,
       StaffEntity? staff,
       List<ServiceEntity> services});
+
+  $BranchEntityCopyWith<$Res> get branch;
 }
 
 /// @nodoc
@@ -73,7 +76,7 @@ class _$AppointmentEntityCopyWithImpl<$Res, $Val extends AppointmentEntity>
   @override
   $Res call({
     Object? id = null,
-    Object? branchId = null,
+    Object? branch = null,
     Object? customerId = null,
     Object? staffProfileId = freezed,
     Object? startAt = null,
@@ -90,10 +93,10 @@ class _$AppointmentEntityCopyWithImpl<$Res, $Val extends AppointmentEntity>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      branchId: null == branchId
-          ? _value.branchId
-          : branchId // ignore: cast_nullable_to_non_nullable
-              as String,
+      branch: null == branch
+          ? _value.branch
+          : branch // ignore: cast_nullable_to_non_nullable
+              as BranchEntity,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -136,6 +139,16 @@ class _$AppointmentEntityCopyWithImpl<$Res, $Val extends AppointmentEntity>
               as List<ServiceEntity>,
     ) as $Val);
   }
+
+  /// Create a copy of AppointmentEntity
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $BranchEntityCopyWith<$Res> get branch {
+    return $BranchEntityCopyWith<$Res>(_value.branch, (value) {
+      return _then(_value.copyWith(branch: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -148,7 +161,7 @@ abstract class _$$AppointmentEntityImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      String branchId,
+      BranchEntity branch,
       String customerId,
       String? staffProfileId,
       DateTime startAt,
@@ -159,6 +172,9 @@ abstract class _$$AppointmentEntityImplCopyWith<$Res>
       CustomerEntity customer,
       StaffEntity? staff,
       List<ServiceEntity> services});
+
+  @override
+  $BranchEntityCopyWith<$Res> get branch;
 }
 
 /// @nodoc
@@ -175,7 +191,7 @@ class __$$AppointmentEntityImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? branchId = null,
+    Object? branch = null,
     Object? customerId = null,
     Object? staffProfileId = freezed,
     Object? startAt = null,
@@ -192,10 +208,10 @@ class __$$AppointmentEntityImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      branchId: null == branchId
-          ? _value.branchId
-          : branchId // ignore: cast_nullable_to_non_nullable
-              as String,
+      branch: null == branch
+          ? _value.branch
+          : branch // ignore: cast_nullable_to_non_nullable
+              as BranchEntity,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -245,7 +261,7 @@ class __$$AppointmentEntityImplCopyWithImpl<$Res>
 class _$AppointmentEntityImpl extends _AppointmentEntity {
   const _$AppointmentEntityImpl(
       {required this.id,
-      required this.branchId,
+      required this.branch,
       required this.customerId,
       this.staffProfileId,
       required this.startAt,
@@ -262,7 +278,8 @@ class _$AppointmentEntityImpl extends _AppointmentEntity {
   @override
   final String id;
   @override
-  final String branchId;
+  final BranchEntity branch;
+// ← CAMBIAR de String branchId a BranchEntity branch
   @override
   final String customerId;
   @override
@@ -291,7 +308,7 @@ class _$AppointmentEntityImpl extends _AppointmentEntity {
 
   @override
   String toString() {
-    return 'AppointmentEntity(id: $id, branchId: $branchId, customerId: $customerId, staffProfileId: $staffProfileId, startAt: $startAt, endAt: $endAt, notes: $notes, status: $status, source: $source, customer: $customer, staff: $staff, services: $services)';
+    return 'AppointmentEntity(id: $id, branch: $branch, customerId: $customerId, staffProfileId: $staffProfileId, startAt: $startAt, endAt: $endAt, notes: $notes, status: $status, source: $source, customer: $customer, staff: $staff, services: $services)';
   }
 
   @override
@@ -300,8 +317,7 @@ class _$AppointmentEntityImpl extends _AppointmentEntity {
         (other.runtimeType == runtimeType &&
             other is _$AppointmentEntityImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.branchId, branchId) ||
-                other.branchId == branchId) &&
+            (identical(other.branch, branch) || other.branch == branch) &&
             (identical(other.customerId, customerId) ||
                 other.customerId == customerId) &&
             (identical(other.staffProfileId, staffProfileId) ||
@@ -321,7 +337,7 @@ class _$AppointmentEntityImpl extends _AppointmentEntity {
   int get hashCode => Object.hash(
       runtimeType,
       id,
-      branchId,
+      branch,
       customerId,
       staffProfileId,
       startAt,
@@ -346,7 +362,7 @@ class _$AppointmentEntityImpl extends _AppointmentEntity {
 abstract class _AppointmentEntity extends AppointmentEntity {
   const factory _AppointmentEntity(
       {required final String id,
-      required final String branchId,
+      required final BranchEntity branch,
       required final String customerId,
       final String? staffProfileId,
       required final DateTime startAt,
@@ -362,7 +378,7 @@ abstract class _AppointmentEntity extends AppointmentEntity {
   @override
   String get id;
   @override
-  String get branchId;
+  BranchEntity get branch; // ← CAMBIAR de String branchId a BranchEntity branch
   @override
   String get customerId;
   @override

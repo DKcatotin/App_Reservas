@@ -4,7 +4,7 @@ import '../../domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
-
+import 'package:agenda_app/features/owner/branches/data/models/branch.dart';  // ← AGREGAR
 import 'package:agenda_app/features/owner/appointments/data/models/source.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/customer.dart';
 import 'package:agenda_app/features/owner/appointments/data/models/appointment_service.dart';
@@ -13,7 +13,6 @@ class AppointmentMapper {
   // FIX: customer puede venir "plano" o dentro de {customer: {...}}
   static Customer customerFromJson(dynamic json) {
     if (json == null) {
-      // aquí tú decides si quieres lanzar error o devolver vacío
       return Customer(
         id: '',
         userId: '',
@@ -47,7 +46,7 @@ class AppointmentMapper {
   static AppointmentEntity toEntity(Appointment model) {
     return AppointmentEntity(
       id: model.id,
-      branchId: model.branchId,
+      branch: model.branch.toEntity(),  // ← CAMBIAR de branchId a branch
       customerId: model.customerId,
       staffProfileId: model.staffProfileId,
       startAt: model.startAt,
@@ -78,7 +77,7 @@ class AppointmentMapper {
   static Appointment toModel(AppointmentEntity entity) {
     return Appointment(
       id: entity.id,
-      branchId: entity.branchId,
+      branch: Branch.fromEntity(entity.branch),  // ← CAMBIAR de branchId a branch
       customerId: entity.customerId,
       staffProfileId: entity.staffProfileId,
       startAt: entity.startAt,
@@ -98,7 +97,7 @@ class AppointmentMapper {
           durationMin: s.durationMin,
           price: s.basePrice,
           serviceName: s.name,
-          branchId: s.branchId,
+          branchId: entity.branch.id,  // ← Usar entity.branch.id
           categoryId: s.categoryId,
           description: s.description,
           basePrice: s.basePrice,

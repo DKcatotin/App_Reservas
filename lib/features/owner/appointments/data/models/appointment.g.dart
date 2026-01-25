@@ -9,7 +9,7 @@ part of 'appointment.dart';
 _$AppointmentImpl _$$AppointmentImplFromJson(Map<String, dynamic> json) =>
     _$AppointmentImpl(
       id: json['id'] as String,
-      branchId: json['branchId'] as String,
+      branch: Branch.fromJson(json['branch'] as Map<String, dynamic>),
       customerId: json['customerId'] as String,
       staffProfileId: json['staffProfileId'] as String?,
       startAt: DateTime.parse(json['startAt'] as String),
@@ -29,7 +29,7 @@ _$AppointmentImpl _$$AppointmentImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$AppointmentImplToJson(_$AppointmentImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'branchId': instance.branchId,
+      'branch': instance.branch,
       'customerId': instance.customerId,
       'staffProfileId': instance.staffProfileId,
       'startAt': instance.startAt.toIso8601String(),

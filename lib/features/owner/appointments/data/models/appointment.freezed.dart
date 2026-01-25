@@ -21,7 +21,7 @@ Appointment _$AppointmentFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Appointment {
   String get id => throw _privateConstructorUsedError;
-  String get branchId => throw _privateConstructorUsedError;
+  Branch get branch => throw _privateConstructorUsedError;
   String get customerId => throw _privateConstructorUsedError;
   String? get staffProfileId => throw _privateConstructorUsedError;
   DateTime get startAt => throw _privateConstructorUsedError;
@@ -52,7 +52,7 @@ abstract class $AppointmentCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String branchId,
+      Branch branch,
       String customerId,
       String? staffProfileId,
       DateTime startAt,
@@ -81,7 +81,7 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
   @override
   $Res call({
     Object? id = null,
-    Object? branchId = null,
+    Object? branch = null,
     Object? customerId = null,
     Object? staffProfileId = freezed,
     Object? startAt = null,
@@ -98,10 +98,10 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      branchId: null == branchId
-          ? _value.branchId
-          : branchId // ignore: cast_nullable_to_non_nullable
-              as String,
+      branch: null == branch
+          ? _value.branch
+          : branch // ignore: cast_nullable_to_non_nullable
+              as Branch,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -156,7 +156,7 @@ abstract class _$$AppointmentImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      String branchId,
+      Branch branch,
       String customerId,
       String? staffProfileId,
       DateTime startAt,
@@ -183,7 +183,7 @@ class __$$AppointmentImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? branchId = null,
+    Object? branch = null,
     Object? customerId = null,
     Object? staffProfileId = freezed,
     Object? startAt = null,
@@ -200,10 +200,10 @@ class __$$AppointmentImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      branchId: null == branchId
-          ? _value.branchId
-          : branchId // ignore: cast_nullable_to_non_nullable
-              as String,
+      branch: null == branch
+          ? _value.branch
+          : branch // ignore: cast_nullable_to_non_nullable
+              as Branch,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -253,7 +253,7 @@ class __$$AppointmentImplCopyWithImpl<$Res>
 class _$AppointmentImpl implements _Appointment {
   const _$AppointmentImpl(
       {required this.id,
-      required this.branchId,
+      required this.branch,
       required this.customerId,
       this.staffProfileId,
       required this.startAt,
@@ -273,7 +273,7 @@ class _$AppointmentImpl implements _Appointment {
   @override
   final String id;
   @override
-  final String branchId;
+  final Branch branch;
   @override
   final String customerId;
   @override
@@ -303,7 +303,7 @@ class _$AppointmentImpl implements _Appointment {
 
   @override
   String toString() {
-    return 'Appointment(id: $id, branchId: $branchId, customerId: $customerId, staffProfileId: $staffProfileId, startAt: $startAt, endAt: $endAt, notes: $notes, status: $status, source: $source, customer: $customer, staff: $staff, services: $services)';
+    return 'Appointment(id: $id, branch: $branch, customerId: $customerId, staffProfileId: $staffProfileId, startAt: $startAt, endAt: $endAt, notes: $notes, status: $status, source: $source, customer: $customer, staff: $staff, services: $services)';
   }
 
   @override
@@ -312,8 +312,7 @@ class _$AppointmentImpl implements _Appointment {
         (other.runtimeType == runtimeType &&
             other is _$AppointmentImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.branchId, branchId) ||
-                other.branchId == branchId) &&
+            (identical(other.branch, branch) || other.branch == branch) &&
             (identical(other.customerId, customerId) ||
                 other.customerId == customerId) &&
             (identical(other.staffProfileId, staffProfileId) ||
@@ -334,7 +333,7 @@ class _$AppointmentImpl implements _Appointment {
   int get hashCode => Object.hash(
       runtimeType,
       id,
-      branchId,
+      branch,
       customerId,
       staffProfileId,
       startAt,
@@ -365,7 +364,7 @@ class _$AppointmentImpl implements _Appointment {
 abstract class _Appointment implements Appointment {
   const factory _Appointment(
       {required final String id,
-      required final String branchId,
+      required final Branch branch,
       required final String customerId,
       final String? staffProfileId,
       required final DateTime startAt,
@@ -384,7 +383,7 @@ abstract class _Appointment implements Appointment {
   @override
   String get id;
   @override
-  String get branchId;
+  Branch get branch;
   @override
   String get customerId;
   @override

@@ -1,9 +1,9 @@
-import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/source_entity.dart';
 import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appointement_input.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
+import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,46 +47,47 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
 
   /// Guardar la cita
   Future<void> _saveAppointment() async {
-    if (_isSaving) return;
+  if (_isSaving) return;
 
-    final formProvider = ref.read(appointmentFormProvider);
-    final customerState = ref.read(customerProvider);
+  // ✅ OBTENER customer del provider
+  final customerState = ref.read(customerProvider);
 
-    // Validaciones
-    if (customerState.customer == null) {
-      _showError('Debe seleccionar un cliente');
-      return;
-    }
+  if (customerState.customer == null) {
+    _showError('Debe seleccionar un cliente');
+    return;
+  }
 
-    if (_selectedServices.isEmpty) {
-      _showError('Debe seleccionar al menos un servicio');
-      return;
-    }
+  if (_selectedServices.isEmpty) {
+    _showError('Debe seleccionar al menos un servicio');
+    return;
+  }
 
-    if (_selectedSource == null) {
-      _showError('Debe seleccionar una fuente de cita');
-      return;
-    }
+  if (_selectedSource == null) {
+    _showError('Debe seleccionar una fuente de cita');
+    return;
+  }
 
-    setState(() => _isSaving = true);
+  setState(() => _isSaving = true);
 
-    try {
-      final startAt = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
+  try {
+    final customer = customerState.customer!;
+    
+    final startAt = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
 
-      // Calcular endAt basado en la duración total de los servicios
-      final totalDurationMin =
-          _selectedServices.fold<int>(0, (sum, service) => sum + service.durationMin);
-      final endAt = startAt.add(Duration(minutes: totalDurationMin));
+    // Calcular duración total
+    final totalDurationMin = _selectedServices.fold<int>(
+      0,
+      (sum, service) => sum + service.durationMin,
+    );
+    final endAt = startAt.add(Duration(minutes: totalDurationMin));
 
-      final customer = customerState.customer!;
-
-      final input = CreateAppointmentInput(
+final input = CreateAppointmentInput(
   customerId: customer.id,
   customer: CustomerEntity(
     id: customer.id,
@@ -100,31 +101,40 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
     allergies: customer.allergies,
   ),
   startAt: startAt,
-  // ❌ REMOVER endAt - se calcula automático en el use case
-  services: _selectedServices,  // ❌ REMOVER .toList() innecesario
-  source: _selectedSource!,  // ✅ Ya es SourceEntity
+  services: _selectedServices,
+  source: _selectedSource!,
+  branch: const BranchEntity(
+    id: "0859edd6-9b10-41b7-8503-20352a4d8c68",
+    name: "Sucursal Centro",
+    phone: "+593987654321",
+    email: "centro@empresa.com",
+    address: "Av. Amazonas y Naciones Unidas",
+    city: "Quito",
+    enabled: true,
+  ),
   notes: _notesController.text,
 );
 
-      await formProvider.createAppointment(input);
+await ref.read(appointmentFormProvider).createAppointment(input);
 
-      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Cita creada exitosamente'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+    if (!mounted) return;
 
-      context.pop(true);
-    } catch (e) {
-      _showError('Error al crear la cita: $e');
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Cita creada exitosamente'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    context.pop(true);
+  } catch (e) {
+    _showError('Error al crear la cita: $e');
+  } finally {
+    if (mounted) setState(() => _isSaving = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

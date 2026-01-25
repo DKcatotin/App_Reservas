@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
+import 'package:agenda_app/features/owner/branches/data/models/branch.dart';  // ← AGREGAR
 
 import 'customer.dart';
 import 'source.dart';
@@ -15,7 +16,7 @@ part 'appointment.g.dart';
 class Appointment with _$Appointment {
   const factory Appointment({
     required String id,
-    required String branchId,
+    required Branch branch,  
     required String customerId,
     String? staffProfileId,
     required DateTime startAt,
@@ -33,4 +34,7 @@ class Appointment with _$Appointment {
 
   factory Appointment.fromJson(Map<String, dynamic> json) =>
       _$AppointmentFromJson(json);
+   
 }
+
+

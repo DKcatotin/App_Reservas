@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:agenda_app/core/errors/exceptions.dart';
 import 'package:agenda_app/core/networking/api_endpoints.dart';
+import 'package:flutter/foundation.dart';
 import '../../models/appointment.dart';
 import 'appointments_datasource.dart';
 
@@ -34,17 +35,43 @@ class AppointmentsRemoteDatasource implements AppointmentsDatasource {
     }
   }
 
-  @override
-  Future<void> create(Appointment appointment) async {
-    try {
-      await dio.post(
-        ApiEndpoints.appointments,
-        data: appointment.toJson(),
-      );
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Error al crear cita');
-    }
+@override
+Future<void> create(Appointment appointment) async {
+  try {
+    final body = {
+      'branch': {
+        'id': appointment.branch.id,
+        'name': appointment.branch.name,
+        'phone': appointment.branch.phone,
+        'email': appointment.branch.email,
+        'address': appointment.branch.address,
+        'city': appointment.branch.city,
+        'enabled': appointment.branch.enabled,
+      },
+      'customerId': appointment.customerId,
+      'staffProfileId': appointment.staffProfileId,
+      'sourceId': appointment.source.sort,  // ← CAMBIO: Enviar sort (int) en lugar de id (UUID)
+      'startAt': appointment.startAt.toIso8601String(),
+      'endAt': appointment.endAt.toIso8601String(),
+      'notes': appointment.notes,
+    };
+
+    debugPrint('📍 Creando appointment: $body');
+
+    final response = await dio.post(
+      '/core/owner/appointments',
+      data: body,
+    );
+
+    debugPrint('✅ Appointment creado: ${response.data}');
+  } on DioException catch (e) {
+    debugPrint('❌ Error creando appointment: ${e.response?.data}');
+    throw ServerException('Error al crear cita: ${e.response?.data ?? e.message}');
   }
+}
+
+
+
 
   @override
   Future<void> update(Appointment appointment) async {

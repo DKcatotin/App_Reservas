@@ -1,3 +1,4 @@
+import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:agenda_app/features/owner/appointments/domain/entities/customer_entity.dart';
@@ -10,11 +11,11 @@ part 'appointment_entity.freezed.dart';
 
 @freezed
 class AppointmentEntity with _$AppointmentEntity {
-  const AppointmentEntity._(); //  para poder tener getters (lógica)
+  const AppointmentEntity._(); // para poder tener getters (lógica)
 
   const factory AppointmentEntity({
     required String id,
-    required String branchId,
+    required BranchEntity branch,  // ← CAMBIAR de String branchId a BranchEntity branch
     required String customerId,
     String? staffProfileId,
     required DateTime startAt,
@@ -27,7 +28,7 @@ class AppointmentEntity with _$AppointmentEntity {
     required List<ServiceEntity> services,
   }) = _AppointmentEntity;
 
-  // lógica de negocio sigue existiendo normal
+  // Lógica de negocio
   Duration get totalDuration => endAt.difference(startAt);
   bool get isPast => endAt.isBefore(DateTime.now());
   bool get isFuture => startAt.isAfter(DateTime.now());
@@ -36,4 +37,7 @@ class AppointmentEntity with _$AppointmentEntity {
     final now = DateTime.now();
     return startAt.isBefore(now) && endAt.isAfter(now);
   }
+  
+  // Getter para facilitar acceso a branchId
+  String get branchId => branch.id;
 }
