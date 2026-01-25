@@ -74,36 +74,37 @@ class AppointmentMapper {
   }
 
   /// ENTITY -> MODEL
-  static Appointment toModel(AppointmentEntity entity) {
-    return Appointment(
-      id: entity.id,
-      branch: Branch.fromEntity(entity.branch),  // ← CAMBIAR de branchId a branch
-      customerId: entity.customerId,
-      staffProfileId: entity.staffProfileId,
-      startAt: entity.startAt,
-      endAt: entity.endAt,
-      notes: entity.notes,
+ /// ENTITY -> MODEL
+static Appointment toModel(AppointmentEntity entity) {
+  return Appointment(
+    id: entity.id,
+    branch: Branch.fromEntity(entity.branch),  // ✅ Ya correcto
+    customerId: entity.customerId,
+    staffProfileId: entity.staffProfileId,
+    startAt: entity.startAt,
+    endAt: entity.endAt,
+    notes: entity.notes,
 
-      status: Status.fromEntity(entity.status),
-      source: Source.fromEntity(entity.source),
-      customer: Customer.fromEntity(entity.customer),
-      staff: entity.staff != null ? Staff.fromEntity(entity.staff!) : null,
+    status: Status.fromEntity(entity.status),
+    source: Source.fromEntity(entity.source),  // ✅ Convierte correctamente
+    customer: Customer.fromEntity(entity.customer),
+    staff: entity.staff != null ? Staff.fromEntity(entity.staff!) : null,
 
-      services: entity.services.map((s) {
-        return AppointmentService(
-          id: '',
-          appointmentId: entity.id,
-          serviceId: s.id,
-          durationMin: s.durationMin,
-          price: s.basePrice,
-          serviceName: s.name,
-          branchId: entity.branch.id,  // ← Usar entity.branch.id
-          categoryId: s.categoryId,
-          description: s.description,
-          basePrice: s.basePrice,
-          enabled: s.enabled,
-        );
-      }).toList(),
-    );
-  }
+    services: entity.services.map((s) {
+      return AppointmentService(
+        id: '',
+        appointmentId: entity.id,
+        serviceId: s.id,
+        durationMin: s.durationMin,
+        price: s.basePrice,
+        serviceName: s.name,
+        branchId: entity.branch.id,
+        categoryId: s.categoryId,
+        description: s.description,
+        basePrice: s.basePrice,
+        enabled: s.enabled,
+      );
+    }).toList(),
+  );
+}
 }

@@ -86,7 +86,10 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
       (sum, service) => sum + service.durationMin,
     );
     final endAt = startAt.add(Duration(minutes: totalDurationMin));
-
+    debugPrint('📍 Customer ID: ${customer.id}');
+    debugPrint('📍 Source selected: ${_selectedSource!.name}');
+    debugPrint('📍 Source ID (UUID): ${_selectedSource!.id}');
+    debugPrint('📍 Source SORT (número): ${_selectedSource!.sort}');
 final input = CreateAppointmentInput(
   customerId: customer.id,
   customer: CustomerEntity(

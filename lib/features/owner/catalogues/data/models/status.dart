@@ -1,7 +1,7 @@
 import '../../domain/entities/status_entity.dart';
 
 class Status {
-  final int id;
+  final String id;  // ✅ UUID en lugar de int
   final String code;
   final String name;
 
@@ -11,16 +11,14 @@ class Status {
     required this.name,
   });
 
-  // JSON → Model
   factory Status.fromJson(Map<String, dynamic> json) {
     return Status(
-      id: json['id'] as int,
+      id: json['id'] as String,  // ✅ UUID
       code: json['code'] as String,
       name: json['name'] as String,
     );
   }
 
-  // Model → JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -29,16 +27,14 @@ class Status {
     };
   }
 
-  // Model → Entity
   StatusEntity toEntity() {
     return StatusEntity(
-      id: id,
+      id: id,  // ✅ UUID
       code: code,
       name: name,
     );
   }
 
-  // Entity → Model
   factory Status.fromEntity(StatusEntity entity) {
     return Status(
       id: entity.id,

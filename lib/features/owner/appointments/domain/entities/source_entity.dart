@@ -1,5 +1,5 @@
 class SourceEntity {
-  final String id;
+  final String id;  // ✅ UUID
   final String code;
   final String name;
   final String? description;

@@ -14,25 +14,22 @@ import '../../domain/inputs/create_appointement_input.dart';
 import '../../domain/use_cases/create_appointment.dart';
 import '../../data/repositories/appointments_repository_impl.dart';
 import '../../../catalogues/domain/entities/service_entity.dart';
+import '../../../catalogues/domain/entities/status_entity.dart';  // ✅ IMPORTAR
 
-// Provider para Dio
 final dioProvider = Provider<Dio>((ref) {
   return DioClient.instance;
 });
 
-// Provider para ApiClient
 final apiClientProvider = Provider<ApiClient>((ref) {
   final dio = ref.watch(dioProvider);
   return ApiClient(dio: dio);
 });
 
-// Provider para AppointmentsDependencies
 final appointmentsDependenciesProvider = Provider<AppointmentsDependencies>((ref) {
   final dio = ref.watch(dioProvider);
   return AppointmentsDependencies()..init(dio);
 });
 
-// Provider principal
 final appointmentFormProvider =
     ChangeNotifierProvider<AppointmentFormProvider>((ref) {
   final deps = ref.watch(appointmentsDependenciesProvider);
@@ -58,13 +55,12 @@ class AppointmentFormProvider extends ChangeNotifier {
 
   List<ServiceEntity> services = [];
   List<SourceEntity> sources = [];
-  List<BranchEntity> branches = [];  // Para cuando implementes branches
+  List<StatusEntity> statuses = [];  // ✅ AGREGAR
 
   bool isLoading = false;
   bool isSaving = false;
   String? errorMessage;
 
-  /// Cargar servicios y sources
   Future<void> loadData() async {
     isLoading = true;
     errorMessage = null;
@@ -87,18 +83,23 @@ class AppointmentFormProvider extends ChangeNotifier {
 
       // CARGAR SOURCES
       try {
-        final sourcesList = await sourcesRemote.getSources();
+        final sourcesList = await sourcesRemote.getSources(type: 'appointment_source');
         sources = sourcesList.map((s) => s.toEntity()).toList();
         debugPrint('✅ Sources cargados: ${sources.length}');
       } catch (e) {
-        debugPrint('⚠️ Error al cargar sources (continuando sin ellos): $e');
+        debugPrint('⚠️ Error al cargar sources: $e');
         sources = [];
       }
 
-      // TODO: CARGAR BRANCHES cuando tengas el endpoint
-      // final branchesRemote = BranchesRemoteDatasource(apiClient: apiClient);
-      // final branchesList = await branchesRemote.getBranches();
-      // branches = branchesList.map((b) => b.toEntity()).toList();
+      // ✅ CARGAR STATUSES
+      try {
+        final statusesList = await cataloguesRemote.getStatuses();
+        statuses = statusesList.map((s) => s.toEntity()).toList();
+        debugPrint('✅ Statuses cargados: ${statuses.length}');
+      } catch (e) {
+        debugPrint('⚠️ Error al cargar statuses: $e');
+        statuses = [];
+      }
 
     } catch (e) {
       errorMessage = 'Error cargando datos: $e';
@@ -109,7 +110,6 @@ class AppointmentFormProvider extends ChangeNotifier {
     }
   }
 
-  /// Crear una cita
   Future<void> createAppointment(CreateAppointmentInput input) async {
     if (isSaving) return;
 
@@ -123,14 +123,13 @@ class AppointmentFormProvider extends ChangeNotifier {
     } catch (e) {
       errorMessage = 'Error creando cita: $e';
       debugPrint('❌ Error creando cita: $e');
-      rethrow;  // Re-lanzar para que el formulario pueda manejarlo
+      rethrow;
     } finally {
       isSaving = false;
       notifyListeners();
     }
   }
 
-  /// Obtener todas las citas
   Future<List<AppointmentEntity>> getAllAppointments() async {
     try {
       return await appointmentsRepository.getAll();
@@ -141,7 +140,6 @@ class AppointmentFormProvider extends ChangeNotifier {
     }
   }
 
-  /// Limpiar errores
   void clearError() {
     errorMessage = null;
     notifyListeners();

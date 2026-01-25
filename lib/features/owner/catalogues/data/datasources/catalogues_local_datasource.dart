@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:dio/dio.dart';
 import 'catalogues_datasource.dart';
@@ -45,5 +46,11 @@ class CataloguesLocalDatasource implements CataloguesDatasource {
     return data
         .map((e) => CatalogueItem.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+  Future<List<Status>> getStatuses() {
+    return _load(
+      'assets/data/owner/catalogues/statuses_mock.json',
+      (json) => Status.fromJson(json),
+    );
   }
 }

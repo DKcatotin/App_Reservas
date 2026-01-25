@@ -1,7 +1,7 @@
 import '../../domain/entities/source_entity.dart';
 
 class Source {
-  final String id;  // ← CAMBIAR de int a String (UUID)
+  final String id;  // ✅ UUID
   final String code;
   final DateTime updatedAt;
   final DateTime createdAt;
@@ -10,7 +10,7 @@ class Source {
   final bool required;
   final int sort;
   final String type;
-  final String? description;  // ← AGREGAR (viene en el JSON)
+  final String? description;
 
   Source({
     required this.id,
@@ -27,13 +27,13 @@ class Source {
 
   factory Source.fromJson(Map<String, dynamic> json) {
     return Source(
-      id: json['id'] as String,  // ← CAMBIAR: String, no int
+      id: json['id'] as String,  // ✅ UUID
       code: json['code'] as String,
       name: json['name'] as String,
-      description: json['description'] as String?,  // ← AGREGAR
+      description: json['description'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      sort: (json['sort'] as num).toInt(),  // ← SAFER: permite int o double
+      sort: (json['sort'] as num).toInt(),
       enabled: json['enabled'] as bool,
       required: json['required'] as bool,
       type: json['type'] as String,
@@ -48,34 +48,32 @@ class Source {
       'enabled': enabled,
       'code': code,
       'name': name,
-      'description': description,  // ← AGREGAR
+      'description': description,
       'required': required,
       'sort': sort,
       'type': type,
     };
   }
 
-  // MODEL → ENTITY
   SourceEntity toEntity() {
     return SourceEntity(
-      id: id,  // ← Ya es String, no necesita toString()
+      id: id,  // ✅ UUID
       code: code,
       name: name,
-      description: description,  // ← AGREGAR
+      description: description,
       sort: sort,
     );
   }
 
-  // ENTITY → MODEL
   factory Source.fromEntity(SourceEntity entity) {
     return Source(
-      id: entity.id,  // ← Ya es String, no necesita parse
+      id: entity.id,  // ✅ UUID
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       enabled: true,
       code: entity.code,
       name: entity.name,
-      description: entity.description,  // ← AGREGAR
+      description: entity.description,
       required: false,
       type: 'appointment_source',
       sort: entity.sort,

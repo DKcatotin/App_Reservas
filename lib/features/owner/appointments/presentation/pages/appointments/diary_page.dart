@@ -265,18 +265,31 @@ class _DiaryPageState extends State<DiaryPage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          //  CORRECCIÓN: Navegar a búsqueda de cliente
-          await context.push('/owner/appointments/cliente/buscar');
-          
-          //  CORRECCIÓN: Recargar citas después de volver
-          await _loadAllAppointments();
-        },
-        backgroundColor: const Color(0xFF8B5CF6),
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva Cita'),
-      ),
+floatingActionButton: FloatingActionButton.extended(
+  onPressed: () async {
+    //  Navegar a búsqueda de cliente
+    final result = await context.push('/owner/appointments/cliente/buscar');  // ✅ Capturar resultado
+    
+    //  Recargar citas si se creó una nueva
+    if (mounted) {
+      await _loadAllAppointments();  // ✅ Recargar siempre al volver
+      
+      // ✅ OPCIONAL: Mostrar mensaje solo si se creó exitosamente
+      if (result == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Cita creada exitosamente'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  },
+  backgroundColor: const Color(0xFF8B5CF6),
+  icon: const Icon(Icons.add),
+  label: const Text('Nueva Cita'),
+),
     );
   }
 

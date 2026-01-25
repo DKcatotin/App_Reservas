@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Domain
 import '../../../domain/entities/appointment_entity.dart';
-import '../../../../catalogues/domain/entities/status_entity.dart';
 import '../../../domain/use_cases/update_appointment.dart';
 import '../../../domain/use_cases/delete_appointment.dart';
 // Data
@@ -293,72 +292,74 @@ Servicio: $services
     }
   }
 
-  Future<void> _saveChanges() async {
-    final newStartAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
+Future<void> _saveChanges() async {
+  final newStartAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
 
-    final newEndAt = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _endTime.hour,
-      _endTime.minute,
-    );
+  final newEndAt = DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _endTime.hour,
+    _endTime.minute,
+  );
 
-    Staff? selectedStaff;
-    if (_selectedStaffId != null) {
-      try {
-        selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
-      } catch (e) {
-        selectedStaff = null;
-      }
-    }
-
-    final updatedAppointment = widget.appointment.copyWith(
-      startAt: newStartAt,
-      endAt: newEndAt,
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-      status: StatusEntity(
-        id: 0,
-        code: _selectedStatus.toLowerCase(),
-        name: _selectedStatus,
-      ),
-      services: _selectedServices,
-      staff: selectedStaff != null
-          ? (selectedStaff.id == widget.appointment.staff?.id
-              ? widget.appointment.staff
-              : StaffEntity(
-                  id: selectedStaff.id,
-                  userId: selectedStaff.userId,
-                  displayName: selectedStaff.displayName,
-                  specialty: selectedStaff.specialty,
-                  colorTag: selectedStaff.colorTag,
-                  positionId: selectedStaff.positionId,
-                  photoUrl: selectedStaff.photoUrl,
-                  commissionType: selectedStaff.commissionType,
-                  commissionValue: selectedStaff.commissionValue,
-                ))
-          : null,
-    );
-
+  Staff? selectedStaff;
+  if (_selectedStaffId != null) {
     try {
-      await _updateAppointmentUseCase.call(updatedAppointment);
-
-      if (mounted) {
-        _showSuccess('Cita actualizada exitosamente');
-        Navigator.pop(context, updatedAppointment);
-      }
+      selectedStaff = _staffList.firstWhere((s) => s.id == _selectedStaffId);
     } catch (e) {
-      if (mounted) _showError('Error al guardar: $e');
+      selectedStaff = null;
     }
   }
+
+  final updatedAppointment = widget.appointment.copyWith(
+    startAt: newStartAt,
+    endAt: newEndAt,
+    notes: _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim(),
+    status: widget.appointment.status.copyWith(  // ✅ Mantener el ID original
+      code: _selectedStatus.toLowerCase(),
+      name: _selectedStatus,
+    ),
+    services: _selectedServices,
+    staff: selectedStaff != null
+        ? (selectedStaff.id == widget.appointment.staff?.id
+            ? widget.appointment.staff
+            : StaffEntity(
+                id: selectedStaff.id,
+                userId: selectedStaff.userId,
+                displayName: selectedStaff.displayName,
+                specialty: selectedStaff.specialty,
+                colorTag: selectedStaff.colorTag,
+                positionId: selectedStaff.positionId,
+                photoUrl: selectedStaff.photoUrl,
+                commissionType: selectedStaff.commissionType,
+                commissionValue: selectedStaff.commissionValue,
+              ))
+        : null,
+  );
+
+  try {
+    await _updateAppointmentUseCase.call(updatedAppointment);
+
+    if (!mounted) return;
+    _showSuccess('Cita actualizada exitosamente');
+    
+    if (!mounted) return;
+    Navigator.pop(context, updatedAppointment);
+    
+  } catch (e) {
+    if (!mounted) return;
+    _showError('Error al guardar: $e');
+  }
+}
 
   void _cancelEdit() {
   setState(() {

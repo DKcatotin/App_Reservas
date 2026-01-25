@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:agenda_app/core/errors/exceptions.dart';
 import 'package:agenda_app/core/networking/api_endpoints.dart';
@@ -50,7 +52,10 @@ Future<void> create(Appointment appointment) async {
       },
       'customerId': appointment.customerId,
       'staffProfileId': appointment.staffProfileId,
-      'sourceId': appointment.source.sort,  // ← CAMBIO: Enviar sort (int) en lugar de id (UUID)
+      'sourceId': appointment.source.id,  // ✅ UUID
+      // ✅ statusId opcional - el backend lo asigna automáticamente
+      if (appointment.status.id.isNotEmpty) 
+        'statusId': appointment.status.id,
       'startAt': appointment.startAt.toIso8601String(),
       'endAt': appointment.endAt.toIso8601String(),
       'notes': appointment.notes,
@@ -69,10 +74,6 @@ Future<void> create(Appointment appointment) async {
     throw ServerException('Error al crear cita: ${e.response?.data ?? e.message}');
   }
 }
-
-
-
-
   @override
   Future<void> update(Appointment appointment) async {
     try {

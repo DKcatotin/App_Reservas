@@ -1,4 +1,5 @@
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
+import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';
 
 import '../models/service.dart';
 import '../models/staff.dart';
@@ -14,4 +15,5 @@ abstract class CataloguesDatasource {
   
  Future<List<CatalogueItem>> getAppointmentStatuses();
   // Agregar getStatuses() si lo necesitas para appointment_statuses
+   Future<List<Status>> getStatuses();
 }
