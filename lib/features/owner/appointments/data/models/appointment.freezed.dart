@@ -32,7 +32,7 @@ mixin _$Appointment {
   @JsonKey(fromJson: AppointmentMapper.customerFromJson)
   Customer get customer => throw _privateConstructorUsedError;
   Staff? get staff => throw _privateConstructorUsedError;
-  List<AppointmentService> get services => throw _privateConstructorUsedError;
+  List<AppointmentService>? get services => throw _privateConstructorUsedError;
 
   /// Serializes this Appointment to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -62,7 +62,7 @@ abstract class $AppointmentCopyWith<$Res> {
       Source source,
       @JsonKey(fromJson: AppointmentMapper.customerFromJson) Customer customer,
       Staff? staff,
-      List<AppointmentService> services});
+      List<AppointmentService>? services});
 }
 
 /// @nodoc
@@ -91,7 +91,7 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
     Object? source = null,
     Object? customer = null,
     Object? staff = freezed,
-    Object? services = null,
+    Object? services = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -138,10 +138,10 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
           ? _value.staff
           : staff // ignore: cast_nullable_to_non_nullable
               as Staff?,
-      services: null == services
+      services: freezed == services
           ? _value.services
           : services // ignore: cast_nullable_to_non_nullable
-              as List<AppointmentService>,
+              as List<AppointmentService>?,
     ) as $Val);
   }
 }
@@ -166,7 +166,7 @@ abstract class _$$AppointmentImplCopyWith<$Res>
       Source source,
       @JsonKey(fromJson: AppointmentMapper.customerFromJson) Customer customer,
       Staff? staff,
-      List<AppointmentService> services});
+      List<AppointmentService>? services});
 }
 
 /// @nodoc
@@ -193,7 +193,7 @@ class __$$AppointmentImplCopyWithImpl<$Res>
     Object? source = null,
     Object? customer = null,
     Object? staff = freezed,
-    Object? services = null,
+    Object? services = freezed,
   }) {
     return _then(_$AppointmentImpl(
       id: null == id
@@ -240,10 +240,10 @@ class __$$AppointmentImplCopyWithImpl<$Res>
           ? _value.staff
           : staff // ignore: cast_nullable_to_non_nullable
               as Staff?,
-      services: null == services
+      services: freezed == services
           ? _value._services
           : services // ignore: cast_nullable_to_non_nullable
-              as List<AppointmentService>,
+              as List<AppointmentService>?,
     ));
   }
 }
@@ -264,7 +264,7 @@ class _$AppointmentImpl implements _Appointment {
       @JsonKey(fromJson: AppointmentMapper.customerFromJson)
       required this.customer,
       this.staff,
-      required final List<AppointmentService> services})
+      final List<AppointmentService>? services})
       : _services = services;
 
   factory _$AppointmentImpl.fromJson(Map<String, dynamic> json) =>
@@ -293,12 +293,14 @@ class _$AppointmentImpl implements _Appointment {
   final Customer customer;
   @override
   final Staff? staff;
-  final List<AppointmentService> _services;
+  final List<AppointmentService>? _services;
   @override
-  List<AppointmentService> get services {
+  List<AppointmentService>? get services {
+    final value = _services;
+    if (value == null) return null;
     if (_services is EqualUnmodifiableListView) return _services;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_services);
+    return EqualUnmodifiableListView(value);
   }
 
   @override
@@ -375,7 +377,7 @@ abstract class _Appointment implements Appointment {
       @JsonKey(fromJson: AppointmentMapper.customerFromJson)
       required final Customer customer,
       final Staff? staff,
-      required final List<AppointmentService> services}) = _$AppointmentImpl;
+      final List<AppointmentService>? services}) = _$AppointmentImpl;
 
   factory _Appointment.fromJson(Map<String, dynamic> json) =
       _$AppointmentImpl.fromJson;
@@ -404,7 +406,7 @@ abstract class _Appointment implements Appointment {
   @override
   Staff? get staff;
   @override
-  List<AppointmentService> get services;
+  List<AppointmentService>? get services;
 
   /// Create a copy of Appointment
   /// with the given fields replaced by the non-null parameter values.

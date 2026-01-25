@@ -29,12 +29,12 @@ class Appointment with _$Appointment {
     required Customer customer,
 
     Staff? staff,
-    required List<AppointmentService> services,
+    List<AppointmentService>? services,  // ← Cambiar a nullable
   }) = _Appointment;
 
   factory Appointment.fromJson(Map<String, dynamic> json) =>
       _$AppointmentFromJson(json);
-   
 }
+
 
 

@@ -21,8 +21,8 @@ _$AppointmentImpl _$$AppointmentImplFromJson(Map<String, dynamic> json) =>
       staff: json['staff'] == null
           ? null
           : Staff.fromJson(json['staff'] as Map<String, dynamic>),
-      services: (json['services'] as List<dynamic>)
-          .map((e) => AppointmentService.fromJson(e as Map<String, dynamic>))
+      services: (json['services'] as List<dynamic>?)
+          ?.map((e) => AppointmentService.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 

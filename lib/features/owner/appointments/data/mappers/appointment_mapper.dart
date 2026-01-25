@@ -43,38 +43,38 @@ class AppointmentMapper {
   }
 
   /// MODEL -> ENTITY
-  static AppointmentEntity toEntity(Appointment model) {
-    return AppointmentEntity(
-      id: model.id,
-      branch: model.branch.toEntity(),  // ← CAMBIAR de branchId a branch
-      customerId: model.customerId,
-      staffProfileId: model.staffProfileId,
-      startAt: model.startAt,
-      endAt: model.endAt,
-      notes: model.notes,
+ /// MODEL -> ENTITY
+static AppointmentEntity toEntity(Appointment model) {
+  return AppointmentEntity(
+    id: model.id,
+    branch: model.branch.toEntity(),
+    customerId: model.customerId,
+    staffProfileId: model.staffProfileId,
+    startAt: model.startAt,
+    endAt: model.endAt,
+    notes: model.notes,
 
-      status: model.status.toEntity(),
-      source: model.source.toEntity(),
-      customer: model.customer.toEntity(),
-      staff: model.staff?.toEntity(),
+    status: model.status.toEntity(),
+    source: model.source.toEntity(),
+    customer: model.customer.toEntity(),
+    staff: model.staff?.toEntity(),
 
-      services: model.services.map((s) {
-        return Service(
-          id: s.serviceId,
-          branchId: s.branchId ?? '',
-          categoryId: s.categoryId,
-          name: s.serviceName ?? '',
-          description: s.description,
-          durationMin: s.durationMin,
-          basePrice: s.basePrice ?? 0.0,
-          enabled: s.enabled ?? true,
-        ).toEntity();
-      }).toList(),
-    );
-  }
+    // ✅ Solución: Usar operador ?? para manejar null
+    services: (model.services ?? []).map((s) {
+      return Service(
+        id: s.serviceId,
+        branchId: s.branchId ?? '',
+        categoryId: s.categoryId,
+        name: s.serviceName ?? '',
+        description: s.description,
+        durationMin: s.durationMin,
+        basePrice: s.basePrice ?? 0.0,
+        enabled: s.enabled ?? true,
+      ).toEntity();
+    }).toList(),
+  );
+}
 
-  /// ENTITY -> MODEL
- /// ENTITY -> MODEL
 static Appointment toModel(AppointmentEntity entity) {
   return Appointment(
     id: entity.id,
