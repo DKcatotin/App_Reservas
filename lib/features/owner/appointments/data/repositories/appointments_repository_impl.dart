@@ -10,7 +10,7 @@ import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.d
 
 class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final AppointmentsDatasource remoteDatasource;
-   final AppointmentServicesRemoteDatasource servicesDataSource;
+  final AppointmentServicesRemoteDatasource servicesDataSource;
   // Cache
   List<Appointment>? _cache;
   List<AppointmentEntity>? _entityCache;
@@ -19,7 +19,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
 
   AppointmentsRepositoryImpl({
     required this.remoteDatasource,
-     required this.servicesDataSource,
+    required this.servicesDataSource,
   });
 
   bool get _isCacheValid =>
@@ -43,12 +43,12 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
       final appointments = await remoteDatasource.getAll();
       _cache = appointments;
       _cacheTime = DateTime.now();
-      
+
       // Usar el mapper que ya tienes
       _entityCache = appointments
           .map((a) => AppointmentMapper.toEntity(a))
           .toList();
-      
+
       return _entityCache!;
     } on ServerException catch (e) {
       throw AppointmentsFailure(e.message);
@@ -86,23 +86,23 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   @override
   Future<void> update(AppointmentEntity appointment) async {
     try {
-      // 1. Actualizar datos básicos de la cita
+      // 1. Actualizar datos basicos de la cita
       final appointmentModel = AppointmentMapper.toModel(appointment);
       await remoteDatasource.update(appointmentModel);
 
-      // 2. Actualizar servicios
-      if (appointment.services.isNotEmpty) {
-        final servicesData = appointment.services.map((s) => {
-          'serviceId': s.id,
-          'durationMin': s.durationMin,
-          'price': s.basePrice,
-        }).toList();
+      // 2. Actualizar servicios (incluye eliminaciones)
+      final servicesData = appointment.services
+          .map((s) => {
+                'serviceId': s.id,
+                'durationMin': s.durationMin,
+                'price': s.basePrice,
+              })
+          .toList();
 
-        await servicesDataSource.updateAppointmentServices(
-          appointmentId: appointment.id,
-          services: servicesData,
-        );
-      }
+      await servicesDataSource.updateAppointmentServices(
+        appointmentId: appointment.id,
+        services: servicesData,
+      );
 
       invalidateCache();
     } on ServerException catch (e) {
@@ -115,6 +115,7 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   @override
   Future<void> delete(String id) async {
     try {
+      await servicesDataSource.deleteByAppointment(id);
       await remoteDatasource.delete(id);
       invalidateCache();
     } on ServerException catch (e) {

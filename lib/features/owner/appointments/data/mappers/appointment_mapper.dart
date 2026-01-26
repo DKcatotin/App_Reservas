@@ -50,8 +50,8 @@ static AppointmentEntity toEntity(Appointment model) {
     branch: model.branch.toEntity(),
     customerId: model.customerId,
     staffProfileId: model.staffProfileId,
-    startAt: model.startAt,
-    endAt: model.endAt,
+    startAt: model.startAt.toLocal(),
+    endAt: model.endAt.toLocal(),
     notes: model.notes,
 
     status: model.status.toEntity(),
@@ -107,4 +107,7 @@ static Appointment toModel(AppointmentEntity entity) {
     }).toList(),
   );
 }
+
+
+
 }

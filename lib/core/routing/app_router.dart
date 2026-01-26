@@ -12,11 +12,13 @@ import 'package:agenda_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../di/app_dependencies.dart';
+import 'route_observer.dart';
 
 class AppRouter {
   static GoRouter router(AppDependencies deps) {
     return GoRouter(
       initialLocation: '/login',
+      observers: [routeObserver],
       routes: [
         GoRoute(
           path: '/login',

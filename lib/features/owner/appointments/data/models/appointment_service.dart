@@ -5,7 +5,7 @@ class AppointmentService {
   final int durationMin;
   final double price;
   
-  //  AGREGAR: Campos del servicio obtenidos por JOIN
+  // Datos del servicio relacionado (pueden venir del backend)
   final String? serviceName;
   final String? branchId;
   final String? categoryId;
@@ -27,43 +27,61 @@ class AppointmentService {
     this.enabled,
   });
 
+  /// ✅ ACTUALIZADO: Parsear desde la estructura anidada del backend
   factory AppointmentService.fromJson(Map<String, dynamic> json) {
+    // El backend puede devolver la estructura así:
+    // {
+    //   "id": "uuid",
+    //   "appointmentId": "uuid",
+    //   "serviceId": "uuid",
+    //   "durationMin": 60,
+    //   "price": "18.00",
+    //   "service": {              ← ANIDADO
+    //     "id": "uuid",
+    //     "name": "Pedicure",
+    //     "branchId": "uuid",
+    //     "categoryId": "uuid",
+    //     "description": "...",
+    //     "durationMin": 60,
+    //     "basePrice": "18.00",
+    //     "enabled": true
+    //   }
+    // }
+
+    final serviceData = json['service'] as Map<String, dynamic>?;
+
     return AppointmentService(
-      id: json['id'] as String? ?? '',
-      appointmentId: json['appointment_id'] as String? ?? '',
-      serviceId: json['service_id'] as String? ?? '',
-      durationMin: (json['durationMin'] as num?)?.toInt() ?? 0,
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      // Campos del JOIN con services
-      serviceName: json['service']?['name'] as String? ?? json['name'] as String?,
-      branchId: json['service']?['branchId'] as String?,
-      categoryId: json['service']?['categoryId'] as String?,
-      description: json['service']?['description'] as String?,
-      basePrice: json['service']?['basePrice'] != null 
-          ? (json['service']?['basePrice'] as num).toDouble() 
+      id: json['id'] as String,
+      appointmentId: json['appointmentId'] as String,
+      serviceId: json['serviceId'] as String,
+      durationMin: json['durationMin'] as int,
+      price: double.parse(json['price'].toString()),
+      
+      // ✅ Si viene el objeto "service" anidado, extraer sus datos
+      serviceName: serviceData?['name'] as String?,
+      branchId: serviceData?['branchId'] as String?,
+      categoryId: serviceData?['categoryId'] as String?,
+      description: serviceData?['description'] as String?,
+      basePrice: serviceData != null 
+          ? double.parse(serviceData['basePrice'].toString())
           : null,
-      enabled: json['service']?['enabled'] as bool?,
+      enabled: serviceData?['enabled'] as bool?,
     );
-  }
-
-  Duration get duration => Duration(minutes: durationMin);
-
-  String get durationLabel {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    }
-    return '${minutes}m';
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'appointment_id': appointmentId,
-      'service_id': serviceId,
+      'appointmentId': appointmentId,
+      'serviceId': serviceId,
       'durationMin': durationMin,
       'price': price,
+      'serviceName': serviceName,
+      'branchId': branchId,
+      'categoryId': categoryId,
+      'description': description,
+      'basePrice': basePrice,
+      'enabled': enabled,
     };
   }
 }

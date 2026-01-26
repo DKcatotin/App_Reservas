@@ -18,7 +18,7 @@ class Env {
   // Android emulator: 10.0.2.2
   // iOS simulator: localhost
   // Dispositivo físico: IP de tu máquina en la red local
-  static const String _developmentUrl = 'http://10.0.2.2:3000/api/v1';
+  static const String _developmentUrl = 'http://192.168.18.14:3000/api/v1';
   static const String _stagingUrl = 'https://staging.tuapp.com/api/v1';
   static const String _productionUrl = 'https://api.tuapp.com/api/v1';
 

@@ -12,30 +12,29 @@ class AppointmentsRemoteDatasource implements AppointmentsDatasource {
 
   AppointmentsRemoteDatasource({required this.dio});
 
-  @override
-  Future<List<Appointment>> getAll() async {
-    try {
-      final response = await dio.get(
-        ApiEndpoints.appointments,
-        queryParameters: {
-          'page': 1,
-          'limit': 100,
-        },
-      );
-      
-      final data = response.data['data'] as List<dynamic>?;
-      
-      if (data == null) {
-        return [];
-      }
-      
-      return data
-          .map((json) => Appointment.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Error al obtener citas del backend');
-    }
+  // En appointments_remote_datasource.dart
+Future<List<Appointment>> getAll() async {
+  try {
+    final response = await dio.get(
+      '/core/owner/appointments',
+      queryParameters: {
+        'page': 1,
+        'limit': 100,
+      },
+    );
+
+    final data = response.data['data'] as List;
+    
+    return data.map((json) {
+      // ✅ Asegúrate de que el modelo parsee los servicios
+      return Appointment.fromJson(json);
+    }).toList();
+    
+  } on DioException catch (e) {
+    throw ServerException('Error al obtener citas: ${e.response?.data ?? e.message}');
   }
+}
+
 
   @override
   Future<void> create(Appointment appointment) async {

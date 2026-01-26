@@ -14,7 +14,7 @@ import '../../domain/inputs/create_appointement_input.dart';
 import '../../domain/use_cases/create_appointment.dart';
 import '../../data/repositories/appointments_repository_impl.dart';
 import '../../../catalogues/domain/entities/service_entity.dart';
-import '../../../catalogues/domain/entities/status_entity.dart';  // ✅ IMPORTAR
+import '../../../catalogues/domain/entities/status_entity.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   return DioClient.instance;
@@ -28,6 +28,20 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 final appointmentsDependenciesProvider = Provider<AppointmentsDependencies>((ref) {
   final dio = ref.watch(dioProvider);
   return AppointmentsDependencies()..init(dio);
+});
+
+// ✅ NUEVO: Provider del repositorio de appointments
+final appointmentsRepositoryProvider = Provider<AppointmentsRepositoryImpl>((ref) {
+  final deps = ref.watch(appointmentsDependenciesProvider);
+  return deps.appointmentsRepository;
+});
+
+// ✅ NUEVO: Provider para la lista de citas con auto-refresh
+final appointmentsListProvider = FutureProvider.autoDispose<List<AppointmentEntity>>((ref) async {
+  final repository = ref.watch(appointmentsRepositoryProvider);
+  final appointments = await repository.getAll();
+  debugPrint('📋 Citas cargadas: ${appointments.length}');
+  return appointments;
 });
 
 final appointmentFormProvider =
@@ -55,7 +69,7 @@ class AppointmentFormProvider extends ChangeNotifier {
 
   List<ServiceEntity> services = [];
   List<SourceEntity> sources = [];
-  List<StatusEntity> statuses = [];  // ✅ AGREGAR
+  List<StatusEntity> statuses = [];
 
   bool isLoading = false;
   bool isSaving = false;
@@ -91,7 +105,7 @@ class AppointmentFormProvider extends ChangeNotifier {
         sources = [];
       }
 
-      // ✅ CARGAR STATUSES
+      // CARGAR STATUSES
       try {
         final statusesList = await cataloguesRemote.getStatuses();
         statuses = statusesList.map((s) => s.toEntity()).toList();

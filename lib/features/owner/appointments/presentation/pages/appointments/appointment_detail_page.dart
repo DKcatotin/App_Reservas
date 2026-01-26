@@ -1,5 +1,7 @@
 // lib/features/owner/appointments/presentation/pages/appointment_detail_page.dart
 import 'dart:convert';
+import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
+import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_remote_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/provider/services_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/widgets/custom_info_card.dart';
 import 'package:flutter/material.dart';
@@ -18,11 +20,10 @@ import '../../../../catalogues/data/models/service.dart';
 // Entities from catalogues
 import '../../../../catalogues/domain/entities/service_entity.dart';
 import '../../../../catalogues/domain/entities/staff_entity.dart';
+import '../../../../catalogues/domain/entities/status_entity.dart';
 // Providers
-import '../../providers/staff_provider.dart';
 // Widgets - Reutilizables de catalogues
 import '../../../../catalogues/presentation/widgets/service_selector.dart';
-import '../../../../catalogues/presentation/widgets/staff_selector.dart';
 // Widgets - Específicos de appointments
 import '../../widgets/appointments/appointment_header.dart';
 import '../../widgets/appointments/appointment_date_time_section.dart';
@@ -56,7 +57,9 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   late String _selectedStatus;
-  List<ServiceEntity> _selectedServices = [];
+  String? _selectedStatusId;
+  List<String> _availableStatuses = const ['Confirmada', 'Pendiente', 'Cancelada'];
+  List<StatusEntity> _statuses = [];
   String? _selectedStaffId;
   // Controladores de texto
   late TextEditingController _notesController;
@@ -64,7 +67,9 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   late TextEditingController _phoneController;
   // Listas de datos
   List<Staff> _staffList = [];
-  Set<String> _selectedServiceIds = {};  // Use cases
+  // ✅ Usar 'late' para inicializar en initState()
+  late List<ServiceEntity> _selectedServices;
+  late Set<String> _selectedServiceIds;
   late UpdateAppointmentUseCase _updateAppointmentUseCase;
   late DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
@@ -73,6 +78,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
     super.initState();
     _initializeData();
     _initializeUseCases();
+    _loadStatuses();
   }
 
   void _initializeData() {
@@ -80,21 +86,79 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
   _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
   _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
   _selectedStatus = widget.appointment.status.name;
+  _selectedStatusId = widget.appointment.status.id;
   
-  // ✅ CAMBIO: Crear una copia mutable de la lista
-  _selectedServices = List.from(widget.appointment.services); 
-  
+  // ✅ Crear copias mutables
+  _selectedServices = List<ServiceEntity>.from(widget.appointment.services);
+  _selectedServiceIds = widget.appointment.services.map((s) => s.id).toSet();  // ✅ Crear Set mutable desde el original
+
   _selectedStaffId = widget.appointment.staff?.id;
-  _selectedServiceIds = _selectedServices.map((s) => s.id).toSet();
 
   _notesController = TextEditingController(text: widget.appointment.notes ?? '');
   _nameController = TextEditingController(text: widget.appointment.customer.fullName);
   _phoneController = TextEditingController(text: widget.appointment.customer.phone);
 }
 
+
   void _initializeUseCases() {
     _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repository);
     _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repository);
+  }
+
+  Future<void> _loadStatuses() async {
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final cataloguesRemote = CataloguesRemoteDatasource(apiClient: apiClient);
+      final statusModels = await cataloguesRemote.getStatuses();
+      final allStatuses = statusModels.map((s) => s.toEntity()).toList();
+      final allowedCodes = {'CONFIRMED', 'PENDING', 'CANCELLED'};
+      final filtered = allStatuses
+          .where((s) => allowedCodes.contains(s.code.toUpperCase()))
+          .toList();
+
+      if (!mounted) return;
+
+      if (filtered.isEmpty) return;
+
+      setState(() {
+        _statuses = filtered;
+        _availableStatuses = filtered.map((s) => s.name).toList();
+
+        final matchById = filtered
+            .where((s) => s.id == _selectedStatusId)
+            .cast<StatusEntity?>()
+            .firstWhere((s) => s != null, orElse: () => null);
+        if (matchById != null) {
+          _selectedStatus = matchById.name;
+        } else {
+          final matchByName = filtered
+              .where((s) => s.name.toLowerCase() == _selectedStatus.toLowerCase())
+              .cast<StatusEntity?>()
+              .firstWhere((s) => s != null, orElse: () => null);
+          if (matchByName != null) {
+            _selectedStatusId = matchByName.id;
+            _selectedStatus = matchByName.name;
+          }
+        }
+      });
+    } catch (_) {
+      // Mantener opciones por defecto si falla la carga
+    }
+  }
+
+  StatusEntity? _findStatusByName(String name) {
+    for (final status in _statuses) {
+      if (status.name.toLowerCase() == name.toLowerCase()) {
+        return status;
+      }
+    }
+    return null;
+  }
+
+  String _statusCodeFromSelection() {
+    final selected = _findStatusByName(_selectedStatus);
+    if (selected != null) return selected.code;
+    return widget.appointment.status.code;
   }
 
   @override
@@ -287,6 +351,8 @@ Future<void> _saveChanges() async {
       selectedStaff = null;
     }
   }
+  final preserveStaff =
+      _selectedStaffId != null && _selectedStaffId == widget.appointment.staff?.id;
 
   final updatedAppointment = widget.appointment.copyWith(
     startAt: newStartAt,
@@ -294,8 +360,9 @@ Future<void> _saveChanges() async {
     notes: _notesController.text.trim().isEmpty
         ? null
         : _notesController.text.trim(),
-    status: widget.appointment.status.copyWith(  // ✅ Mantener el ID original
-      code: _selectedStatus.toLowerCase(),
+    status: widget.appointment.status.copyWith(
+      id: _selectedStatusId ?? widget.appointment.status.id,
+      code: _statusCodeFromSelection(),
       name: _selectedStatus,
     ),
     services: _selectedServices,
@@ -313,13 +380,17 @@ Future<void> _saveChanges() async {
                 commissionType: selectedStaff.commissionType,
                 commissionValue: selectedStaff.commissionValue,
               ))
-        : null,
+        : (preserveStaff ? widget.appointment.staff : null),
   );
 
   try {
     await _updateAppointmentUseCase.call(updatedAppointment);
 
     if (!mounted) return;
+    
+    // ✅ NUEVO: Invalidar el provider de appointments para forzar recarga
+    ref.invalidate(appointmentsListProvider);
+    
     _showSuccess('Cita actualizada exitosamente');
     
     if (!mounted) return;
@@ -331,6 +402,7 @@ Future<void> _saveChanges() async {
   }
 }
 
+
   void _cancelEdit() {
   setState(() {
     _isEditing = false;
@@ -338,6 +410,7 @@ Future<void> _saveChanges() async {
     _startTime = TimeOfDay.fromDateTime(widget.appointment.startAt);
     _endTime = TimeOfDay.fromDateTime(widget.appointment.endAt);
     _selectedStatus = widget.appointment.status.name;
+    _selectedStatusId = widget.appointment.status.id;
     _notesController.text = widget.appointment.notes ?? '';
     
     // ✅ CAMBIO: Crear una copia mutable
@@ -401,7 +474,7 @@ Future<void> _saveChanges() async {
                   //  CLIENTE (refactorizado)
                   CustomerInfoCard(
                     customer: widget.appointment.customer,
-                    isEditing: _isEditing,
+                    isEditing: false,
                     nameController: _nameController,
                     phoneController: _phoneController,
                     onWhatsAppTap: _isEditing ? null : _sendWhatsAppReminder,
@@ -444,8 +517,13 @@ Future<void> _saveChanges() async {
                     child: AppointmentStatusSelector(
                       status: _selectedStatus,
                       isEditing: _isEditing,
+                      availableStatuses: _availableStatuses,
                       onChanged: (newStatus) {
-                        setState(() => _selectedStatus = newStatus);
+                        final selected = _findStatusByName(newStatus);
+                        setState(() {
+                          _selectedStatus = newStatus;
+                          _selectedStatusId = selected?.id ?? _selectedStatusId;
+                        });
                       },
                     ),
                   ),
@@ -491,10 +569,36 @@ Future<void> _saveChanges() async {
   /// Widget para la sección de staff
   Widget _buildStaffSection() {
     if (_isEditing) {
-      return StaffSelector(
-        staffList: _staffList,
-        selectedStaffId: _selectedStaffId,
-        onChanged: (id) => setState(() => _selectedStaffId = id),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey[300]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.grey[700],
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Asignacion de staff no disponible por el momento',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 

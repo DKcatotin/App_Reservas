@@ -1,9 +1,8 @@
 import 'package:agenda_app/features/owner/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
-import 'package:agenda_app/features/owner/appointments/domain/use_cases/delete_appointment.dart';
 import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_appointments_by_day.dart';
-import 'package:agenda_app/features/owner/appointments/domain/use_cases/update_appointment.dart';
 import 'package:agenda_app/features/owner/appointments/domain/utils/date_utils.dart';
+import 'package:agenda_app/core/routing/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:go_router/go_router.dart'; 
@@ -22,10 +21,8 @@ class DiaryPage extends StatefulWidget {
   State<DiaryPage> createState() => _DiaryPageState();
 }
 
-class _DiaryPageState extends State<DiaryPage> {
+class _DiaryPageState extends State<DiaryPage> with RouteAware {
   late final GetAppointmentsByDayUseCase _getAppointmentsByDayUseCase;
-  late final UpdateAppointmentUseCase _updateAppointmentUseCase;
-  late final DeleteAppointmentUseCase _deleteAppointmentUseCase;
 
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -38,11 +35,29 @@ class _DiaryPageState extends State<DiaryPage> {
     super.initState();
     
     _getAppointmentsByDayUseCase = GetAppointmentsByDayUseCase(widget.repo);
-    _updateAppointmentUseCase = UpdateAppointmentUseCase(widget.repo);
-    _deleteAppointmentUseCase = DeleteAppointmentUseCase(widget.repo);
 
     _selectedDay = _focusedDay;
     _loadAllAppointments();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _loadAllAppointments();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
   }
 
   /// Carga todas las citas
@@ -92,15 +107,30 @@ class _DiaryPageState extends State<DiaryPage> {
 
   Future<void> _handleAppointmentUpdated(AppointmentEntity updated) async {
     try {
-      await _updateAppointmentUseCase.call(updated);
-      
+      final selectedDay = _selectedDay ?? DateTime.now();
+
       setState(() {
         final allIndex = _allAppointments.indexWhere((a) => a.id == updated.id);
-        if (allIndex != -1) _allAppointments[allIndex] = updated;
+        if (allIndex != -1) {
+          _allAppointments[allIndex] = updated;
+        } else {
+          _allAppointments.add(updated);
+        }
 
         final filteredIndex =
             _filteredAppointments.indexWhere((a) => a.id == updated.id);
-        if (filteredIndex != -1) _filteredAppointments[filteredIndex] = updated;
+        if (isSameDate(updated.startAt, selectedDay)) {
+          if (filteredIndex != -1) {
+            _filteredAppointments[filteredIndex] = updated;
+          } else {
+            _filteredAppointments.add(updated);
+          }
+        } else if (filteredIndex != -1) {
+          _filteredAppointments.removeAt(filteredIndex);
+        }
+
+        _allAppointments.sort((a, b) => a.startAt.compareTo(b.startAt));
+        _filteredAppointments.sort((a, b) => a.startAt.compareTo(b.startAt));
       });
 
       if (mounted) {
@@ -125,8 +155,6 @@ class _DiaryPageState extends State<DiaryPage> {
 
   Future<void> _handleAppointmentDeleted(String id) async {
     try {
-      await _deleteAppointmentUseCase.call(id);
-
       setState(() {
         _allAppointments.removeWhere((a) => a.id == id);
         _filteredAppointments.removeWhere((a) => a.id == id);

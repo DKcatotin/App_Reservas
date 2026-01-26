@@ -5,6 +5,7 @@ import 'package:agenda_app/features/owner/appointments/domain/use_cases/get_upco
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../appointments/data/repositories/appointments_repository_impl.dart';
+import 'package:agenda_app/core/routing/route_observer.dart';
 
 class OwnerHomePage extends StatefulWidget {
   final AppointmentsRepositoryImpl repo;
@@ -18,7 +19,7 @@ class OwnerHomePage extends StatefulWidget {
   State<OwnerHomePage> createState() => _OwnerHomePageState();
 }
 
-class _OwnerHomePageState extends State<OwnerHomePage> {
+class _OwnerHomePageState extends State<OwnerHomePage> with RouteAware {
   //  Declarar use cases
   late final GetAppointmentsByDayUseCase _getTodayUseCase;
   late final GetUpcomingAppointmentsUseCase _getUpcomingUseCase;
@@ -41,8 +42,30 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
  Future<void> _loadData() async {
   setState(() => _isLoading = true);
+
+  widget.repo.invalidateCache();
   
   await Future.wait([
     _loadServicios(),
@@ -254,10 +277,6 @@ Future<void> _loadServicios() async {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.white),
-                        onPressed: () {},
-                      ),
-                      IconButton(
                         icon: const Icon(Icons.logout, color: Colors.white),
                         onPressed: () => _logout(context),
                       ),
@@ -428,11 +447,6 @@ Future<void> _loadServicios() async {
             },
           ),
           const SizedBox(height: 12),
-          _buildSecondaryButton(
-            label: 'Probar ruta privada',
-            icon: Icons.bug_report_outlined,
-            onPressed: () => context.go('/owner/test1'),
-          ),
         ],
       ),
     ),
