@@ -1,11 +1,7 @@
-import 'package:agenda_app/core/api/api_client.dart';
-import 'package:agenda_app/core/di/appointments_di.dart';
-import 'package:agenda_app/core/networking/dio_client.dart';
+import 'package:agenda_app/core/di/riverpod_providers.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/datasources/sources_remote_datasource.dart';
 import 'package:agenda_app/features/owner/appointments/domain/entities/appointment_entity.dart';
-import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
 import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_remote_datasource.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,20 +11,6 @@ import '../../domain/use_cases/create_appointment.dart';
 import '../../data/repositories/appointments_repository_impl.dart';
 import '../../../catalogues/domain/entities/service_entity.dart';
 import '../../../catalogues/domain/entities/status_entity.dart';
-
-final dioProvider = Provider<Dio>((ref) {
-  return DioClient.instance;
-});
-
-final apiClientProvider = Provider<ApiClient>((ref) {
-  final dio = ref.watch(dioProvider);
-  return ApiClient(dio: dio);
-});
-
-final appointmentsDependenciesProvider = Provider<AppointmentsDependencies>((ref) {
-  final dio = ref.watch(dioProvider);
-  return AppointmentsDependencies()..init(dio);
-});
 
 // ✅ NUEVO: Provider del repositorio de appointments
 final appointmentsRepositoryProvider = Provider<AppointmentsRepositoryImpl>((ref) {
@@ -47,12 +29,14 @@ final appointmentsListProvider = FutureProvider.autoDispose<List<AppointmentEnti
 final appointmentFormProvider =
     ChangeNotifierProvider<AppointmentFormProvider>((ref) {
   final deps = ref.watch(appointmentsDependenciesProvider);
-  final apiClient = ref.watch(apiClientProvider);
+  final cataloguesRemote = ref.watch(cataloguesRemoteDatasourceProvider);
+  final sourcesRemote = ref.watch(sourcesRemoteDatasourceProvider);
 
   return AppointmentFormProvider(
     appointmentsRepository: deps.appointmentsRepository,
     createAppointmentUseCase: deps.createAppointmentUseCase,
-    apiClient: apiClient,
+    cataloguesRemote: cataloguesRemote,
+    sourcesRemote: sourcesRemote,
   );
 });
 
@@ -60,12 +44,14 @@ class AppointmentFormProvider extends ChangeNotifier {
   AppointmentFormProvider({
     required this.appointmentsRepository,
     required this.createAppointmentUseCase,
-    required this.apiClient,
+    required this.cataloguesRemote,
+    required this.sourcesRemote,
   });
 
   final AppointmentsRepositoryImpl appointmentsRepository;
   final CreateAppointmentUseCase createAppointmentUseCase;
-  final ApiClient apiClient;
+  final CataloguesRemoteDatasource cataloguesRemote;
+  final SourcesRemoteDatasource sourcesRemote;
 
   List<ServiceEntity> services = [];
   List<SourceEntity> sources = [];
@@ -81,9 +67,6 @@ class AppointmentFormProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final cataloguesRemote = CataloguesRemoteDatasource(apiClient: apiClient);
-      final sourcesRemote = SourcesRemoteDatasource(apiClient: apiClient);
-
       // CARGAR SERVICIOS
       try {
         final servicesList = await cataloguesRemote.getServices();

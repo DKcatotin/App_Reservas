@@ -1,7 +1,7 @@
 // lib/features/owner/appointments/presentation/pages/appointment_detail_page.dart
 import 'dart:convert';
+import 'package:agenda_app/core/di/riverpod_providers.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
-import 'package:agenda_app/features/owner/catalogues/data/sources/catalogues_remote_datasource.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/provider/services_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/widgets/custom_info_card.dart';
 import 'package:flutter/material.dart';
@@ -107,8 +107,7 @@ class _AppointmentDetailPageState extends ConsumerState<AppointmentDetailPage> {
 
   Future<void> _loadStatuses() async {
     try {
-      final apiClient = ref.read(apiClientProvider);
-      final cataloguesRemote = CataloguesRemoteDatasource(apiClient: apiClient);
+      final cataloguesRemote = ref.read(cataloguesRemoteDatasourceProvider);
       final statusModels = await cataloguesRemote.getStatuses();
       final allStatuses = statusModels.map((s) => s.toEntity()).toList();
       final allowedCodes = {'CONFIRMED', 'PENDING', 'CANCELLED'};
@@ -391,7 +390,7 @@ Future<void> _saveChanges() async {
     // ✅ NUEVO: Invalidar el provider de appointments para forzar recarga
     ref.invalidate(appointmentsListProvider);
     
-    _showSuccess('Cita actualizada exitosamente');
+   
     
     if (!mounted) return;
     Navigator.pop(context, updatedAppointment);

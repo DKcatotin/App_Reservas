@@ -1,4 +1,6 @@
 // lib/features/owner/catalogues/domain/entities/service_category_entity.dart
+// Deprecated: duplicate of domain entity and unused.
+@Deprecated('Use lib/features/owner/catalogues/domain/entities/service_category_entity.dart instead.')
 
 class ServiceCategoryEntity {
   final String id;

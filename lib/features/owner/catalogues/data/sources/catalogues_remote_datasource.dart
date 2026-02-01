@@ -12,6 +12,31 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
   
   CataloguesRemoteDatasource({required this.apiClient});
 
+  List<T> _mapListWithGuard<T>(
+    List<dynamic> data,
+    T Function(Map<String, dynamic>) fromJson, {
+    String Function(Map<String, dynamic>)? onItemLog,
+    String? errorLabel,
+  }) {
+    final items = <T>[];
+    for (final item in data) {
+      try {
+        final json = item as Map<String, dynamic>;
+        if (onItemLog != null) {
+          debugPrint(onItemLog(json));
+        }
+        final model = fromJson(json);
+        items.add(model);
+      } catch (e) {
+        if (errorLabel != null) {
+          debugPrint('⚠️ Error parseando $errorLabel: $e');
+        }
+        continue;
+      }
+    }
+    return items;
+  }
+
   @override
   Future<List<Service>> getServices() async {
     try {
@@ -28,22 +53,12 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
       if (data.isEmpty) {
         return [];
       }
-
-      final services = <Service>[];
-      
-      for (final item in data) {
-        try {
-          final json = item as Map<String, dynamic>;
-          debugPrint('📍 Parseando servicio: ${json['name']}');
-          
-          final service = Service.fromJson(json);
-          services.add(service);
-        } catch (e) {
-          debugPrint('⚠️ Error parseando servicio: $e');
-          continue;
-        }
-      }
-
+      final services = _mapListWithGuard<Service>(
+        data,
+        (json) => Service.fromJson(json),
+        onItemLog: (json) => '📍 Parseando servicio: ${json['name']}',
+        errorLabel: 'servicio',
+      );
       debugPrint('✅ Servicios parseados: ${services.length}');
       return services;
       
@@ -102,21 +117,12 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
         debugPrint('⚠️ No hay statuses disponibles');
         return [];
       }
-
-      final statuses = <Status>[];
-      
-      for (final item in data) {
-        try {
-          final json = item as Map<String, dynamic>;
-          debugPrint('📍 Status: ${json['code']} - ID: ${json['id']}');
-          
-          final status = Status.fromJson(json);
-          statuses.add(status);
-        } catch (e) {
-          debugPrint('⚠️ Error parseando status: $e');
-          continue;
-        }
-      }
+      final statuses = _mapListWithGuard<Status>(
+        data,
+        (json) => Status.fromJson(json),
+        onItemLog: (json) => '📍 Status: ${json['code']} - ID: ${json['id']}',
+        errorLabel: 'status',
+      );
 
       statuses.sort((a, b) => a.code.compareTo(b.code));
       

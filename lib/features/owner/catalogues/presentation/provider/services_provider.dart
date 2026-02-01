@@ -1,5 +1,4 @@
-import 'package:agenda_app/core/api/api_client.dart';
-import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
+import 'package:agenda_app/core/di/riverpod_providers.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:agenda_app/features/owner/catalogues/data/sources/services_remotedatasource.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
