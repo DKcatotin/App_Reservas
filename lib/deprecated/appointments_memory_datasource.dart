@@ -1,5 +1,5 @@
-import '../../models/appointment.dart';
-import 'appointments_datasource.dart';
+import '../features/owner/appointments/data/models/appointment.dart';
+import '../features/owner/appointments/data/sources/appointments/appointments_datasource.dart';
 
 class AppointmentsMemoryDatasource implements AppointmentsDatasource {
   final List<Appointment> _items = [];

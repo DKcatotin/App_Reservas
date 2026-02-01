@@ -7,8 +7,13 @@ class CoreDependencies {
   late final TokenStorage tokenStorage;
   late final Dio dio;
 
-  void init() {
-    tokenStorage = TokenStorage();
-    dio = DioClient.create(tokenStorage);
+  /// Inicializa usando las instancias globales creadas en main().
+  /// Regla del proyecto: Dio y TokenStorage se crean SOLO una vez.
+  void init({
+    required TokenStorage tokenStorage,
+    required Dio dio,
+  }) {
+    this.tokenStorage = tokenStorage;
+    this.dio = dio;
   }
 }

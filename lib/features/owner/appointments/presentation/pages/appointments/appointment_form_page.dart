@@ -123,7 +123,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Cita creada exitosamente. Ahora puedes asignar servicios editándola.'),
+          content: Text('Cita creada exitosamente. Ahora puedes asignar servicios editándola.'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 3),
         ),

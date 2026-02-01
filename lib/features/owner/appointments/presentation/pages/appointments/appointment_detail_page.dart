@@ -311,7 +311,6 @@ Servicio: $services
         await _deleteAppointmentUseCase.call(widget.appointment.id);
 
         if (mounted) {
-          _showSuccess('Cita eliminada exitosamente');
 
           if (widget.onAppointmentDeleted != null) {
             await widget.onAppointmentDeleted!(widget.appointment.id);
