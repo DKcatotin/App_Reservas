@@ -3,6 +3,7 @@ import 'package:agenda_app/core/networking/api_endpoints.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/service.dart';
 import 'package:dio/dio.dart';
 
+@Deprecated('Duplicado: usar CataloguesRemoteDatasource.getServices()')
 class ServicesRemoteDatasource {
   final Dio _dio;
 

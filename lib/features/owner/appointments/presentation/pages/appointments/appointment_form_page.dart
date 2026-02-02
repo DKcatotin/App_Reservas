@@ -4,6 +4,7 @@ import 'package:agenda_app/features/owner/appointments/domain/inputs/create_appo
 import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/customer_provider.dart';
 import 'package:agenda_app/features/owner/branches/domain/branch_entity.dart';
+import 'package:agenda_app/features/owner/catalogues/domain/entities/service_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +28,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
   SourceEntity? _selectedSource;
 
   bool _isSaving = false;
+  final Set<String> _selectedServiceIds = {};
 
   @override
   void initState() {
@@ -42,13 +44,23 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
     _durationController.dispose();
     super.dispose();
   }
+  void _syncDurationFromServices(List<ServiceEntity> services) {
+  final selected = services.where((s) => _selectedServiceIds.contains(s.id)).toList();
+  final total = selected.fold<int>(0, (sum, s) => sum + (s.durationMin ?? 0));
+  if (total > 0) _durationController.text = total.toString();
+}
 
   /// Guardar la cita SIN servicios
   Future<void> _saveAppointment() async {
     if (_isSaving) return;
+    //obtener servicios del provider
+    final formState = ref.read(appointmentFormProvider);
 
-    // ✅ OBTENER customer del provider
+    // OBTENER customer del provider
     final customerState = ref.read(customerProvider);
+    final selectedServices = formState.services
+    .where((s) => _selectedServiceIds.contains(s.id))
+    .toList();
 
     if (customerState.customer == null) {
       _showError('Debe seleccionar un cliente');
@@ -59,6 +71,10 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
       _showError('Debe seleccionar una fuente de cita');
       return;
     }
+  if (selectedServices.isEmpty) {
+    _showError('Debe seleccionar al menos un servicio');
+    return;
+  }
 
     // ✅ Validar duración
     final duration = int.tryParse(_durationController.text.trim());
@@ -115,6 +131,7 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
           enabled: true,
         ),
         notes: _notesController.text,
+        selectedServices: selectedServices,
       );
 
       await ref.read(appointmentFormProvider).createAppointment(input);
@@ -217,6 +234,12 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
               },
             ),
             const SizedBox(height: 16),
+        Text('Servicios cargados: ${formState.services.length}'),
+        const SizedBox(height: 8),
+
+            // Servicios
+            _buildServicesSelector(formState.services),
+            const SizedBox(height: 16),
 
             // Fuente de cita
             _buildSourceSelector(formState.sources),
@@ -241,21 +264,6 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
                 color: Colors.blue[50],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.blue[700]),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Los servicios se asignan después de crear la cita',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.blue[900],
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -297,6 +305,41 @@ class _AppointmentFormPageState extends ConsumerState<AppointmentFormPage> {
       ),
     );
   }
+///metodo para traer servicios
+Widget _buildServicesSelector(List<ServiceEntity> services) {
+  if (services.isEmpty) {
+    return const Text('No hay servicios disponibles');
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text('Servicios', style: TextStyle(fontWeight: FontWeight.bold)),
+      const SizedBox(height: 8),
+      ...services.map((s) {
+        final checked = _selectedServiceIds.contains(s.id);
+        final dur = s.durationMin ?? 0;
+        final price = s.basePrice?.toStringAsFixed(2) ?? '0.00';
+
+        return CheckboxListTile(
+          value: checked,
+          title: Text(s.name),
+          subtitle: Text('$dur min • \$$price'),
+          onChanged: (value) {
+            setState(() {
+              if (value == true) {
+                _selectedServiceIds.add(s.id);
+              } else {
+                _selectedServiceIds.remove(s.id);
+              }
+              _syncDurationFromServices(services);
+            });
+          },
+        );
+      }),
+    ],
+  );
+}
 
   /// Widget: Selector de fecha y hora
   Widget _buildDateTimeSelector() {

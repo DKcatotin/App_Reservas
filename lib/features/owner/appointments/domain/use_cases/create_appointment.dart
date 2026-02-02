@@ -21,19 +21,22 @@ class CreateAppointmentUseCase {
 
     // 3. Crear entidad Appointment SIN servicios
     final appointment = AppointmentEntity(
-      id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
-      branch: input.branch,
-      customerId: input.customerId,
-      staffProfileId: null,  // Sin staff al crear
-      startAt: input.startAt,
-      endAt: input.endAt,  // ✅ Ya viene calculado
-      notes: cleanNotes,
-      status: StatusEntity.pending,
-      source: input.source,
-      customer: input.customer,
-      staff: null,
-      services: [],  // ✅ VACÍO al crear
-    );
+  id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
+  branch: input.branch,
+  customerId: input.customerId,
+  staffProfileId: null,
+  startAt: input.startAt,
+  endAt: input.endAt,
+  notes: cleanNotes,
+  status: StatusEntity.pending,
+  source: input.source,
+  customer: input.customer,
+  staff: null,
+
+  /// ✅ Ahora sí manda lo seleccionado
+  services: input.selectedServices,
+);
+
 
     // 4. Guardar en repositorio
     AppLogger.d('[USE_CASE] Creando appointment: ${appointment.id}');

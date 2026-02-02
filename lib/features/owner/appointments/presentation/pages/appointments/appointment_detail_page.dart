@@ -1,11 +1,9 @@
 // lib/features/owner/appointments/presentation/pages/appointment_detail_page.dart
-import 'dart:convert';
 import 'package:agenda_app/core/di/riverpod_providers.dart';
 import 'package:agenda_app/features/owner/appointments/presentation/providers/appointment_form_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/provider/services_provider.dart';
 import 'package:agenda_app/features/owner/catalogues/presentation/widgets/custom_info_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,7 +14,6 @@ import '../../../domain/use_cases/delete_appointment.dart';
 // Data
 import '../../../data/repositories/appointments_repository_impl.dart';
 import '../../../../catalogues/data/models/staff.dart';
-import '../../../../catalogues/data/models/service.dart';
 // Entities from catalogues
 import '../../../../catalogues/domain/entities/service_entity.dart';
 import '../../../../catalogues/domain/entities/staff_entity.dart';

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:agenda_app/core/errors/exceptions.dart';
 import 'package:agenda_app/core/networking/api_endpoints.dart';
@@ -12,34 +10,33 @@ class AppointmentsRemoteDatasource implements AppointmentsDatasource {
 
   AppointmentsRemoteDatasource({required this.dio});
 
+  @override
   // En appointments_remote_datasource.dart
-Future<List<Appointment>> getAll() async {
-  try {
-    final response = await dio.get(
-      '/core/owner/appointments',
-      queryParameters: {
-        'page': 1,
-        'limit': 100,
-      },
-    );
+  Future<List<Appointment>> getAll() async {
+    try {
+      final response = await dio.get(
+        '/core/owner/appointments',
+        queryParameters: {
+          'page': 1,
+          'limit': 100,
+        },
+      );
 
-    final data = response.data['data'] as List;
-    
-    return data.map((json) {
-      // ✅ Asegúrate de que el modelo parsee los servicios
-      return Appointment.fromJson(json);
-    }).toList();
-    
-  } on DioException catch (e) {
-    throw ServerException('Error al obtener citas: ${e.response?.data ?? e.message}');
+      final data = response.data['data'] as List;
+
+      return data.map((json) {
+        // ✅ Asegúrate de que el modelo parsee los servicios
+        return Appointment.fromJson(json);
+      }).toList();
+    } on DioException catch (e) {
+      throw ServerException(
+          'Error al obtener citas: ${e.response?.data ?? e.message}');
+    }
   }
-}
-
 
   @override
   Future<void> create(Appointment appointment) async {
     try {
-      // ✅ CORRECCIÓN: NO enviar services al crear
       final body = {
         'branch': {
           'id': appointment.branch.id,
@@ -53,16 +50,19 @@ Future<List<Appointment>> getAll() async {
         'customerId': appointment.customerId,
         'staffProfileId': appointment.staffProfileId,
         'sourceId': appointment.source.id,
-        if (appointment.status.id.isNotEmpty) 
-          'statusId': appointment.status.id,
+        if (appointment.status.id.isNotEmpty) 'statusId': appointment.status.id,
         'startAt': appointment.startAt.toIso8601String(),
         'endAt': appointment.endAt.toIso8601String(),
         'notes': appointment.notes,
-        // ✅ NO incluir services aquí - se asignan después al editar
+        'services': (appointment.services ?? [])
+            .map((s) => {
+                  'serviceId': s.serviceId,
+                  'durationMin': s.durationMin,
+                  'price': s.price,
+                })
+            .toList(),
       };
-
-      debugPrint('📍 Creando appointment SIN servicios: $body');
-
+      debugPrint('📍 Creando appointment CON servicios: $body');
       final response = await dio.post(
         '/core/owner/appointments',
         data: body,
@@ -71,47 +71,48 @@ Future<List<Appointment>> getAll() async {
       debugPrint('✅ Appointment creado: ${response.data}');
     } on DioException catch (e) {
       debugPrint('❌ Error creando appointment: ${e.response?.data}');
-      throw ServerException('Error al crear cita: ${e.response?.data ?? e.message}');
+      throw ServerException(
+          'Error al crear cita: ${e.response?.data ?? e.message}');
     }
   }
 
-@override
-Future<void> update(Appointment appointment) async {
-  try {
-    // ✅ Incluir el objeto branch completo
-    final body = {
-      'branch': {
-        'id': appointment.branch.id,
-        'name': appointment.branch.name,
-        'phone': appointment.branch.phone,
-        'email': appointment.branch.email,
-        'address': appointment.branch.address,
-        'city': appointment.branch.city,
-        'enabled': appointment.branch.enabled,
-      },
-      'customerId': appointment.customerId,
-      'staffProfileId': appointment.staffProfileId,
-      'sourceId': appointment.source.id,
-      'statusId': appointment.status.id,
-      'startAt': appointment.startAt.toIso8601String(),
-      'endAt': appointment.endAt.toIso8601String(),
-      'notes': appointment.notes,
-    };
+  @override
+  Future<void> update(Appointment appointment) async {
+    try {
+      // ✅ Incluir el objeto branch completo
+      final body = {
+        'branch': {
+          'id': appointment.branch.id,
+          'name': appointment.branch.name,
+          'phone': appointment.branch.phone,
+          'email': appointment.branch.email,
+          'address': appointment.branch.address,
+          'city': appointment.branch.city,
+          'enabled': appointment.branch.enabled,
+        },
+        'customerId': appointment.customerId,
+        'staffProfileId': appointment.staffProfileId,
+        'sourceId': appointment.source.id,
+        'statusId': appointment.status.id,
+        'startAt': appointment.startAt.toIso8601String(),
+        'endAt': appointment.endAt.toIso8601String(),
+        'notes': appointment.notes,
+      };
 
-    debugPrint('📍 Actualizando appointment: $body');
+      debugPrint('📍 Actualizando appointment: $body');
 
-    final response = await dio.patch(
-      '/core/owner/appointments/${appointment.id}',
-      data: body,
-    );
+      final response = await dio.patch(
+        '/core/owner/appointments/${appointment.id}',
+        data: body,
+      );
 
-    debugPrint('✅ Appointment actualizado: ${response.data}');
-  } on DioException catch (e) {
-    debugPrint('❌ Error actualizando appointment: ${e.response?.data}');
-    throw ServerException('Error al actualizar cita: ${e.response?.data ?? e.message}');
+      debugPrint('✅ Appointment actualizado: ${response.data}');
+    } on DioException catch (e) {
+      debugPrint('❌ Error actualizando appointment: ${e.response?.data}');
+      throw ServerException(
+          'Error al actualizar cita: ${e.response?.data ?? e.message}');
+    }
   }
-}
-
 
   @override
   Future<void> delete(String id) async {

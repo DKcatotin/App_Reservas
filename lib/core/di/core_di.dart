@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import '../networking/dio_client.dart';
 import '../storage/token_storage.dart';
 
 /// Dependencias core compartidas por todos los módulos

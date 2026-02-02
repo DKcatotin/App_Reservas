@@ -76,8 +76,9 @@ class AppointmentFormProvider extends ChangeNotifier {
         debugPrint('❌ Error cargando servicios: $e');
         errorMessage = 'Error al cargar servicios: $e';
         throw Exception('Servicios: $e');
+        
       }
-
+      
       // CARGAR SOURCES
       try {
         final sourcesList = await sourcesRemote.getSources(type: 'appointment_source');
@@ -118,8 +119,8 @@ class AppointmentFormProvider extends ChangeNotifier {
       await createAppointmentUseCase.call(input);
       debugPrint('✅ Cita creada exitosamente');
     } catch (e) {
-      errorMessage = 'Error creando cita: $e';
-      debugPrint('❌ Error creando cita: $e');
+  // ✅ No setear errorMessage aquí, porque errorMessage se usa para errores de carga (pantalla completa).
+  debugPrint('❌ Error creando cita: $e');
       rethrow;
     } finally {
       isSaving = false;

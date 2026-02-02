@@ -1,9 +1,9 @@
 import 'package:agenda_app/core/api/api_client.dart';
 import 'package:agenda_app/core/errors/exceptions.dart';
+import 'package:agenda_app/core/logger/app_logger.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/catalogue_item.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/staff.dart';
 import 'package:agenda_app/features/owner/catalogues/data/models/status.dart';  // ✅ IMPORTAR
-import 'package:flutter/foundation.dart';
 import 'catalogues_datasource.dart';
 import '../models/service.dart';
 
@@ -23,13 +23,13 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
       try {
         final json = item as Map<String, dynamic>;
         if (onItemLog != null) {
-          debugPrint(onItemLog(json));
+          AppLogger.d(onItemLog(json));
         }
         final model = fromJson(json);
         items.add(model);
       } catch (e) {
         if (errorLabel != null) {
-          debugPrint('⚠️ Error parseando $errorLabel: $e');
+          AppLogger.d('⚠️ Error parseando $errorLabel: $e');
         }
         continue;
       }
@@ -59,11 +59,11 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
         onItemLog: (json) => '📍 Parseando servicio: ${json['name']}',
         errorLabel: 'servicio',
       );
-      debugPrint('✅ Servicios parseados: ${services.length}');
+      AppLogger.d('✅ Servicios parseados: ${services.length}');
       return services;
       
     } catch (e) {
-      debugPrint('❌ Error en getServices: $e');
+      AppLogger.d('❌ Error en getServices: $e');
       throw ServerException('Error al obtener servicios: $e');
     }
   }
@@ -114,7 +114,7 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
       final data = response['data'] as List<dynamic>;
       
       if (data.isEmpty) {
-        debugPrint('⚠️ No hay statuses disponibles');
+        AppLogger.d('⚠️ No hay statuses disponibles');
         return [];
       }
       final statuses = _mapListWithGuard<Status>(
@@ -126,11 +126,11 @@ class CataloguesRemoteDatasource implements CataloguesDatasource {
 
       statuses.sort((a, b) => a.code.compareTo(b.code));
       
-      debugPrint('✅ Statuses cargados: ${statuses.length}');
+      AppLogger.d('✅ Statuses cargados: ${statuses.length}');
       return statuses;
       
     } catch (e) {
-      debugPrint('❌ Error al obtener statuses: $e');
+      AppLogger.d('❌ Error al obtener statuses: $e');
       throw ServerException('Error al obtener statuses: $e');
     }
   }

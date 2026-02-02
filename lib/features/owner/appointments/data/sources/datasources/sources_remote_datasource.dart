@@ -1,5 +1,4 @@
 import 'package:agenda_app/core/api/api_client.dart';
-import 'package:agenda_app/core/logger/app_logger.dart';
 import 'package:agenda_app/features/owner/appointments/data/sources/datasources/source_datasource.dart';
 import 'package:flutter/foundation.dart';
 import '../../models/source.dart';
